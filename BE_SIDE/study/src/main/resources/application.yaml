@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://localhost:3306/sw
+    username: root
+    password: password123!
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+                show_sql: true #얘는 콘솔에 찍는건데 이건 아래에서 debug 해놓은거로 로그에 남겨놓는게 좋기때문에 주석 처리했다
+                format_sql: true
+                default_batch_fetch_size: 100
+    database-platform: org.hibernate.dialect.MariaDBDialect
+
+logging:
+  level:
+    org.hibernate.sql: debug
+#    org.hibernate.type: trace #파라미터 바인딩되는 파라미터까지 볼 수 있게 해줌
