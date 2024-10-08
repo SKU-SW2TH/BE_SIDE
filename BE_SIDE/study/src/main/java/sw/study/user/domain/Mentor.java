@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import sw.study.community.domain.Member;
+import sw.study.user.TimeAvailability;
 
 import java.time.LocalDateTime;
 
@@ -24,7 +25,8 @@ public class Mentor {
 
     private double rating;
 
-    private Enum time;
+    @Enumerated(EnumType.STRING) // Enum 타입을 DB에 문자열로 저장
+    private TimeAvailability time;
 
     private boolean is_deleted = false;
 
@@ -46,10 +48,11 @@ public class Mentor {
         this.is_deleted = true;
     }
 
-    public static Mentor createMentor(Member member, String expertise, double rating) {
+    public static Mentor createMentor(Member member, String expertise, double rating, TimeAvailability time) {
         Mentor mentor = new Mentor();
         mentor.member = member;
         mentor.rating = rating;
+        mentor.time = time;
         return mentor;
     }
 
