@@ -3,6 +3,9 @@ package sw.study.community.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import sw.study.user.domain.NotificationCategory;
+import sw.study.user.domain.NotificationSetting;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -48,7 +51,7 @@ public class Member {
 
     //== 생성 메서드 ==//
     public static Member createMember(String email, String password, String nickname,
-                                      String profile, String introduce, List<InterestArea> interestAreas) {
+                                      String profile, String introduce, List<InterestArea> interestAreas, List<NotificationCategory> categories) {
 
         Member member = new Member();
         member.email = email;
@@ -63,7 +66,9 @@ public class Member {
         }
 
         // 알림설정 저장
-
+        for(NotificationCategory category : categories) {
+            NotificationSetting.createSetting(member, category);
+        }
 
         return member;
     }
