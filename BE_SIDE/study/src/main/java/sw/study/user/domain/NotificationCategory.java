@@ -7,10 +7,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static lombok.AccessLevel.PROTECTED;
+
 @Entity
 @Table(name = "NotificationCategory")
 @Getter
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = PROTECTED)
 public class NotificationCategory {
 
     @Id
@@ -24,10 +26,10 @@ public class NotificationCategory {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true) // cascade 및 orphanRemoval 설정
-    private List<Notification> notifications = new ArrayList<>();
+    private List<Notification> notifications;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true) // cascade 및 orphanRemoval 설정
-    private List<NotificationSetting> settings = new ArrayList<>();
+    private List<NotificationSetting> settings;
 
     @PrePersist
     protected void onCreate() {

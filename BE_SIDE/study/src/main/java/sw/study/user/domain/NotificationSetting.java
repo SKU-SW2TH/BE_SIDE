@@ -8,10 +8,12 @@ import sw.study.community.domain.Member;
 
 import java.time.LocalDateTime;
 
+import static lombok.AccessLevel.PROTECTED;
+
 @Entity
 @Table(name = "Setting")
 @Getter
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = PROTECTED)
 public class NotificationSetting {
 
     @Id
@@ -20,13 +22,11 @@ public class NotificationSetting {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY) // 다대일 관계 설정
-    @NotNull
-    @JoinColumn(name = "member_id") // 외래키 이름 설정
+    @JoinColumn(name = "member_id", nullable = false) // 외래키 이름 설정
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY) // 다대일 관계 설정
-    @NotNull
-    @JoinColumn(name = "category_id") // 외래키 이름 설정
+    @JoinColumn(name = "category_id", nullable = false) // 외래키 이름 설정
     private NotificationCategory category;
 
     private boolean isEnabled = true;

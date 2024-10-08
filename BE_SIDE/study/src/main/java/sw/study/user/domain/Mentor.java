@@ -7,11 +7,15 @@ import sw.study.community.domain.Member;
 import sw.study.user.TimeAvailability;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import static lombok.AccessLevel.PROTECTED;
 
 @Entity
 @Table(name = "mentor")
 @Getter
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = PROTECTED)
 public class Mentor {
 
     @Id
@@ -32,6 +36,12 @@ public class Mentor {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "mentor", cascade = CascadeType.ALL, orphanRemoval = true) // cascade 및 orphanRemoval 설정
+    private List<MentorSkill> skills = new ArrayList<>();
+
+    @OneToMany(mappedBy = "mentor", cascade = CascadeType.ALL, orphanRemoval = true) // cascade 및 orphanRemoval 설정
+    private List<Review> reviews = new ArrayList<>();
 
     @PrePersist
     public void onCreate() {
@@ -54,6 +64,14 @@ public class Mentor {
         mentor.rating = rating;
         mentor.time = time;
         return mentor;
+    }
+
+    public void addSkill(MentorSkill skill) {
+        skills.add(skill);
+    }
+
+    public void addReview(Review review) {
+        reviews.add(review);
     }
 
 }

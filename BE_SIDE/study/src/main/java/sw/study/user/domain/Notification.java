@@ -8,10 +8,12 @@ import sw.study.community.domain.Member;
 
 import java.time.LocalDateTime;
 
+import static lombok.AccessLevel.PROTECTED;
+
 @Entity
 @Table(name = "Notification")
 @Getter
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = PROTECTED)
 public class Notification {
 
     @Id

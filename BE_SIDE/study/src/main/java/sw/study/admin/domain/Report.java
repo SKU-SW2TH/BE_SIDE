@@ -10,10 +10,12 @@ import sw.study.admin.TargetType;
 import sw.study.community.domain.Member;
 import java.time.LocalDateTime;
 
+import static lombok.AccessLevel.PROTECTED;
+
 @Entity
 @Table(name = "report")
 @Getter
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = PROTECTED)
 public class Report {
 
     @Id
@@ -35,13 +37,13 @@ public class Report {
     @Enumerated(EnumType.STRING) // Enum 타입을 문자열로 저장
     private TargetType targetType;
 
+    @Lob
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @NotNull
     @Enumerated(EnumType.STRING) // Enum 타입을 문자열로 저장
     private Reason reason;
 
-    @NotNull
     @Enumerated(EnumType.STRING) // Enum 타입을 문자열로 저장
     private Status status;
 

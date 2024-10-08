@@ -7,10 +7,12 @@ import sw.study.admin.MentorRequestStatus;
 import sw.study.community.domain.Member;
 import java.time.LocalDateTime;
 
+import static lombok.AccessLevel.PROTECTED;
+
 @Entity
 @Table(name = "mentorRequest")
 @Getter
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = PROTECTED)
 public class MentorRequest {
 
     @Id
