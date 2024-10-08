@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import sw.study.community.domain.Member;
-import sw.study.user.TimeAvailability;
+import sw.study.user.role.TimeAvailability;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

@@ -4,9 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.NotNull;
-import sw.study.admin.Reason;
-import sw.study.admin.Status;
-import sw.study.admin.TargetType;
+import sw.study.admin.role.Reason;
+import sw.study.admin.role.Status;
+import sw.study.admin.role.TargetType;
 import sw.study.community.domain.Member;
 import java.time.LocalDateTime;
 

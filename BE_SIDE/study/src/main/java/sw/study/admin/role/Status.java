@@ -1,4 +1,4 @@
-package sw.study.admin;
+package sw.study.admin.role;
 
 public enum Status {
     PENDING,

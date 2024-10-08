@@ -3,7 +3,7 @@ package sw.study.admin.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import sw.study.admin.MentorRequestStatus;
+import sw.study.admin.role.MentorRequestStatus;
 import sw.study.community.domain.Member;
 import java.time.LocalDateTime;
 

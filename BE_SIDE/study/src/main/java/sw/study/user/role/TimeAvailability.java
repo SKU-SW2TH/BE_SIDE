@@ -1,4 +1,4 @@
-package sw.study.user;
+package sw.study.user.role;
 
 public enum TimeAvailability {
     WEEKDAY, // 평일
