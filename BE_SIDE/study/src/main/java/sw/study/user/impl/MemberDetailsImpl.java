@@ -4,20 +4,15 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import sw.study.community.domain.Member;
-
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class MemberDetailsImpl implements UserDetails {
 
     private final Member member;
-    private final String email;
-    private final String password;
 
-    public MemberDetailsImpl(Member member, String email, String password) {
+    public MemberDetailsImpl(Member member) {
         this.member = member;
-        this.email = email;
-        this.password = password;
     }
 
     public Member getMember() {
@@ -38,12 +33,12 @@ public class MemberDetailsImpl implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.email;
+        return member.getEmail();
     }
 
     @Override
     public String getPassword() {
-        return this.password;
+        return member.getPassword();
     }
 
     @Override

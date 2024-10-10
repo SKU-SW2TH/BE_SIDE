@@ -46,7 +46,7 @@ public class WebConfig {
 //                .logout(logout -> logout
 //                        .logoutSuccessUrl("/login")
 //                        .invalidateHttpSession(true)
-//                .addFilterBefore(authenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+//                .addFilterBefore(authenticationFilter(), UsernamePasswordAuthenticationFilter.class); //jwt
 
         return http.build();
     }
@@ -57,9 +57,9 @@ public class WebConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(HttpSecurity http, BCryptPasswordEncoder bCryptPasswordEncoder, UserDetailsService userDetailsService) throws Exception {
+    public AuthenticationManager authenticationManager(HttpSecurity http, BCryptPasswordEncoder bCryptPasswordEncoder) throws Exception {
         AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-        authenticationManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(bCryptPasswordEncoder);
+        authenticationManagerBuilder.userDetailsService(memberDetailsService).passwordEncoder(bCryptPasswordEncoder);
         return authenticationManagerBuilder.build();
     }
 
