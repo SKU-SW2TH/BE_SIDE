@@ -3,7 +3,7 @@ package sw.study.admin.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import sw.study.community.domain.Member;
+import sw.study.user.domain.Member;
 
 import java.time.LocalDateTime;
 

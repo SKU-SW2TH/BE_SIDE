@@ -1,4 +1,4 @@
-package sw.study.community.domain;
+package sw.study.user.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;

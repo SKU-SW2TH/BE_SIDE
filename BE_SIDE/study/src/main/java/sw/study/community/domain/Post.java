@@ -3,6 +3,8 @@ package sw.study.community.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import sw.study.user.domain.Member;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
