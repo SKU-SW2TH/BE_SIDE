@@ -12,10 +12,13 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import sw.study.config.jwt.JwtFilter;
+import sw.study.config.jwt.TokenProvider;
 import sw.study.user.serivce.MemberDetailsServiceImpl;
 
 import java.util.List;
@@ -25,6 +28,7 @@ import java.util.List;
 @EnableWebSecurity
 public class WebConfig {
     private final MemberDetailsServiceImpl memberDetailsService;
+    private final TokenProvider tokenProvider;
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
@@ -33,22 +37,33 @@ public class WebConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        // HTTP 기본 인증 비활성화
         http.httpBasic(AbstractHttpConfigurer::disable)
+                // CSRF 보호 비활성화 (REST API의 경우 일반적으로 비활성화)
                 .csrf(AbstractHttpConfigurer::disable)
+                // 요청에 대한 권한 설정
                 .authorizeHttpRequests(authorize -> authorize
+                        // 특정 경로에 대한 접근 허용
                         .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/logout", "/user").permitAll()
+                        // 나머지 모든 요청을 허용 (이 부분은 필요에 따라 수정 가능)
                         .anyRequest().permitAll()
                 )
+                // 세션 관리 설정 (무상태 세션)
                 .sessionManagement(configurer -> configurer
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 상태를 유지하지 않는 세션 정책
+                // 기본 로그인 비활성화
                 .formLogin(AbstractHttpConfigurer::disable)
+                // 로그아웃 비활성화
                 .logout(AbstractHttpConfigurer::disable);
-//                .logout(logout -> logout
-//                        .logoutSuccessUrl("/login")
-//                        .invalidateHttpSession(true)
-//                .addFilterBefore(authenticationFilter(), UsernamePasswordAuthenticationFilter.class); //jwt
+        // .logout(logout -> logout // 로그아웃 설정
+        //         .logoutSuccessUrl("/login") // 로그아웃 성공 후 리다이렉트할 URL
+        //         .invalidateHttpSession(true) // 세션 무효화
+        // );
 
-        return http.build();
+        // JwtFilter를 UsernamePasswordAuthenticationFilter 앞에 추가
+        http.addFilterBefore(new JwtFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
+
+        return http.build(); // 보안 필터 체인을 빌드하여 반환
     }
 
     @Bean
