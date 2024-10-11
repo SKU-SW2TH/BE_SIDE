@@ -1,4 +1,4 @@
-package sw.study.redis;
+package sw.study.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
