@@ -33,7 +33,6 @@ public class Member {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private LocalDateTime deletedAt;
 
 
 
@@ -49,7 +48,7 @@ public class Member {
 
     //== 생성 메서드 ==//
     public static Member createMember(String email, String password, String nickname,
-                                      String profile, String introduce, List<InterestArea> interestAreas, List<NotificationCategory> categories) {
+                                      String profile, String introduce) {
 
         Member member = new Member();
         member.email = email;
@@ -58,15 +57,11 @@ public class Member {
         member.profile = profile;
         member.introduce = introduce;
 
-        // 관심분야 저장
-        for (InterestArea interestArea : interestAreas) {
-            MemberInterest.CreateMemberInterest(member, interestArea);
-        }
 
         // 알림설정 저장
-        for(NotificationCategory category : categories) {
-            NotificationSetting.createSetting(member, category);
-        }
+//        for(NotificationCategory category : categories) {
+//            NotificationSetting.createSetting(member, category);
+//        }
 
         return member;
     }
