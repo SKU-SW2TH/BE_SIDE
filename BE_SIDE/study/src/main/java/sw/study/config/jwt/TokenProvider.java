@@ -60,7 +60,29 @@ public class TokenProvider {
                 .build();
     }
 
-    public UsernamePasswordAuthenticationToken getAuthentication(String accessToken) {
+    private String generateAccessToken(String email, String authorities) {
+        long now = (new Date()).getTime();
+        Date accessTokenExpiresIn = new Date(now + ACCESS_TOKEN_EXPIRE_TIME);
+        return Jwts.builder()
+                .setSubject(email)
+                .claim(AUTHORITIES_KEY, authorities)
+                .setExpiration(accessTokenExpiresIn)
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+    private String generateRefreshToken(String email, String authorities) {
+        long now = (new Date()).getTime();
+        return Jwts.builder()
+                .setSubject(email)
+                .claim(AUTHORITIES_KEY, authorities)
+                .setExpiration(new Date(now + REFRESH_TOKEN_EXPIRE_TIME))
+                .claim("isRefreshToken", true) // refreshToken 임을 나타내는 클레임 추가
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+    public Authentication getAuthentication(String accessToken) {
         // 토큰 복호화
         Claims claims = parseClaims(accessToken);
 
@@ -105,6 +127,14 @@ public class TokenProvider {
         } catch (ExpiredJwtException e) {
             return e.getClaims();
         }
+    }
+
+    public Long getExpiration(String accessToken) {
+        // accessToken 남은 유효시간
+        Date expiration = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(accessToken).getBody().getExpiration();
+        // 현재 시간
+        Long now = new Date().getTime();
+        return (expiration.getTime() - now);
     }
 
 }

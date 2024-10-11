@@ -44,7 +44,7 @@ public class WebConfig {
                 // 요청에 대한 권한 설정
                 .authorizeHttpRequests(authorize -> authorize
                         // 특정 경로에 대한 접근 허용
-                        .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/logout", "/user").permitAll()
+                        .requestMatchers("/api/auth/signup", "/auth/login", "/api/auth/logout", "/user").permitAll()
                         // 나머지 모든 요청을 허용 (이 부분은 필요에 따라 수정 가능)
                         .anyRequest().permitAll()
                 )

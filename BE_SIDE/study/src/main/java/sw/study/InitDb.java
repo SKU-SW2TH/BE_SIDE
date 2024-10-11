@@ -3,10 +3,16 @@ package sw.study;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.community.domain.Category;
 import sw.study.community.domain.InterestArea;
+import sw.study.community.domain.Member;
+import sw.study.user.domain.NotificationCategory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -25,6 +31,7 @@ public class InitDb {
     static class InitService {
 
         private final EntityManager em;
+        private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
         public void initInterestArea() {
 
@@ -37,6 +44,20 @@ public class InitDb {
             em.persist(interest2);
             em.persist(interest3);
 //           em.flush(); //필요는 없음
+
+            List<InterestArea> interestAreas = new ArrayList<>();
+            List<NotificationCategory> categories = new ArrayList<>();
+
+            Member member1 = Member.createMember(
+                    "limjh0703@naver.com",
+                    encoder.encode("1q2w3e4r!"), // 비밀번호 암호화
+                    "User One",
+                    "profile1.jpg",
+                    "안녕하세요, 저는 User One입니다.",
+                    interestAreas,
+                    categories
+            );
+            em.persist(member1);
 
             interest1.addChildInterest(interest2);
             interest1.addChildInterest(interest3);
