@@ -1,6 +1,7 @@
 # BE_SIDE
 
 ### Tag Name: Description 👋
+IntelliJ : plugins -> gitmoji 설치
 
 git Commit Convention
 
