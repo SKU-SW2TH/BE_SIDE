@@ -187,8 +187,8 @@ public class TokenProvider {
     }
 
     public boolean isTokenBlacklisted(String accessToken) {
-        String blacklistKey = "blacklist:" + accessToken;
-        return redisUtil.hasKey(blacklistKey); // 블랙리스트에 존재하는지 체크
+        String blacklistKey = "BlackList_" + accessToken;
+        return redisUtil.hasKeyBlackList(blacklistKey); // 블랙리스트에 존재하는지 체크
     }
 
 }

@@ -72,8 +72,12 @@ public class AuthService {
             String accessToken = redisUtil.getData(accessTokenKey); // Access Token 조회
 
             if (accessToken != null) {
-                Long expiration = tokenProvider.getExpiration(accessToken);
-                redisUtil.setBlackList("blacklist_" + accessToken, true, expiration, TimeUnit.MILLISECONDS);
+                // Access Token의 유효성 검사
+                if (tokenProvider.validateToken(accessToken)) {
+                    Long expiration = tokenProvider.getExpiration(accessToken);
+                    redisUtil.setBlackList("BlackList_" + accessToken, true, expiration, TimeUnit.MILLISECONDS);
+                }
+
                 // Redis에서 Access Token 삭제
                 redisUtil.delete(accessTokenKey);
             }
@@ -94,8 +98,12 @@ public class AuthService {
             String accessToken = redisUtil.getData(accessTokenKey); // Access Token 조회
 
             if (accessToken != null) {
-                Long expiration = tokenProvider.getExpiration(accessToken);
-                redisUtil.setBlackList("blacklist_" + accessToken, true, expiration, TimeUnit.MILLISECONDS);
+                // Access Token의 유효성 검사
+                if (tokenProvider.validateToken(accessToken)) {
+                    Long expiration = tokenProvider.getExpiration(accessToken);
+                    redisUtil.setBlackList("BlackList_" + accessToken, true, expiration, TimeUnit.MILLISECONDS);
+                }
+
                 // Redis에서 Access Token 삭제
                 redisUtil.delete(accessTokenKey);
             }

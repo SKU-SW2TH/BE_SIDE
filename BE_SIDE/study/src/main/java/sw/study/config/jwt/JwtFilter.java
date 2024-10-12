@@ -5,12 +5,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import sw.study.user.util.RedisUtil;
+
 import java.io.IOException;
 
 @RequiredArgsConstructor // final 필드에 대한 생성자를 자동으로 생성하는 Lombok 애노테이션
@@ -20,7 +21,7 @@ public class JwtFilter extends OncePerRequestFilter {
     public static final String BEARER_PREFIX = "Bearer "; // Bearer 토큰의 접두사
 
     private final TokenProvider tokenProvider; // JWT 토큰을 처리하는 TokenProvider 인스턴스
-    private final RedisTemplate<String, String> redisTemplate; // RedisTemplate 인스턴스 추가
+    private final RedisUtil redisUtil; // RedisTemplate 인스턴스 추가
 
     // JWT 토큰의 인증 정보를 현재 쓰레드의 SecurityContext에 저장하는 역할 수행
     @Override
@@ -29,10 +30,10 @@ public class JwtFilter extends OncePerRequestFilter {
         // 1. Request Header에서 토큰을 꺼냄
         String jwt = resolveToken(request);
 
-        // 2. validateToken으로 토큰 유효성 검사
+        // 2. validateToken 으로 토큰 유효성 검사
         // 정상 토큰이면 해당 토큰으로 Authentication을 가져와서 SecurityContext에 저장
         if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-            String isLogout = redisTemplate.opsForValue().get("black:" + jwt);
+            String isLogout = (String)redisUtil.getBlackList("BlackList_" + jwt);
 
             // 로그아웃되지 않은 경우
             if (ObjectUtils.isEmpty(isLogout)) {
