@@ -1,15 +1,15 @@
 package sw.study.user.controller;
 
-import jakarta.security.auth.message.AuthException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.config.jwt.TokenDTO;
 import sw.study.user.dto.LoginRequest;
+import sw.study.user.dto.LogoutRequest;
 import sw.study.user.service.AuthService;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
     private final AuthService authService;
 
@@ -26,6 +26,18 @@ public class AuthController {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR) // 500 Internal Server Error
                     .body(null); // 본문은 null
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@RequestBody LogoutRequest logoutRequest) {
+        try {
+            authService.logout(logoutRequest.getEmail(), logoutRequest.getRefreshToken()); // AuthService의 logout 메서드 호출
+            return ResponseEntity.ok("로그아웃 성공"); // 200 OK 응답
+        } catch (Exception ex) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR) // 500 Internal Server Error
+                    .build(); // 본문은 null
         }
     }
 

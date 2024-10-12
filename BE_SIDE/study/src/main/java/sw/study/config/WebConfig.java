@@ -3,13 +3,13 @@ package sw.study.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -29,6 +29,7 @@ import java.util.List;
 public class WebConfig {
     private final MemberDetailsServiceImpl memberDetailsService;
     private final TokenProvider tokenProvider;
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
@@ -44,7 +45,7 @@ public class WebConfig {
                 // 요청에 대한 권한 설정
                 .authorizeHttpRequests(authorize -> authorize
                         // 특정 경로에 대한 접근 허용
-                        .requestMatchers("/api/auth/signup", "/auth/login", "/api/auth/logout", "/user").permitAll()
+                        .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/logout", "/user").permitAll()
                         // 나머지 모든 요청을 허용 (이 부분은 필요에 따라 수정 가능)
                         .anyRequest().permitAll()
                 )
@@ -61,7 +62,7 @@ public class WebConfig {
         // );
 
         // JwtFilter를 UsernamePasswordAuthenticationFilter 앞에 추가
-        http.addFilterBefore(new JwtFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new JwtFilter(tokenProvider, redisTemplate), UsernamePasswordAuthenticationFilter.class);
 
         return http.build(); // 보안 필터 체인을 빌드하여 반환
     }

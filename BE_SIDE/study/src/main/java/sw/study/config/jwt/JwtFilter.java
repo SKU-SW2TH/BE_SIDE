@@ -5,8 +5,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
@@ -18,6 +20,7 @@ public class JwtFilter extends OncePerRequestFilter {
     public static final String BEARER_PREFIX = "Bearer "; // Bearer 토큰의 접두사
 
     private final TokenProvider tokenProvider; // JWT 토큰을 처리하는 TokenProvider 인스턴스
+    private final RedisTemplate<String, String> redisTemplate; // RedisTemplate 인스턴스 추가
 
     // JWT 토큰의 인증 정보를 현재 쓰레드의 SecurityContext에 저장하는 역할 수행
     @Override
@@ -29,8 +32,17 @@ public class JwtFilter extends OncePerRequestFilter {
         // 2. validateToken으로 토큰 유효성 검사
         // 정상 토큰이면 해당 토큰으로 Authentication을 가져와서 SecurityContext에 저장
         if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-            Authentication authentication = tokenProvider.getAuthentication(jwt); // 토큰에서 인증 정보를 가져옴
-            SecurityContextHolder.getContext().setAuthentication(authentication); // SecurityContext에 인증 정보를 저장
+            String isLogout = redisTemplate.opsForValue().get("black:" + jwt);
+
+            // 로그아웃되지 않은 경우
+            if (ObjectUtils.isEmpty(isLogout)) {
+                Authentication authentication = tokenProvider.getAuthentication(jwt); // 토큰에서 인증 정보를 가져옴
+                SecurityContextHolder.getContext().setAuthentication(authentication); // SecurityContext에 인증 정보를 저장
+            } else {
+                // 로그아웃된 경우 적절한 처리 (예: 오류 응답 반환)
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "로그아웃된 사용자입니다.");
+                return;
+            }
         }
 
         filterChain.doFilter(request, response); // 다음 필터로 요청을 전달
