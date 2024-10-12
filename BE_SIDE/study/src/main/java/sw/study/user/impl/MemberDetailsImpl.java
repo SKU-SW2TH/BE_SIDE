@@ -1,9 +1,8 @@
 package sw.study.user.impl;
 
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import sw.study.community.domain.Member;
+import sw.study.user.domain.Member;
 import java.util.ArrayList;
 import java.util.Collection;
 

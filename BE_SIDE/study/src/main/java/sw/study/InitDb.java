@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.community.domain.Category;
 import sw.study.community.domain.InterestArea;
-import sw.study.community.domain.Member;
+import sw.study.user.domain.Member;
 import sw.study.user.domain.NotificationCategory;
 
 import java.util.ArrayList;

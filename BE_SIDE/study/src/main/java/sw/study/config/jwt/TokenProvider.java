@@ -25,10 +25,12 @@ public class TokenProvider {
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7;  // 7일
 
     private final Key key;
+    private final RedisUtil redisUtil;
 
-    public TokenProvider(@Value("${jwt.secret}") String secretKey) {
+    public TokenProvider(@Value("${jwt.secret}") String secretKey, RedisUtil redisUtil) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
+        this.redisUtil = redisUtil;
     }
 
     public TokenDTO generateTokenDTO(Authentication authentication) {
@@ -49,8 +51,11 @@ public class TokenProvider {
                 .compact();
 
         // Refresh Token 생성
-        String refreshToken = Jwts.builder()
+        String refreshToken = Jwts.builder().
+                setSubject(authentication.getName())       // payload "sub": "name"
+                .claim(AUTHORITIES_KEY, authorities)
                 .setExpiration(new Date(now + REFRESH_TOKEN_EXPIRE_TIME))
+                .claim("isRefreshToken", true)
                 .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
 
@@ -59,6 +64,44 @@ public class TokenProvider {
                 .accessToken(accessToken)
                 .accessTokenExpiresIn(accessTokenExpiresIn.getTime())
                 .refreshToken(refreshToken)
+                .build();
+    }
+
+    public TokenDTO reissueAccessToken(String refreshToken) {
+
+        // 리프레시 토큰에서 사용자 정보 추출 -> 클레임 확인
+        Claims claims = parseClaims(refreshToken);
+
+        // Refresh Token 검증 및 클레임에서 Refresh Token 여부 확인
+        if (!validateToken(refreshToken) || claims.get("isRefreshToken") == null || !Boolean.TRUE.equals(claims.get("isRefreshToken"))) {
+            throw new RuntimeException("유효하지 않은 Refresh Token입니다.");
+        }
+
+        String email = claims.getSubject();
+        String authorities = claims.get(AUTHORITIES_KEY).toString();
+
+        String newAccessToken = generateAccessToken(email, authorities);
+        String newRefreshToken = generateRefreshToken(email, authorities);
+
+        String refreshTokenKey = "RT:" + email;
+        String accessTokenKey = "AT:" + email;
+
+        // 기존의 accessToken을 Redis에서 삭제
+        redisUtil.delete(accessTokenKey);
+
+        // 기존의 refreshToken 삭제
+        redisUtil.delete(refreshTokenKey);
+
+        redisUtil.setData(refreshTokenKey, newRefreshToken, REFRESH_TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
+
+        // Access Token도 Redis에 저장
+        redisUtil.setData(accessTokenKey, newAccessToken, ACCESS_TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
+
+        return TokenDTO.builder()
+                .grantType(BEARER_TYPE)
+                .accessToken(newAccessToken)
+                .accessTokenExpiresIn(new Date((new Date()).getTime() + ACCESS_TOKEN_EXPIRE_TIME).getTime())
+                .refreshToken(newRefreshToken)
                 .build();
     }
 
@@ -85,6 +128,10 @@ public class TokenProvider {
     }
 
     public Authentication getAuthentication(String accessToken) {
+        if (isTokenBlacklisted(accessToken)) {
+            throw new RuntimeException("블랙리스트에 등록된 토큰입니다.");
+        }
+
         // 토큰 복호화
         Claims claims = parseClaims(accessToken);
 
@@ -123,7 +170,7 @@ public class TokenProvider {
         return false;
     }
 
-    private Claims parseClaims(String accessToken) {
+    public Claims parseClaims(String accessToken) {
         try {
             return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(accessToken).getBody();
         } catch (ExpiredJwtException e) {
@@ -137,6 +184,11 @@ public class TokenProvider {
         // 현재 시간
         Long now = new Date().getTime();
         return (expiration.getTime() - now);
+    }
+
+    public boolean isTokenBlacklisted(String accessToken) {
+        String blacklistKey = "blacklist:" + accessToken;
+        return redisUtil.hasKey(blacklistKey); // 블랙리스트에 존재하는지 체크
     }
 
 }

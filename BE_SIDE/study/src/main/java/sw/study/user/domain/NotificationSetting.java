@@ -3,8 +3,6 @@ package sw.study.user.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.antlr.v4.runtime.misc.NotNull;
-import sw.study.community.domain.Member;
 
 import java.time.LocalDateTime;
 

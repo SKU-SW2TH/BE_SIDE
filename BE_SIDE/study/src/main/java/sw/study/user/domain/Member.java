@@ -1,10 +1,9 @@
-package sw.study.community.domain;
+package sw.study.user.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import sw.study.user.domain.NotificationCategory;
-import sw.study.user.domain.NotificationSetting;
+import sw.study.community.domain.InterestArea;
 
 import java.time.LocalDateTime;
 import java.util.List;

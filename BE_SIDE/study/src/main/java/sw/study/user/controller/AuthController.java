@@ -4,17 +4,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.config.jwt.TokenDTO;
+import sw.study.config.jwt.TokenProvider;
 import sw.study.user.dto.LoginRequest;
 import sw.study.user.dto.LogoutRequest;
+import sw.study.user.dto.TokenRequest;
 import sw.study.user.service.AuthService;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
     private final AuthService authService;
+    private final TokenProvider tokenProvider;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, TokenProvider tokenProvider) {
         this.authService = authService;
+        this.tokenProvider = tokenProvider;
     }
 
     @PostMapping("/login")
@@ -39,6 +43,12 @@ public class AuthController {
                     .status(HttpStatus.INTERNAL_SERVER_ERROR) // 500 Internal Server Error
                     .build(); // 본문은 null
         }
+    }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<TokenDTO> reissue(@RequestBody TokenRequest tokenRequest) {
+        TokenDTO newToken = tokenProvider.reissueAccessToken(tokenRequest.getRefreshToken());
+        return ResponseEntity.ok(newToken);
     }
 
 }

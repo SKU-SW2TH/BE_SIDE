@@ -7,7 +7,7 @@ import org.antlr.v4.runtime.misc.NotNull;
 import sw.study.admin.role.Reason;
 import sw.study.admin.role.Status;
 import sw.study.admin.role.TargetType;
-import sw.study.community.domain.Member;
+import sw.study.user.domain.Member;
 import java.time.LocalDateTime;
 
 import static lombok.AccessLevel.PROTECTED;

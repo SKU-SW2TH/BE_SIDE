@@ -1,8 +1,9 @@
-package sw.study.community.domain;
+package sw.study.user.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import sw.study.community.domain.InterestArea;
 
 import static lombok.AccessLevel.*;
 
