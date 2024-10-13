@@ -58,8 +58,10 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(String email, String refreshToken) {
+    public void logout(String refreshToken) {
         // Refresh Token 키를 생성
+        Claims claims = tokenProvider.parseClaims(refreshToken);
+        String email = claims.getSubject();
         String refreshTokenKey = "RT:" + email;
 
         // Refresh Token을 조회

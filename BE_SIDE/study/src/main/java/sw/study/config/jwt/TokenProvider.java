@@ -68,7 +68,6 @@ public class TokenProvider {
     }
 
     public TokenDTO reissueAccessToken(String refreshToken) {
-
         // 리프레시 토큰에서 사용자 정보 추출 -> 클레임 확인
         Claims claims = parseClaims(refreshToken);
 

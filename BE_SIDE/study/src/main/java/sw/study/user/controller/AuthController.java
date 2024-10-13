@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import sw.study.config.jwt.TokenDTO;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.user.dto.LoginRequest;
-import sw.study.user.dto.LogoutRequest;
 import sw.study.user.dto.TokenRequest;
 import sw.study.user.service.AuthService;
 
@@ -34,9 +33,9 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestBody LogoutRequest logoutRequest) {
+    public ResponseEntity<String> logout(@RequestBody TokenRequest logoutRequest) {
         try {
-            authService.logout(logoutRequest.getEmail(), logoutRequest.getRefreshToken()); // AuthService의 logout 메서드 호출
+            authService.logout(logoutRequest.getRefreshToken()); // AuthService의 logout 메서드 호출
             return ResponseEntity.ok("로그아웃 성공"); // 200 OK 응답
         } catch (Exception ex) {
             return ResponseEntity
@@ -46,9 +45,18 @@ public class AuthController {
     }
 
     @PostMapping("/reissue")
-    public ResponseEntity<TokenDTO> reissue(@RequestBody TokenRequest tokenRequest) {
-        TokenDTO newToken = tokenProvider.reissueAccessToken(tokenRequest.getRefreshToken());
-        return ResponseEntity.ok(newToken);
+    public ResponseEntity<?> reissue(@RequestBody TokenRequest tokenRequest) {
+        try {
+            // 토큰 재발행 로직 수행
+            TokenDTO newToken = tokenProvider.reissueAccessToken(tokenRequest.getRefreshToken());
+            return ResponseEntity.ok(newToken);
+        } catch (RuntimeException e) {
+            // 토큰 재발행 실패 시 발생한 예외 처리
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰 재발행에 실패했습니다: " + e.getMessage());
+        } catch (Exception e) {
+            // 기타 예외 처리
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 에러가 발생했습니다.");
+        }
     }
 
 }
