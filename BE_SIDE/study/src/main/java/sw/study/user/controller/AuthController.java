@@ -10,8 +10,6 @@ import sw.study.user.service.EmailVerificationService;
 import sw.study.user.service.MailService;
 import sw.study.user.service.MemberService;
 
-import java.util.UUID;
-
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -63,7 +61,15 @@ public class AuthController {
     @PostMapping("/join")
     public ResponseEntity<String> join(@RequestBody MemberDto memberDto) {
         // 프론트엔드에서 이메일 인증 완료 여부를 확인 후 회원가입 진행
-        memberService.join(memberDto);
-        return ResponseEntity.ok("회원가입이 완료되었습니다.");
+
+        // 이메일 중복 확인
+        boolean isVerified = memberService.verifyEmail(memberDto);
+
+        if (isVerified) {
+            memberService.join(memberDto);
+            return ResponseEntity.ok("회원가입이 완료되었습니다.");
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이미 사용 중인 이메일입니다.");
+        }
     }
 }

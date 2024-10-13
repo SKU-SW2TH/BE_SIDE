@@ -10,7 +10,6 @@ import sw.study.user.repository.MemberRepository;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -35,6 +34,11 @@ public class MemberService {
 
     public boolean verifyNickname(MemberDto memberDto) {
         Optional<Member> findMember = memberRepository.findByNickname(memberDto.getNickname());
+        return findMember.isEmpty();
+    }
+
+    public boolean verifyEmail(MemberDto memberDto) {
+        Optional<Member> findMember = memberRepository.findByEmail(memberDto.getEmail());
         return findMember.isEmpty();
     }
 
