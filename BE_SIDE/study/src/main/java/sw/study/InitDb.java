@@ -7,7 +7,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.community.domain.Category;
-import sw.study.community.domain.InterestArea;
 import sw.study.user.domain.Member;
 import sw.study.user.domain.NotificationCategory;
 
@@ -46,17 +45,10 @@ public class InitDb {
             em.persist(interest3);
 //           em.flush(); //필요는 없음
 
-            List<InterestArea> interestAreas = new ArrayList<>();
-            List<NotificationCategory> categories = new ArrayList<>();
-
             Member member1 = Member.createMember(
                     "limjh0703@naver.com",
                     encoder.encode("1q2w3e4r!"), // 비밀번호 암호화
-                    "User One",
-                    "profile1.jpg",
-                    "안녕하세요, 저는 User One입니다.",
-                    interestAreas,
-                    categories
+                    "User One"
             );
             em.persist(member1);
 

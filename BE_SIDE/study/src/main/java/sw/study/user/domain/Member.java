@@ -1,4 +1,4 @@
-package sw.study.community.domain;
+package sw.study.user.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -50,15 +50,12 @@ public class Member {
 
 
     //== 생성 메서드 ==//
-    public static Member createMember(String email, String password, String nickname,
-                                      String profile, String introduce, List<InterestArea> interestAreas, List<NotificationCategory> categories) {
+    public static Member createMember(String email, String password, String nickname) {
 
         Member member = new Member();
         member.email = email;
         member.password = password;
         member.nickname = nickname;
-        member.profile = profile;
-        member.introduce = introduce;
 
 
         // 알림설정 저장
