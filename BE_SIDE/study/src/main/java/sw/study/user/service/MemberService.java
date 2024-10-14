@@ -2,6 +2,7 @@ package sw.study.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.user.domain.Member;
@@ -19,12 +20,13 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class MemberService {
     private final MemberRepository memberRepository;
+    private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Transactional
     public Long join(MemberDto memberDto) {
 
         Member member = Member.createMember(
-                memberDto.getEmail(), memberDto.getPassword(),
+                memberDto.getEmail(), encoder.encode(memberDto.getPassword()),
                 memberDto.getNickname(), memberDto.getProfile(),
                 memberDto.getIntroduce()
         );
