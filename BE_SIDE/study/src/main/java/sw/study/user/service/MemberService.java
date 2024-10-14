@@ -27,8 +27,7 @@ public class MemberService {
 
         Member member = Member.createMember(
                 memberDto.getEmail(), encoder.encode(memberDto.getPassword()),
-                memberDto.getNickname(), memberDto.getProfile(),
-                memberDto.getIntroduce()
+                memberDto.getNickname()
         );
 
         return memberRepository.save(member).getId();
