@@ -18,7 +18,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import sw.study.config.jwt.JwtFilter;
 import sw.study.config.jwt.TokenProvider;
-import sw.study.user.serivce.MemberDetailsServiceImpl;
+import sw.study.user.service.MemberDetailsServiceImpl;
 import sw.study.user.util.RedisUtil;
 import java.util.List;
 

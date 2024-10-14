@@ -1,10 +1,11 @@
-package sw.study.user.serivce;
+package sw.study.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
 import sw.study.user.domain.Member;
 import sw.study.user.repository.MemberRepository;
 import sw.study.user.impl.MemberDetailsImpl;
