@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.user.dto.EmailDto;
+import sw.study.user.dto.EmailVerificationRequest;
 import sw.study.user.dto.MemberDto;
 import sw.study.user.service.EmailVerificationService;
 import sw.study.user.service.MailService;
@@ -38,9 +39,9 @@ public class AuthController {
     }
 
     @PostMapping("/verify-email")
-    public ResponseEntity<String> verifyEmail(@RequestParam String email, @RequestParam String verificationCode) {
+    public ResponseEntity<String> verifyEmail(@RequestBody EmailVerificationRequest request) {
         // 인증 코드 검증
-        boolean isVerified = emailVerificationService.verifyCode(email, verificationCode);
+        boolean isVerified = emailVerificationService.verifyCode(request.getEmail(), request.getVerificationCode());
 
         if (isVerified)
             return ResponseEntity.ok("이메일 인증이 완료되었습니다."); // 이메일 인증 성공 시 처리 (프론트엔드에서 이를 확인)
