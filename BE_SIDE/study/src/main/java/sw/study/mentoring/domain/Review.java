@@ -1,8 +1,9 @@
-package sw.study.user.domain;
+package sw.study.mentoring.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
 import java.time.LocalDateTime;
 import static lombok.AccessLevel.PROTECTED;
 
