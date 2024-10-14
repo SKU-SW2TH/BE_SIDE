@@ -1,9 +1,10 @@
-package sw.study.user.domain;
+package sw.study.community.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import sw.study.community.domain.InterestArea;
+import sw.study.user.domain.NotificationCategory;
+import sw.study.user.domain.NotificationSetting;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -59,15 +60,11 @@ public class Member {
         member.profile = profile;
         member.introduce = introduce;
 
-        // 관심분야 저장
-        for (InterestArea interestArea : interestAreas) {
-            MemberInterest.CreateMemberInterest(member, interestArea);
-        }
 
         // 알림설정 저장
-        for(NotificationCategory category : categories) {
-            NotificationSetting.createSetting(member, category);
-        }
+//        for(NotificationCategory category : categories) {
+//            NotificationSetting.createSetting(member, category);
+//        }
 
         return member;
     }

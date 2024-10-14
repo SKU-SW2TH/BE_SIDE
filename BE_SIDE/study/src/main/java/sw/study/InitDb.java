@@ -13,6 +13,7 @@ import sw.study.user.domain.NotificationCategory;
 
 import java.util.ArrayList;
 import java.util.List;
+import sw.study.user.domain.InterestArea;
 
 @Component
 @RequiredArgsConstructor

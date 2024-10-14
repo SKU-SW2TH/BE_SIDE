@@ -3,7 +3,7 @@ package sw.study.user.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import sw.study.community.domain.InterestArea;
+
 import java.time.LocalDateTime;
 
 import static lombok.AccessLevel.PROTECTED;
