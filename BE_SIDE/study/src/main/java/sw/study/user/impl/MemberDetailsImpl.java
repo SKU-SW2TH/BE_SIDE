@@ -47,8 +47,8 @@ public class MemberDetailsImpl implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
-    }
+        return !member.isSuspended();
+    } // 정지된 계정은 잠금된 것으로 처리
 
     @Override
     public boolean isCredentialsNonExpired() {
@@ -57,7 +57,7 @@ public class MemberDetailsImpl implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
-    }
+        return !member.isDeleted();
+    } // 삭제된 계정은 비활성화
 
 }
