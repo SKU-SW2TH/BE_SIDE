@@ -1,9 +1,11 @@
 package sw.study.user.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sw.study.user.apiDoc.AuthApiDocumentation;
 import sw.study.user.dto.EmailDto;
 import sw.study.user.dto.EmailVerificationRequest;
 import sw.study.user.dto.MemberDto;
@@ -19,7 +21,8 @@ import sw.study.user.service.AuthService;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class AuthController {
+@Tag(name = "Auth", description = "Auth API")
+public class AuthController implements AuthApiDocumentation {
     private final AuthService authService;
     private final TokenProvider tokenProvider;
 
@@ -27,6 +30,7 @@ public class AuthController {
     private final MailService mailService;
     private final MemberService memberService;
 
+    @Override
     @PostMapping("/send-verification-email")
     public ResponseEntity<String> sendVerificationEmail(@RequestBody EmailDto emailDto) {
         String email = emailDto.getEmail();
@@ -47,6 +51,7 @@ public class AuthController {
         return ResponseEntity.ok("인증 코드가 전송되었습니다.");
     }
 
+    @Override
     @PostMapping("/verify-email")
     public ResponseEntity<String> verifyEmail(@RequestBody EmailVerificationRequest request) {
         // 인증 코드 검증
@@ -58,6 +63,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("인증 코드가 올바르지 않습니다.");
     }
 
+    @Override
     @PostMapping("/verify-nickname")
     public ResponseEntity<String> verifyNickname(@RequestBody MemberDto memberDto) {
         boolean isVerified = memberService.verifyNickname(memberDto);
@@ -68,6 +74,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이미 사용 중인 닉네임입니다.");
     }
 
+    @Override
     @PostMapping("/join")
     public ResponseEntity<String> join(@RequestBody MemberDto memberDto) {
         // 프론트엔드에서 이메일 인증 완료 여부를 확인 후 회원가입 진행
@@ -83,6 +90,7 @@ public class AuthController {
         }
     }
 
+    @Override
     @PostMapping("/login")
     public ResponseEntity<TokenDTO> login(@RequestBody LoginRequest loginRequest) {
         try {
@@ -95,6 +103,7 @@ public class AuthController {
         }
     }
 
+    @Override
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@RequestBody TokenRequest logoutRequest) {
         try {
@@ -107,6 +116,7 @@ public class AuthController {
         }
     }
 
+    @Override
     @PostMapping("/reissue")
     public ResponseEntity<?> reissue(@RequestBody TokenRequest tokenRequest) {
         try {
