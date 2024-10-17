@@ -1,13 +1,19 @@
 package sw.study.user.service;
 
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sw.study.config.jwt.TokenProvider;
+import sw.study.exception.InvalidTokenException;
+import sw.study.exception.UserNotFoundException;
 import sw.study.user.domain.Member;
 import sw.study.user.dto.MemberDto;
 import sw.study.user.repository.MemberRepository;
+import sw.study.user.util.RedisUtil;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -21,6 +27,7 @@ import java.util.Random;
 public class MemberService {
     private final MemberRepository memberRepository;
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    private final TokenProvider tokenProvider;
 
     @Transactional
     public Long join(MemberDto memberDto) {
@@ -57,4 +64,20 @@ public class MemberService {
             throw new IllegalStateException("Secure random algorithm not found", e);
         }
     }
+
+    public Member getMemberByToken(String token) {
+        // 토큰 유효성 검사
+        if (!tokenProvider.validateToken(token)) {
+            throw new InvalidTokenException("Invalid or expired token");
+        }
+
+        Claims claims = tokenProvider.parseClaims(token);
+        String email = claims.getSubject();
+        System.out.println(email);
+
+        // 이메일로 사용자 조회
+        return memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+    }
+
 }
