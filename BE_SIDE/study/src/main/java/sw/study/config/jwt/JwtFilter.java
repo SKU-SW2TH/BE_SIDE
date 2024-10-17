@@ -33,10 +33,11 @@ public class JwtFilter extends OncePerRequestFilter {
         // 2. validateToken 으로 토큰 유효성 검사
         // 정상 토큰이면 해당 토큰으로 Authentication을 가져와서 SecurityContext에 저장
         if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-            String isLogout = (String)redisUtil.getBlackList("BlackList_" + jwt);
+            Object isLogoutObj = redisUtil.getBlackList("BlackList_" + jwt);
+            boolean isLogout = (isLogoutObj != null && isLogoutObj instanceof Boolean) ? (Boolean) isLogoutObj : false;
 
             // 로그아웃되지 않은 경우
-            if (ObjectUtils.isEmpty(isLogout)) {
+            if (!isLogout) {
                 Authentication authentication = tokenProvider.getAuthentication(jwt); // 토큰에서 인증 정보를 가져옴
                 SecurityContextHolder.getContext().setAuthentication(authentication); // SecurityContext에 인증 정보를 저장
             } else {
