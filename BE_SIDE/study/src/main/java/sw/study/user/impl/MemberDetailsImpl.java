@@ -1,10 +1,12 @@
 package sw.study.user.impl;
 
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import sw.study.user.domain.Member;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class MemberDetailsImpl implements UserDetails {
 
@@ -18,16 +20,9 @@ public class MemberDetailsImpl implements UserDetails {
         return member;
     }
 
-    @Override
+    @Override // 권한 반환
     public Collection<? extends GrantedAuthority> getAuthorities() {
-
-        //String authority = role.getAuthority();
-
-        //SimpleGrantedAuthority simpleGrantedAuthority = new SimpleGrantedAuthority(authority);
-        Collection<GrantedAuthority> authorities = new ArrayList<>();
-        //authorities.add(simpleGrantedAuthority);
-
-        return authorities;
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     @Override

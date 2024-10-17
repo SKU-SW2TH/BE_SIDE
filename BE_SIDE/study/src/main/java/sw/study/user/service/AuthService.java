@@ -39,8 +39,10 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword());
         authenticationManager.authenticate(authenticationToken);
 
+        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+
         // 인증 성공 후 토큰 생성
-        TokenDTO tokenDTO = tokenProvider.generateTokenDTO(authenticationToken);
+        TokenDTO tokenDTO = tokenProvider.generateTokenDTO(authentication);
 
         // 생성된 토큰 확인
         if (tokenDTO.getAccessToken() != null && tokenDTO.getRefreshToken() != null) {

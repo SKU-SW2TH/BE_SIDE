@@ -41,6 +41,9 @@ public class TokenProvider {
 
         long now = (new Date()).getTime();
 
+        //System.out.println("Authentication Name: " + authentication.getName());
+        //System.out.println("Authorities: " + authorities);
+
         // Access Token 생성
         Date accessTokenExpiresIn = new Date(now + ACCESS_TOKEN_EXPIRE_TIME);
         String accessToken = Jwts.builder()
@@ -134,15 +137,29 @@ public class TokenProvider {
         // 토큰 복호화
         Claims claims = parseClaims(accessToken);
 
+        // 권한 정보가 없을 경우 예외 처리
         if (claims.get(AUTHORITIES_KEY) == null) {
             throw new RuntimeException("권한 정보가 없는 토큰입니다.");
         }
 
         // 클레임에서 권한 정보 가져오기
+        String authoritiesString = claims.get(AUTHORITIES_KEY).toString();
+        System.out.println(authoritiesString);
+
+        if (authoritiesString.isEmpty()) {
+            throw new RuntimeException("권한 정보가 비어 있습니다.");
+        }
+
+        // 권한 문자열을 사용하여 GrantedAuthority 객체 생성
         Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
+                Arrays.stream(authoritiesString.split(","))
+                        .filter(authority -> !authority.trim().isEmpty()) // 빈 문자열 필터링
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
+
+        if (authorities.isEmpty()) {
+            throw new RuntimeException("권한 정보 비어 있습니다.");
+        }
 
         // UserDetails 객체를 만들어서 Authentication 리턴
         UserDetails principal = new User(claims.getSubject(), "", authorities);
