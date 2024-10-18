@@ -15,6 +15,11 @@ spring:
                 default_batch_fetch_size: 100
     database-platform: org.hibernate.dialect.MariaDBDialect
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB # 요청의 최대 크기도 동일하게 20MB로 지정 (선택 사항)
+
   data:
     redis: # spring.data.redis로 변경
       host: localhost
