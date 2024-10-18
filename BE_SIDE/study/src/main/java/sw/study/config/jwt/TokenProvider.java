@@ -144,7 +144,6 @@ public class TokenProvider {
 
         // 클레임에서 권한 정보 가져오기
         String authoritiesString = claims.get(AUTHORITIES_KEY).toString();
-        System.out.println(authoritiesString);
 
         if (authoritiesString.isEmpty()) {
             throw new RuntimeException("권한 정보가 비어 있습니다.");

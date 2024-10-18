@@ -73,7 +73,6 @@ public class MemberService {
 
         Claims claims = tokenProvider.parseClaims(token);
         String email = claims.getSubject();
-        System.out.println(email);
 
         // 이메일로 사용자 조회
         return memberRepository.findByEmail(email)

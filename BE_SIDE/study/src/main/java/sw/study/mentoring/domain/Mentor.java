@@ -3,8 +3,8 @@ package sw.study.mentoring.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import sw.study.mentoring.role.TimeAvailability;
 import sw.study.user.domain.Member;
-import sw.study.user.role.TimeAvailability;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
