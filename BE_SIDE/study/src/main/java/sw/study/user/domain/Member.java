@@ -65,5 +65,20 @@ public class Member {
 
         return member;
     }
+
+
+    // 개별 프로필 필드를 선택적으로 업데이트하는 메소드
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void updateProfilePicture(String profile) {
+        this.profile = profile;
+    }
+
+    public void updateIntroduction(String introduce ) {
+        this.introduce = introduce;
+    }
+
 }
 

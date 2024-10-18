@@ -1,20 +1,23 @@
 package sw.study.user.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import sw.study.exception.DuplicateNicknameException;
 import sw.study.exception.InvalidTokenException;
 import sw.study.exception.UserNotFoundException;
 import sw.study.exception.dto.ErrorResponse;
 import sw.study.user.domain.Member;
 import sw.study.user.dto.MemberDto;
+import sw.study.user.dto.UpdateProfileRequest;
+import sw.study.user.dto.UpdateProfileResponse;
 import sw.study.user.service.MemberService;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/member")
@@ -46,6 +49,43 @@ public class MemberController {
         } catch (Exception e) {
             // 일반적인 예외 처리
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/edit")
+    public ResponseEntity<?> updateMemberProfile(
+            @RequestHeader("Authorization") String accessToken,
+            @ModelAttribute UpdateProfileRequest updateProfileRequest) throws IOException {
+        try {
+            // 서비스에서 프로필 업데이트 로직 실행
+            Member member = memberService.updateMemberProfile(accessToken, updateProfileRequest);
+
+            UpdateProfileResponse response = new UpdateProfileResponse(
+                    member.getNickname(),
+                    member.getIntroduce(),
+                    member.getProfile()
+            );
+
+            // 성공적으로 업데이트되면 200 OK 응답
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } catch (DuplicateNicknameException ex) {
+            // 닉네임 중복 시 409 Conflict 반환
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+        }catch (UserNotFoundException ex) {
+            // 사용자를 찾지 못한 경우 404 Not Found 응답
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (InvalidTokenException ex) {
+            // 잘못된 토큰이면 401 Unauthorized 응답
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid access token");
+        } catch (FileUploadException ex) {
+            // 파일 업로드 실패 시 500 Internal Server Error 응답
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("File upload failed");
+        } catch (IOException ex) {
+            // 파일 저장 중 발생하는 I/O 예외 처리
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error while saving file");
+        } catch (Exception ex) {
+            // 그 외의 예기치 않은 예외 처리
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred");
         }
     }
 

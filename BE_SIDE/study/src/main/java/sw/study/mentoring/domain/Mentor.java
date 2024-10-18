@@ -58,7 +58,7 @@ public class Mentor {
         this.is_deleted = true;
     }
 
-    public static Mentor createMentor(Member member, String expertise, double rating, TimeAvailability time) {
+    public static Mentor createMentor(Member member, double rating, TimeAvailability time) {
         Mentor mentor = new Mentor();
         mentor.member = member;
         mentor.rating = rating;
