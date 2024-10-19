@@ -80,5 +80,9 @@ public class Member {
         this.introduce = introduce;
     }
 
+    public void changePassword(String password) {
+        this.password = password;
+    }
+
 }
 

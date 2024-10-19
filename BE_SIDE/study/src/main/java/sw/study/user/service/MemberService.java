@@ -9,15 +9,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.DuplicateNicknameException;
+import sw.study.exception.InvalidPasswordException;
 import sw.study.exception.InvalidTokenException;
 import sw.study.exception.UserNotFoundException;
 import sw.study.user.domain.Member;
 import sw.study.user.dto.MemberDto;
 import sw.study.user.dto.UpdateProfileRequest;
 import sw.study.user.repository.MemberRepository;
-import sw.study.user.util.RedisUtil;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,7 +33,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MemberService {
     private final MemberRepository memberRepository;
-    private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder encoder;
     private final TokenProvider tokenProvider;
     // 파일 저장 경로 (서버에서 실제 파일이 저장되는 위치)
     private final String uploadDirectory = "src/main/resources/profile";
@@ -114,9 +112,35 @@ public class MemberService {
         return member;
     }
 
+    @Transactional
+    public void changePassword(String accessToken, String oldPassword, String newPassword) {
+        String email = extractEmail(accessToken);
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        // 비밀번호 공백 제거
+        String trimmedOldPassword = oldPassword.trim();
+        String trimmedNewPassword = newPassword.trim();
+
+        // 비밀번호 일치 확인
+        if (!encoder.matches(trimmedOldPassword, member.getPassword())) {
+            throw new InvalidPasswordException("Current password is incorrect.");
+        }
+
+        // 새 비밀번호 유효성 검사
+        if (isValidPassword(trimmedNewPassword)) {
+            String encodedNewPassword = encoder.encode(trimmedNewPassword);
+            member.changePassword(encodedNewPassword);
+            memberRepository.save(member);
+        } else {
+            throw new InvalidPasswordException("Password does not meet the requirements.");
+        }
+    }
+
     private String extractEmail(String token) {
         Claims claims = tokenProvider.parseClaims(token);
         String email = claims.getSubject();
+        System.out.println(email);
         return email;
     }
 
@@ -150,6 +174,12 @@ public class MemberService {
 
         // 파일 URL 반환
         return fileUrl;
+    }
+
+    private boolean isValidPassword(String password) {
+        return password.length() >= 8 && // 최소 길이
+                password.matches(".*\\d.*") && // 숫자 포함 여부
+                password.matches(".*[!@#$%^&*()].*"); // 특수문자 포함 여부
     }
 
 }
