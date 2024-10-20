@@ -3,11 +3,13 @@ package sw.study.user.service;
 import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import sw.study.config.jwt.TokenDTO;
 import sw.study.config.jwt.TokenProvider;
+import sw.study.exception.InvalidCredentialsException;
 import sw.study.user.dto.LoginRequest;
 import sw.study.user.util.RedisUtil;
 
@@ -29,7 +31,8 @@ public class AuthService {
 
     public TokenDTO login(LoginRequest loginRequest) {
         String refreshTokenKey = "RT:" + loginRequest.getEmail();
-        if (redisUtil.hasKey(refreshTokenKey)) { // 이메일을 키로 사용하여 Redis에 저장된 정보 확인
+
+        if (redisUtil.hasKey(refreshTokenKey)) { // Redis에서 이메일 키 확인
             // 이미 로그인된 경우, 해당 세션을 로그아웃 처리
             forceLogout(refreshTokenKey);
         }
@@ -37,25 +40,30 @@ public class AuthService {
         // 사용자 인증
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword());
-        authenticationManager.authenticate(authenticationToken);
 
-        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        try {
+            Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
-        // 인증 성공 후 토큰 생성
-        TokenDTO tokenDTO = tokenProvider.generateTokenDTO(authentication);
+            // 인증 성공 후 토큰 생성
+            TokenDTO tokenDTO = tokenProvider.generateTokenDTO(authentication);
 
-        // 생성된 토큰 확인
-        if (tokenDTO.getAccessToken() != null && tokenDTO.getRefreshToken() != null) {
-            // Refresh Token을 Redis에 저장
-            redisUtil.setData(refreshTokenKey, tokenDTO.getRefreshToken(), REFRESH_TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
+            // 생성된 토큰 확인
+            if (tokenDTO.getAccessToken() != null && tokenDTO.getRefreshToken() != null) {
+                // Refresh Token을 Redis에 저장
+                redisUtil.setData(refreshTokenKey, tokenDTO.getRefreshToken(), REFRESH_TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
 
-            // Access Token을 Redis에 저장 (예: "AT:이메일" 형식으로 저장)
-            String accessTokenKey = "AT:" + loginRequest.getEmail();
-            redisUtil.setData(accessTokenKey, tokenDTO.getAccessToken(), ACCESS_TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
+                // Access Token을 Redis에 저장
+                String accessTokenKey = "AT:" + loginRequest.getEmail();
+                redisUtil.setData(accessTokenKey, tokenDTO.getAccessToken(), ACCESS_TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
 
-            return tokenDTO; // 생성된 토큰 반환
-        } else {
-            throw new RuntimeException("토큰 생성에 실패했습니다.");
+                return tokenDTO; // 생성된 토큰 반환
+            } else {
+                throw new RuntimeException("토큰 생성에 실패했습니다.");
+            }
+        } catch (BadCredentialsException ex) {
+            throw new InvalidCredentialsException("Invalid email or password."); // 사용자 정의 예외 또는 적절한 예외로 처리
+        } catch (Exception ex) {
+            throw new RuntimeException("An error occurred during authentication."); // 기타 예외 처리
         }
     }
 
