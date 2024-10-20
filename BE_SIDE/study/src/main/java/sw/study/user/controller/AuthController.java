@@ -6,16 +6,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.user.apiDoc.AuthApiDocumentation;
-import sw.study.user.dto.EmailDto;
-import sw.study.user.dto.EmailVerificationRequest;
-import sw.study.user.dto.MemberDto;
+import sw.study.user.dto.*;
 import sw.study.user.service.EmailVerificationService;
 import sw.study.user.service.MailService;
 import sw.study.user.service.MemberService;
 import sw.study.config.jwt.TokenDTO;
 import sw.study.config.jwt.TokenProvider;
-import sw.study.user.dto.LoginRequest;
-import sw.study.user.dto.TokenRequest;
 import sw.study.user.service.AuthService;
 
 @RestController
@@ -65,8 +61,8 @@ public class AuthController implements AuthApiDocumentation {
 
     @Override
     @PostMapping("/verify-nickname")
-    public ResponseEntity<String> verifyNickname(@RequestBody MemberDto memberDto) {
-        boolean isVerified = memberService.verifyNickname(memberDto);
+    public ResponseEntity<String> verifyNickname(@RequestBody JoinDto joinDto) {
+        boolean isVerified = memberService.verifyNickname(joinDto);
 
         if (isVerified)
             return ResponseEntity.ok("사용 가능한 닉네임입니다.");
@@ -76,14 +72,14 @@ public class AuthController implements AuthApiDocumentation {
 
     @Override
     @PostMapping("/join")
-    public ResponseEntity<String> join(@RequestBody MemberDto memberDto) {
+    public ResponseEntity<String> join(@RequestBody JoinDto joinDto) {
         // 프론트엔드에서 이메일 인증 완료 여부를 확인 후 회원가입 진행
 
         // 이메일 중복 확인
-        boolean isVerified = memberService.verifyEmail(memberDto);
+        boolean isVerified = memberService.verifyEmail(joinDto);
 
         if (isVerified) {
-            memberService.join(memberDto);
+            memberService.join(joinDto);
             return ResponseEntity.ok("회원가입이 완료되었습니다.");
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이미 사용 중인 이메일입니다.");

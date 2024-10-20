@@ -16,7 +16,7 @@ public interface AuthApiDocumentation {
 
     ResponseEntity<String> verifyEmail(@RequestBody EmailVerificationRequest request);
 
-    ResponseEntity<String> verifyNickname(@RequestBody MemberDto memberDto);
+    ResponseEntity<String> verifyNickname(@RequestBody JoinDto joinDto);
 
     @Operation(summary = "회원가입", description = "회원가입 할 때 사용하는 API")
     @ApiResponses(value = {
@@ -30,10 +30,10 @@ public interface AuthApiDocumentation {
             @Parameter(name = "profile", description = "프로필 사진"),
             @Parameter(name = "introduce", description = "자기소개 글", example = "안녕하세요! 저는..."),
     })
+    ResponseEntity<String> join(@RequestBody JoinDto joinDto);
 
 
 
-    ResponseEntity<String> join(@RequestBody MemberDto memberDto);
     ResponseEntity<TokenDTO> login(@RequestBody LoginRequest loginRequest);
     ResponseEntity<String> logout(@RequestBody TokenRequest logoutRequest);
     ResponseEntity<?> reissue(@RequestBody TokenRequest tokenRequest);

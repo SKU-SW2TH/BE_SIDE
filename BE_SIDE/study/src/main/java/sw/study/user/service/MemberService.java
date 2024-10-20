@@ -6,6 +6,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.user.domain.Member;
+import sw.study.user.dto.JoinDto;
 import sw.study.user.dto.MemberDto;
 import sw.study.user.repository.MemberRepository;
 
@@ -23,23 +24,23 @@ public class MemberService {
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Transactional
-    public Long join(MemberDto memberDto) {
+    public Long join(JoinDto joinDto) {
 
         Member member = Member.createMember(
-                memberDto.getEmail(), encoder.encode(memberDto.getPassword()),
-                memberDto.getNickname()
+                joinDto.getEmail(), encoder.encode(joinDto.getPassword()),
+                joinDto.getNickname()
         );
 
         return memberRepository.save(member).getId();
     }
 
-    public boolean verifyNickname(MemberDto memberDto) {
-        Optional<Member> findMember = memberRepository.findByNickname(memberDto.getNickname());
+    public boolean verifyNickname(JoinDto joinDto) {
+        Optional<Member> findMember = memberRepository.findByNickname(joinDto.getNickname());
         return findMember.isEmpty();
     }
 
-    public boolean verifyEmail(MemberDto memberDto) {
-        Optional<Member> findMember = memberRepository.findByEmail(memberDto.getEmail());
+    public boolean verifyEmail(JoinDto joinDto) {
+        Optional<Member> findMember = memberRepository.findByEmail(joinDto.getEmail());
         return findMember.isEmpty();
     }
 
