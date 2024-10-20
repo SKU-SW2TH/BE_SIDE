@@ -1,6 +1,7 @@
 package sw.study.user.service;
 
 import io.jsonwebtoken.Claims;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -13,9 +14,15 @@ import sw.study.exception.InvalidPasswordException;
 import sw.study.exception.InvalidTokenException;
 import sw.study.exception.UserNotFoundException;
 import sw.study.user.domain.Member;
+import sw.study.user.domain.NotificationCategory;
+import sw.study.user.domain.NotificationSetting;
 import sw.study.user.dto.MemberDto;
+import sw.study.user.dto.NotificationSettingDTO;
 import sw.study.user.dto.UpdateProfileRequest;
 import sw.study.user.repository.MemberRepository;
+import sw.study.user.repository.NotificationCategoryRepository;
+import sw.study.user.repository.NotificationSettingRepository;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,6 +42,8 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final BCryptPasswordEncoder encoder;
     private final TokenProvider tokenProvider;
+    private final NotificationSettingRepository notificationSettingRepository;
+    private final NotificationCategoryRepository notificationCategoryRepository;
     // 파일 저장 경로 (서버에서 실제 파일이 저장되는 위치)
     private final String uploadDirectory = "src/main/resources/profile";
 
@@ -135,6 +144,22 @@ public class MemberService {
         } else {
             throw new InvalidPasswordException("Password does not meet the requirements.");
         }
+    }
+
+    public void updateNotification(String accessToken, NotificationSettingDTO dto) {
+        String email = extractEmail(accessToken);
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        NotificationCategory category = notificationCategoryRepository.findById(dto.getCategoryId()).orElseThrow(
+                () -> new UserNotFoundException("Category not found with id: " + dto.getCategoryId()));
+
+        NotificationSetting setting = notificationSettingRepository
+                .findByMemberAndCategory(member, category)
+                .orElseThrow(() -> new EntityNotFoundException("NotificationSetting not found for email: " + email + " and categoryId: " + dto.getCategoryId()));
+
+        setting.setEnabled(dto.isEnabled());
+        notificationSettingRepository.save(setting);
     }
 
     private String extractEmail(String token) {

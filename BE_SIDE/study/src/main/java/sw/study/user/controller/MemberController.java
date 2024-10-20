@@ -1,5 +1,6 @@
 package sw.study.user.controller;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.http.HttpStatus;
@@ -25,7 +26,7 @@ public class MemberController {
     @GetMapping("/info")
     public ResponseEntity<?> getMemberInfo(@RequestHeader("Authorization") String accessToken) {
         try {
-            String token = accessToken.substring(7); // "Bearer " 이후 부분 추출
+            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken; // "Bearer " 이후 부분 추출
 
             // 토큰 검증 및 사용자 정보 조회 로직
             Member member = memberService.getMemberByToken(token);
@@ -55,7 +56,7 @@ public class MemberController {
             @ModelAttribute UpdateProfileRequest updateProfileRequest) throws IOException {
         try {
             // 서비스에서 프로필 업데이트 로직 실행
-            String token = accessToken.substring(7); // "Bearer " 이후 부분 추출
+            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken; // "Bearer " 이후 부분 추출
             Member member = memberService.updateMemberProfile(token, updateProfileRequest);
 
             UpdateProfileResponse response = new UpdateProfileResponse(
@@ -92,7 +93,7 @@ public class MemberController {
                                             @RequestBody PasswordChangeRequest request){
         try {
             // 현재 비밀번호 확인 및 비밀번호 변경 처리
-            String token = accessToken.substring(7);
+            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
 
             memberService.changePassword(token, request.getOldPassword(), request.getNewPassword());
             return ResponseEntity.status(HttpStatus.OK).body("Password updated successfully.");
@@ -107,5 +108,23 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
+    @PutMapping("/update/notification")
+    public ResponseEntity<?> updateNotification(@RequestHeader("Authorization") String accessToken,
+                                            @RequestBody NotificationSettingDTO dto){
+        try {
+            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
+
+            memberService.updateNotification(token, dto);
+            return ResponseEntity.status(HttpStatus.OK).body("updated successfully.");
+        } catch (EntityNotFoundException e) {
+            // 사용자를 찾을 수 없을 때 예외 처리
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            // 그 외 기타 예외 처리
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
 
 }
