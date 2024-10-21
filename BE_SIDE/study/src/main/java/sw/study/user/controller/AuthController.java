@@ -88,14 +88,22 @@ public class AuthController implements AuthApiDocumentation {
 
     @Override
     @PostMapping("/login")
-    public ResponseEntity<TokenDTO> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             TokenDTO tokenDTO = authService.login(loginRequest); // AuthService의 login 메서드 호출
             return ResponseEntity.ok(tokenDTO); // 200 OK와 함께 토큰 반환
-        } catch (Exception ex) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR) // 500 Internal Server Error
-                    .body(null); // 본문은 null
+        } catch (InvalidCredentialsException e) {
+            // 자격 증명이 잘못된 경우
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(e.getMessage()); // 401 Unauthorized
+        } catch (UserNotFoundException e) {
+            // 사용자가 존재하지 않는 경우
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage()); // 404 Not Found
+        } catch (Exception e) {
+            // 기타 예외 처리
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while processing your request."); // 500 Internal Server Error
         }
     }
 

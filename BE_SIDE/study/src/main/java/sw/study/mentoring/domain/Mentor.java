@@ -3,8 +3,8 @@ package sw.study.mentoring.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import sw.study.mentoring.role.TimeAvailability;
 import sw.study.user.domain.Member;
-import sw.study.user.role.TimeAvailability;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ public class Mentor {
         this.is_deleted = true;
     }
 
-    public static Mentor createMentor(Member member, String expertise, double rating, TimeAvailability time) {
+    public static Mentor createMentor(Member member, double rating, TimeAvailability time) {
         Mentor mentor = new Mentor();
         mentor.member = member;
         mentor.rating = rating;
