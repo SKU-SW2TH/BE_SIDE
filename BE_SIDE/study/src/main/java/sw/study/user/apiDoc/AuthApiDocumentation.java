@@ -34,7 +34,7 @@ public interface AuthApiDocumentation {
 
 
 
-    ResponseEntity<TokenDTO> login(@RequestBody LoginRequest loginRequest);
+    ResponseEntity<?> login(@RequestBody LoginRequest loginRequest);
     ResponseEntity<String> logout(@RequestBody TokenRequest logoutRequest);
     ResponseEntity<?> reissue(@RequestBody TokenRequest tokenRequest);
 }

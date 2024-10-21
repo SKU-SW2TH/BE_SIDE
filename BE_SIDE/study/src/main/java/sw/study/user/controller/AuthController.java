@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sw.study.exception.InvalidCredentialsException;
+import sw.study.exception.UserNotFoundException;
 import sw.study.user.apiDoc.AuthApiDocumentation;
 import sw.study.user.dto.*;
 import sw.study.user.service.EmailVerificationService;
