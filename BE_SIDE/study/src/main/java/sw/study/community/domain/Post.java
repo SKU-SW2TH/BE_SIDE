@@ -32,7 +32,7 @@ public class Post {
     private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "post") // 게시판 쪽에 있어야 불러오기 편한거 아닌가?
-    private List<File> files = new ArrayList<>();
+    private List<PostFile> files = new ArrayList<>();
 
     @OneToMany(mappedBy = "post") // 게시판 쪽에 있어야 불러오기 편한거 아닌가?
     private List<PostLike> likes = new ArrayList<>();

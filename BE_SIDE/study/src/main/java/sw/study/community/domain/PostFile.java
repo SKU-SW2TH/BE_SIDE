@@ -12,7 +12,7 @@ import static lombok.AccessLevel.*;
 @Entity
 @Getter
 @NoArgsConstructor(access = PROTECTED)
-public class File {
+public class PostFile {
     @Id @GeneratedValue
     @Column(name = "file_id")
     private Long id;
@@ -42,8 +42,8 @@ public class File {
     }
 
     //== 생성 메서드 ==//
-    public static File create(Post post, Member member, String url) {
-        File file = new File();
+    public static PostFile create(Post post, Member member, String url) {
+        PostFile file = new PostFile();
         file.post = post;
         file.member = member;
         file.url = url;
