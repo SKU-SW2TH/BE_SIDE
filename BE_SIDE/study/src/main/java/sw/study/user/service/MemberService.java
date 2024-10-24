@@ -44,7 +44,7 @@ public class MemberService {
     private final NotificationSettingRepository notificationSettingRepository;
     private final NotificationCategoryRepository notificationCategoryRepository;
     // 파일 저장 경로 (서버에서 실제 파일이 저장되는 위치)
-    private final String uploadDirectory = "src/main/resources/profile";
+    private final String uploadDirectory = "BE_SIDE/study/src/main/resources/profile";
 
     @Transactional
     public Long join(JoinDto joinDto) {
@@ -97,28 +97,50 @@ public class MemberService {
     }
 
     @Transactional
-    public Member updateMemberProfile(String accessToken, UpdateProfileRequest updateProfileRequest) throws IOException{
+    public Member updateMemberProfile(String accessToken, UpdateProfileRequest updateProfileRequest, MultipartFile profilePicture) throws IOException{
         String email = extractEmail(accessToken);
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
-        if (updateProfileRequest.getNickname() != null && !updateProfileRequest.getNickname().isEmpty()) {
+        if (updateProfileRequest.getNickname() != null && !updateProfileRequest.getNickname().isEmpty() && !member.getNickname().equals(updateProfileRequest.getNickname())) {
             checkNicknameDuplication(updateProfileRequest.getNickname());
             member.updateNickname(updateProfileRequest.getNickname());
         }
 
         // 프로필 사진 업데이트
-        if (updateProfileRequest.getProfilePicture() != null && !updateProfileRequest.getProfilePicture().isEmpty()) {
-            String profilePicturePath = saveProfilePicture(updateProfileRequest.getProfilePicture());
-            member.updateProfilePicture(profilePicturePath);
+        if (profilePicture != null) {
+            // 빈 파일인지 확인
+            if (!profilePicture.isEmpty()) {
+                String profilePicturePath = saveProfilePicture(profilePicture);
+                member.updateProfilePicture(profilePicturePath);
+            }
+            // 빈 파일일 경우, 그냥 건너뛰기
         }
 
         // 자기소개 업데이트
-        if (updateProfileRequest.getIntroduction() != null && !updateProfileRequest.getIntroduction().isEmpty()) {
+        if (updateProfileRequest.getIntroduction() != null && !updateProfileRequest.getIntroduction().isEmpty() && !member.getNickname().equals(updateProfileRequest.getIntroduction())) {
             member.updateIntroduction(updateProfileRequest.getIntroduction());
         }
 
         memberRepository.save(member);
+        return member;
+    }
 
+    @Transactional
+    public Member updateMemberProfileWithoutPicture(String accessToken, UpdateProfileRequest updateProfileRequest) throws IOException{
+        String email = extractEmail(accessToken);
+        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        if (updateProfileRequest.getNickname() != null && !updateProfileRequest.getNickname().isEmpty() && !member.getNickname().equals(updateProfileRequest.getNickname())) {
+            checkNicknameDuplication(updateProfileRequest.getNickname());
+            member.updateNickname(updateProfileRequest.getNickname());
+        }
+
+        // 자기소개 업데이트
+        if (updateProfileRequest.getIntroduction() != null && !updateProfileRequest.getIntroduction().isEmpty() && !member.getNickname().equals(updateProfileRequest.getIntroduction())) {
+            member.updateIntroduction(updateProfileRequest.getIntroduction());
+        }
+
+        memberRepository.save(member);
         return member;
     }
 
@@ -189,7 +211,7 @@ public class MemberService {
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         // 파일 URL 생성 (웹에서 접근 가능한 경로)
-        String fileUrl = "http://yourdomain.com/api/member/profile" + uniqueFileName;
+        String fileUrl = "http://localhost:8080/api/member/profile/" + uniqueFileName;
 
         // 파일 URL 반환
         return fileUrl;
