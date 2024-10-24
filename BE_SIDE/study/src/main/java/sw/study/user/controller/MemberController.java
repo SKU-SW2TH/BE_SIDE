@@ -12,10 +12,13 @@ import sw.study.exception.InvalidTokenException;
 import sw.study.exception.UserNotFoundException;
 import sw.study.exception.dto.ErrorResponse;
 import sw.study.user.domain.Member;
+import sw.study.user.domain.NotificationSetting;
 import sw.study.user.dto.*;
 import sw.study.user.service.MemberService;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/member")
@@ -36,6 +39,23 @@ public class MemberController {
             memberDto.setNickname(member.getNickname());
             memberDto.setProfile(member.getProfile());
             memberDto.setIntroduce(member.getIntroduce());
+
+            List<NotificationSetting> settings = member.getSettings();
+            List<NotificationSettingDTO> dtos  = new ArrayList<>();
+
+            for(NotificationSetting s : settings) {
+                NotificationSettingDTO dto = new NotificationSettingDTO();
+                NotificationCategoryDTO categoryDTO = new NotificationCategoryDTO();
+                categoryDTO.setId(s.getCategory().getId());
+                categoryDTO.setName(s.getCategory().getCategoryName());
+
+                dto.setSettingId(s.getId());
+                dto.setEnabled(s.isEnabled());
+                dto.setCategoryDTO(categoryDTO);
+                dtos.add(dto);
+            }
+
+            memberDto.setSettings(dtos);
 
             return ResponseEntity.ok(memberDto);
         }catch (InvalidTokenException e) {
@@ -111,7 +131,7 @@ public class MemberController {
 
     @PutMapping("/update/notification")
     public ResponseEntity<?> updateNotification(@RequestHeader("Authorization") String accessToken,
-                                            @RequestBody NotificationSettingDTO dto){
+                                            @RequestBody SettingRequest dto){
         try {
             String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
 

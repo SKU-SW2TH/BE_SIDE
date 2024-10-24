@@ -14,12 +14,9 @@ import sw.study.exception.InvalidPasswordException;
 import sw.study.exception.InvalidTokenException;
 import sw.study.exception.UserNotFoundException;
 import sw.study.user.domain.Member;
-import sw.study.user.dto.JoinDto;
+import sw.study.user.dto.*;
 import sw.study.user.domain.NotificationCategory;
 import sw.study.user.domain.NotificationSetting;
-import sw.study.user.dto.MemberDto;
-import sw.study.user.dto.NotificationSettingDTO;
-import sw.study.user.dto.UpdateProfileRequest;
 import sw.study.user.repository.MemberRepository;
 import sw.study.user.repository.NotificationCategoryRepository;
 import sw.study.user.repository.NotificationSettingRepository;
@@ -31,6 +28,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
@@ -50,10 +48,11 @@ public class MemberService {
 
     @Transactional
     public Long join(JoinDto joinDto) {
+        List<NotificationCategory> categories = notificationCategoryRepository.findAll();
 
         Member member = Member.createMember(
                 joinDto.getEmail(), encoder.encode(joinDto.getPassword()),
-                joinDto.getNickname()
+                joinDto.getNickname(), categories
         );
 
         return memberRepository.save(member).getId();
@@ -97,6 +96,7 @@ public class MemberService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
     }
 
+    @Transactional
     public Member updateMemberProfile(String accessToken, UpdateProfileRequest updateProfileRequest) throws IOException{
         String email = extractEmail(accessToken);
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
@@ -147,20 +147,13 @@ public class MemberService {
         }
     }
 
-    public void updateNotification(String accessToken, NotificationSettingDTO dto) {
-        String email = extractEmail(accessToken);
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
-
-        NotificationCategory category = notificationCategoryRepository.findById(dto.getCategoryId()).orElseThrow(
-                () -> new UserNotFoundException("Category not found with id: " + dto.getCategoryId()));
-
-        NotificationSetting setting = notificationSettingRepository
-                .findByMemberAndCategory(member, category)
-                .orElseThrow(() -> new EntityNotFoundException("NotificationSetting not found for email: " + email + " and categoryId: " + dto.getCategoryId()));
+    @Transactional
+    public void updateNotification(String accessToken, SettingRequest dto) {
+        NotificationSetting setting = notificationSettingRepository.findById(dto.getSettingId())
+                .orElseThrow(() -> new EntityNotFoundException("NotificationSetting with ID " + dto.getSettingId() + " not found"));
 
         setting.setEnabled(dto.isEnabled());
-        notificationSettingRepository.save(setting);
+        notificationSettingRepository.save(setting); // 또는 flush()를 사용할 수 있음
     }
 
     private String extractEmail(String token) {

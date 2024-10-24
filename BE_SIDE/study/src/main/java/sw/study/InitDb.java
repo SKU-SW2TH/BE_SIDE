@@ -45,10 +45,19 @@ public class InitDb {
             em.persist(interest3);
 //           em.flush(); //필요는 없음
 
+            NotificationCategory category1 = NotificationCategory.createNotificationCategory("게시판");
+            NotificationCategory category2 = NotificationCategory.createNotificationCategory("스터디");
+            em.persist(category1);
+            em.persist(category2);
+
+            List<NotificationCategory> categories = new ArrayList<>();
+            categories.add(category1);
+            categories.add(category2);
+
             Member member1 = Member.createMember(
                     "limjh0703@naver.com",
                     encoder.encode("1q2w3e4r!"), // 비밀번호 암호화
-                    "User One"
+                    "User One", categories
             );
             em.persist(member1);
 
