@@ -3,9 +3,14 @@ package sw.study.user.controller;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sw.study.exception.DuplicateNicknameException;
 import sw.study.exception.InvalidPasswordException;
 import sw.study.exception.InvalidTokenException;
@@ -16,7 +21,11 @@ import sw.study.user.domain.NotificationSetting;
 import sw.study.user.dto.*;
 import sw.study.user.service.MemberService;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,14 +79,24 @@ public class MemberController {
         }
     }
 
-    @PutMapping("/update/profile")
+    @PutMapping(value = "/update/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateMemberProfile(
             @RequestHeader("Authorization") String accessToken,
-            @ModelAttribute UpdateProfileRequest updateProfileRequest) throws IOException {
+            @ModelAttribute UpdateProfileRequest updateProfileRequest,
+            @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture) throws IOException {
         try {
             // 서비스에서 프로필 업데이트 로직 실행
             String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken; // "Bearer " 이후 부분 추출
-            Member member = memberService.updateMemberProfile(token, updateProfileRequest);
+
+            Member member;
+
+            if (profilePicture != null && !profilePicture.isEmpty()) {
+                // Call service to update member profile with the new picture
+                member = memberService.updateMemberProfile(token, updateProfileRequest, profilePicture);
+            } else {
+                // Call service to update member profile without the picture
+                member = memberService.updateMemberProfileWithoutPicture(token, updateProfileRequest);
+            }
 
             UpdateProfileResponse response = new UpdateProfileResponse(
                     member.getNickname(),
@@ -146,5 +165,21 @@ public class MemberController {
         }
     }
 
+    @GetMapping("/profile/{filename}")
+    public ResponseEntity<Resource> getProfile(@PathVariable("filename") String filename) {
+        try {
+            Path filePath = Paths.get("BE_SIDE/study/src/main/resources/profile").resolve(filename).normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+            if (resource.exists() && resource.isReadable()) {
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 
 }
