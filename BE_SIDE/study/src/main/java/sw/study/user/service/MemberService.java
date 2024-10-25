@@ -20,6 +20,7 @@ import sw.study.user.domain.NotificationSetting;
 import sw.study.user.repository.MemberRepository;
 import sw.study.user.repository.NotificationCategoryRepository;
 import sw.study.user.repository.NotificationSettingRepository;
+import sw.study.user.role.Role;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,7 +53,7 @@ public class MemberService {
 
         Member member = Member.createMember(
                 joinDto.getEmail(), encoder.encode(joinDto.getPassword()),
-                joinDto.getNickname(), categories
+                joinDto.getNickname(), Role.USER, categories
         );
 
         return memberRepository.save(member).getId();
@@ -117,7 +118,7 @@ public class MemberService {
         }
 
         // 자기소개 업데이트
-        if (updateProfileRequest.getIntroduction() != null && !updateProfileRequest.getIntroduction().isEmpty() && !member.getNickname().equals(updateProfileRequest.getIntroduction())) {
+        if (updateProfileRequest.getIntroduction() != null && !updateProfileRequest.getIntroduction().isEmpty() && !member.getIntroduce().equals(updateProfileRequest.getIntroduction())) {
             member.updateIntroduction(updateProfileRequest.getIntroduction());
         }
 
@@ -136,7 +137,7 @@ public class MemberService {
         }
 
         // 자기소개 업데이트
-        if (updateProfileRequest.getIntroduction() != null && !updateProfileRequest.getIntroduction().isEmpty() && !member.getNickname().equals(updateProfileRequest.getIntroduction())) {
+        if (updateProfileRequest.getIntroduction() != null && !updateProfileRequest.getIntroduction().isEmpty() && !member.getIntroduce().equals(updateProfileRequest.getIntroduction())) {
             member.updateIntroduction(updateProfileRequest.getIntroduction());
         }
 
@@ -170,7 +171,7 @@ public class MemberService {
     }
 
     @Transactional
-    public void updateNotification(String accessToken, SettingRequest dto) {
+    public void updateNotification(SettingRequest dto) {
         NotificationSetting setting = notificationSettingRepository.findById(dto.getSettingId())
                 .orElseThrow(() -> new EntityNotFoundException("NotificationSetting with ID " + dto.getSettingId() + " not found"));
 

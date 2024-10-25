@@ -82,13 +82,16 @@ public class MemberController {
     @PutMapping(value = "/update/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateMemberProfile(
             @RequestHeader("Authorization") String accessToken,
-            @ModelAttribute UpdateProfileRequest updateProfileRequest,
+            @RequestParam(value = "nickname", required = false) String nickname,
+            @RequestParam(value = "introduction", required = false) String introduction,
             @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture) throws IOException {
         try {
             // 서비스에서 프로필 업데이트 로직 실행
             String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken; // "Bearer " 이후 부분 추출
 
             Member member;
+            UpdateProfileRequest updateProfileRequest = new UpdateProfileRequest(nickname, introduction);
+
 
             if (profilePicture != null && !profilePicture.isEmpty()) {
                 // Call service to update member profile with the new picture
@@ -123,7 +126,7 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error while saving file");
         } catch (Exception ex) {
             // 그 외의 예기치 않은 예외 처리
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
         }
     }
 
@@ -152,9 +155,7 @@ public class MemberController {
     public ResponseEntity<?> updateNotification(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody SettingRequest dto){
         try {
-            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
-
-            memberService.updateNotification(token, dto);
+            memberService.updateNotification(dto);
             return ResponseEntity.status(HttpStatus.OK).body("updated successfully.");
         } catch (EntityNotFoundException e) {
             // 사용자를 찾을 수 없을 때 예외 처리

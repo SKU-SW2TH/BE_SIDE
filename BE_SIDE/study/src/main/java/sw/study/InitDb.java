@@ -13,6 +13,7 @@ import sw.study.user.domain.NotificationCategory;
 import java.util.ArrayList;
 import java.util.List;
 import sw.study.user.domain.InterestArea;
+import sw.study.user.role.Role;
 
 @Component
 @RequiredArgsConstructor
@@ -57,7 +58,7 @@ public class InitDb {
             Member member1 = Member.createMember(
                     "limjh0703@naver.com",
                     encoder.encode("1q2w3e4r!"), // 비밀번호 암호화
-                    "User One", categories
+                    "User One", Role.USER, categories
             );
             em.persist(member1);
 

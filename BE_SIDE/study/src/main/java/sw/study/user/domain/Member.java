@@ -63,13 +63,14 @@ public class Member {
 
 
     //== 생성 메서드 ==//
-    public static Member createMember(String email, String password, String nickname, List<NotificationCategory> categories) {
+    public static Member createMember(String email, String password, String nickname, Role role, List<NotificationCategory> categories) {
 
         Member member = new Member();
         member.email = email;
         member.password = password;
         member.nickname = nickname;
-        member.role = Role.USER;
+        member.introduce = "";
+        member.role = role;
 
         // 알림설정 저장
         for(NotificationCategory category : categories) {
