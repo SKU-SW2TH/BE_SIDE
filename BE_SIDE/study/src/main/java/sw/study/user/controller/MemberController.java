@@ -20,10 +20,7 @@ import sw.study.user.domain.Member;
 import sw.study.user.domain.NotificationSetting;
 import sw.study.user.dto.*;
 import sw.study.user.service.MemberService;
-
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -48,6 +45,7 @@ public class MemberController {
             memberDto.setNickname(member.getNickname());
             memberDto.setProfile(member.getProfile());
             memberDto.setIntroduce(member.getIntroduce());
+            memberDto.setRole(member.getRole().toString());
 
             List<NotificationSetting> settings = member.getSettings();
             List<NotificationSettingDTO> dtos  = new ArrayList<>();

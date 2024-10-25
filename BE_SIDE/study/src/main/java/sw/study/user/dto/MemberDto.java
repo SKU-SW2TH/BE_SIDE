@@ -11,5 +11,6 @@ public class MemberDto {
     private String nickname;
     private String profile;
     private String introduce;
-    List<NotificationSettingDTO> settings = new ArrayList<>();
+    private String role;
+    private List<NotificationSettingDTO> settings = new ArrayList<>();
 }
