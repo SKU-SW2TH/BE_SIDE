@@ -1,5 +1,7 @@
 package sw.study.user.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import sw.study.user.domain.Member;
 
@@ -12,4 +14,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByNickname(String nickname);
 
     boolean existsByNickname(String nickname); // 닉네임 중복 확인 쿼리
+
+    Page<Member> findMembersByNickname(String nickname, Pageable pageable); // 닉네임을 통한 사용자 검색
 }
