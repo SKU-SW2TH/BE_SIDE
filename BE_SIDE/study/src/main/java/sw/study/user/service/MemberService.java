@@ -1,6 +1,7 @@
 package sw.study.user.service;
 
 import io.jsonwebtoken.Claims;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,13 +14,12 @@ import sw.study.exception.DuplicateNicknameException;
 import sw.study.exception.InvalidPasswordException;
 import sw.study.exception.InvalidTokenException;
 import sw.study.exception.UserNotFoundException;
+import sw.study.user.domain.InterestArea;
 import sw.study.user.domain.Member;
 import sw.study.user.dto.*;
 import sw.study.user.domain.NotificationCategory;
 import sw.study.user.domain.NotificationSetting;
-import sw.study.user.repository.MemberRepository;
-import sw.study.user.repository.NotificationCategoryRepository;
-import sw.study.user.repository.NotificationSettingRepository;
+import sw.study.user.repository.*;
 import sw.study.user.role.Role;
 
 import java.io.IOException;
@@ -29,10 +29,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -44,8 +41,9 @@ public class MemberService {
     private final TokenProvider tokenProvider;
     private final NotificationSettingRepository notificationSettingRepository;
     private final NotificationCategoryRepository notificationCategoryRepository;
-    // 파일 저장 경로 (서버에서 실제 파일이 저장되는 위치)
-    private final String uploadDirectory = "BE_SIDE/study/src/main/resources/profile";
+    private final InterestAreaRepository interestAreaRepository;
+    private final MemberInterestRepository interestRepository;
+    private final String uploadDirectory = "BE_SIDE/study/src/main/resources/profile"; // 파일 저장 경로 (서버에서 실제 파일이 저장되는 위치)
 
     @Transactional
     public Long join(JoinDto joinDto) {
@@ -177,6 +175,29 @@ public class MemberService {
 
         setting.setEnabled(dto.isEnabled());
         notificationSettingRepository.save(setting); // 또는 flush()를 사용할 수 있음
+    }
+
+    public List<InterestAreaDTO> getInterestAreas() {
+        List<InterestArea> interestAreas = interestAreaRepository.findAll();
+        List<InterestAreaDTO> interestAreasDTO = new ArrayList<>();
+
+        for (InterestArea interestArea : interestAreas) {
+            InterestAreaDTO interestAreaDTO = new InterestAreaDTO();
+            interestAreaDTO.setId(interestArea.getId());
+            interestAreaDTO.setAreaName(interestArea.getAreaName());
+            interestAreaDTO.setLevel(interestArea.getLevel());
+
+            // Check if parent is null and set parentId accordingly
+            if (interestArea.getParent() != null) {
+                interestAreaDTO.setParentId(interestArea.getParent().getId());
+            } else {
+                interestAreaDTO.setParentId(0L); // Set to 0 if parent is null
+            }
+
+            interestAreasDTO.add(interestAreaDTO); // Add the DTO to the list
+        }
+
+        return interestAreasDTO;
     }
 
     private String extractEmail(String token) {

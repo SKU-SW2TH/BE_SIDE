@@ -181,4 +181,16 @@ public class MemberController {
         }
     }
 
+    @GetMapping("/interestList")
+    public ResponseEntity<?> getInterestList() {
+        try {
+            List<InterestAreaDTO> interestAreaDTOList = memberService.getInterestAreas();
+            return ResponseEntity.ok(interestAreaDTOList);
+        } catch (Exception e) {
+            // 예외 로그 기록 (선택적)
+            e.printStackTrace(); // 콘솔에 예외 출력
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred: " + e.getMessage());
+        }
+    }
 }
