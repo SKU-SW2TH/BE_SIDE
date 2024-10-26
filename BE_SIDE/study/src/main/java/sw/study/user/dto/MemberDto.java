@@ -13,4 +13,5 @@ public class MemberDto {
     private String introduce;
     private String role;
     private List<NotificationSettingDTO> settings = new ArrayList<>();
+    private List<MemberInterestDTO> interests = new ArrayList<>();
 }
