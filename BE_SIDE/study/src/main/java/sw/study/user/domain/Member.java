@@ -60,7 +60,8 @@ public class Member {
     private List<Report> reports = new ArrayList<>();
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Punishment> punishments = new ArrayList<>();
-
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MemberInterest> interests = new ArrayList<>();
 
     //== 생성 메서드 ==//
     public static Member createMember(String email, String password, String nickname, Role role, List<NotificationCategory> categories) {
@@ -84,6 +85,14 @@ public class Member {
 
     public void addSetting(NotificationSetting setting) {
         settings.add(setting);
+    }
+
+    public void addInterest(MemberInterest interest) {
+        interests.add(interest);
+    }
+
+    public void removeInterest(MemberInterest interest) {
+        interests.remove(interest);
     }
 
     // 개별 프로필 필드를 선택적으로 업데이트하는 메소드

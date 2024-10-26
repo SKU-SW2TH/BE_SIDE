@@ -34,6 +34,8 @@ public class MemberInterest {
         memberInterest.member = member;
         memberInterest.interestArea = interestArea;
 
+        member.addInterest(memberInterest);
+
         return memberInterest;
     }
 }

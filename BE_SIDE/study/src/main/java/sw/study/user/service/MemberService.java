@@ -10,15 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.config.jwt.TokenProvider;
-import sw.study.exception.DuplicateNicknameException;
-import sw.study.exception.InvalidPasswordException;
-import sw.study.exception.InvalidTokenException;
-import sw.study.exception.UserNotFoundException;
-import sw.study.user.domain.InterestArea;
-import sw.study.user.domain.Member;
+import sw.study.exception.*;
+import sw.study.user.domain.*;
 import sw.study.user.dto.*;
-import sw.study.user.domain.NotificationCategory;
-import sw.study.user.domain.NotificationSetting;
 import sw.study.user.repository.*;
 import sw.study.user.role.Role;
 
@@ -30,6 +24,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -44,6 +39,7 @@ public class MemberService {
     private final InterestAreaRepository interestAreaRepository;
     private final MemberInterestRepository interestRepository;
     private final String uploadDirectory = "BE_SIDE/study/src/main/resources/profile"; // 파일 저장 경로 (서버에서 실제 파일이 저장되는 위치)
+    private final MemberInterestRepository memberInterestRepository;
 
     @Transactional
     public Long join(JoinDto joinDto) {
@@ -198,6 +194,64 @@ public class MemberService {
         }
 
         return interestAreasDTO;
+    }
+
+    @Transactional
+    public List<MemberInterestDTO> updateInterest(String token, InterestRequest interestRequest) {
+        List<MemberInterestDTO> dtos = new ArrayList<>();
+
+        String email = extractEmail(token);
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        List<Long> interestIds = interestRequest.getIds();
+        if (interestIds == null) {
+            interestIds = new ArrayList<>(); // null 체크 및 초기화
+        }
+
+        List<MemberInterest> existingInterests = memberInterestRepository.findByMemberId(member.getId());
+
+        Set<Long> newInterestIds = new HashSet<>(interestIds);
+        Set<Long> existingInterestIds = existingInterests.stream()
+                .map(memberInterest -> memberInterest.getInterestArea().getId())
+                .collect(Collectors.toSet());
+
+        // 추가할 관심 분야 ID
+        Set<Long> interestsToAdd = new HashSet<>(newInterestIds);
+        interestsToAdd.removeAll(existingInterestIds);
+
+        // 삭제할 관심 분야 ID
+        Set<Long> interestsToRemove = new HashSet<>(existingInterestIds);
+        interestsToRemove.removeAll(newInterestIds);
+
+        // 관심 항목 추가
+        for (Long interestId : interestsToAdd) {
+            InterestArea interestArea = interestAreaRepository.findById(interestId)
+                    .orElseThrow(() -> new InterestNotFoundException("Interest not found with ID: " + interestId));
+
+            MemberInterest newInterest = MemberInterest.CreateMemberInterest(member, interestArea);
+            memberInterestRepository.save(newInterest);
+        }
+
+        // 관심 항목 삭제
+        for (Long interestId : interestsToRemove) {
+            MemberInterest existingInterest = memberInterestRepository.findByMemberIdAndInterestAreaId(member.getId(), interestId)
+                    .orElseThrow(() -> new InterestNotFoundException("Interest not found with ID: " + interestId));
+
+            member.removeInterest(existingInterest);
+            memberInterestRepository.delete(existingInterest);
+        }
+
+        // 업데이트된 관심 분야 DTO 생성
+        List<MemberInterest> updateInterests = memberInterestRepository.findByMemberId(member.getId());
+        for (MemberInterest interest : updateInterests) {
+            MemberInterestDTO dto = new MemberInterestDTO();
+            dto.setId(interest.getId());
+            dto.setName(interest.getInterestArea().getAreaName());
+            dtos.add(dto);
+        }
+
+        return dtos;
     }
 
     private String extractEmail(String token) {

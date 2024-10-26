@@ -11,12 +11,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import sw.study.exception.DuplicateNicknameException;
-import sw.study.exception.InvalidPasswordException;
-import sw.study.exception.InvalidTokenException;
-import sw.study.exception.UserNotFoundException;
+import sw.study.exception.*;
 import sw.study.exception.dto.ErrorResponse;
 import sw.study.user.domain.Member;
+import sw.study.user.domain.MemberInterest;
 import sw.study.user.domain.NotificationSetting;
 import sw.study.user.dto.*;
 import sw.study.user.service.MemberService;
@@ -25,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/member")
@@ -40,6 +39,7 @@ public class MemberController {
             // 토큰 검증 및 사용자 정보 조회 로직
             Member member = memberService.getMemberByToken(token);
 
+            // MemberDto 생성
             MemberDto memberDto = new MemberDto();
             memberDto.setEmail(member.getEmail());
             memberDto.setNickname(member.getNickname());
@@ -47,33 +47,41 @@ public class MemberController {
             memberDto.setIntroduce(member.getIntroduce());
             memberDto.setRole(member.getRole().toString());
 
-            List<NotificationSetting> settings = member.getSettings();
-            List<NotificationSettingDTO> dtos  = new ArrayList<>();
+            // 알림 설정 DTO 변환
+            List<NotificationSettingDTO> dtos = member.getSettings().stream()
+                    .map(s -> {
+                        NotificationSettingDTO dto = new NotificationSettingDTO();
+                        NotificationCategoryDTO categoryDTO = new NotificationCategoryDTO();
+                        categoryDTO.setId(s.getCategory().getId());
+                        categoryDTO.setName(s.getCategory().getCategoryName());
 
-            for(NotificationSetting s : settings) {
-                NotificationSettingDTO dto = new NotificationSettingDTO();
-                NotificationCategoryDTO categoryDTO = new NotificationCategoryDTO();
-                categoryDTO.setId(s.getCategory().getId());
-                categoryDTO.setName(s.getCategory().getCategoryName());
+                        dto.setSettingId(s.getId());
+                        dto.setEnabled(s.isEnabled());
+                        dto.setCategoryDTO(categoryDTO);
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
 
-                dto.setSettingId(s.getId());
-                dto.setEnabled(s.isEnabled());
-                dto.setCategoryDTO(categoryDTO);
-                dtos.add(dto);
-            }
+            // 관심 분야 DTO 변환
+            List<MemberInterestDTO> interestDtos = member.getInterests().stream()
+                    .map(interest -> {
+                        MemberInterestDTO dto = new MemberInterestDTO();
+                        dto.setId(interest.getId());
+                        dto.setName(interest.getInterestArea().getAreaName());
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
 
+            // DTO 설정
             memberDto.setSettings(dtos);
+            memberDto.setInterests(interestDtos);
 
             return ResponseEntity.ok(memberDto);
-        }catch (InvalidTokenException e) {
-            // 유효하지 않은 토큰일 경우 401 반환
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(e.getMessage()));
         } catch (UserNotFoundException e) {
-            // 사용자가 존재하지 않을 경우 404 반환
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
-            // 일반적인 예외 처리
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred: " + e.getMessage());
         }
     }
 
@@ -193,4 +201,19 @@ public class MemberController {
                     .body("An unexpected error occurred: " + e.getMessage());
         }
     }
+
+    @PutMapping("/update/interest")
+    public ResponseEntity<?> updateInterest(@RequestHeader("Authorization") String accessToken,
+                                            @RequestBody InterestRequest interestRequest){
+        try {
+            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
+            List<MemberInterestDTO> dtos = memberService.updateInterest(token, interestRequest);
+            return ResponseEntity.status(HttpStatus.OK).body(dtos);
+        } catch (UserNotFoundException | InterestNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + e.getMessage());
+        }
+    }
+
 }
