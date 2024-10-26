@@ -247,6 +247,7 @@ public class MemberService {
         for (MemberInterest interest : updateInterests) {
             MemberInterestDTO dto = new MemberInterestDTO();
             dto.setId(interest.getId());
+            dto.setInterestId(interest.getInterestArea().getId());
             dto.setName(interest.getInterestArea().getAreaName());
             dtos.add(dto);
         }

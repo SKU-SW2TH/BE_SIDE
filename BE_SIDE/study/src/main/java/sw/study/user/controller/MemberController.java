@@ -67,6 +67,7 @@ public class MemberController {
                     .map(interest -> {
                         MemberInterestDTO dto = new MemberInterestDTO();
                         dto.setId(interest.getId());
+                        dto.setInterestId(interest.getInterestArea().getId());
                         dto.setName(interest.getInterestArea().getAreaName());
                         return dto;
                     })
