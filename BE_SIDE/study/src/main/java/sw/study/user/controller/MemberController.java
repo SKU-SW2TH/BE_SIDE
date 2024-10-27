@@ -12,16 +12,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.exception.*;
-import sw.study.exception.dto.ErrorResponse;
 import sw.study.user.domain.Member;
-import sw.study.user.domain.MemberInterest;
-import sw.study.user.domain.NotificationSetting;
 import sw.study.user.dto.*;
 import sw.study.user.service.MemberService;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -99,7 +95,6 @@ public class MemberController {
             Member member;
             UpdateProfileRequest updateProfileRequest = new UpdateProfileRequest(nickname, introduction);
 
-
             if (profilePicture != null && !profilePicture.isEmpty()) {
                 // Call service to update member profile with the new picture
                 member = memberService.updateMemberProfile(token, updateProfileRequest, profilePicture);
@@ -163,7 +158,7 @@ public class MemberController {
                                             @RequestBody SettingRequest dto){
         try {
             memberService.updateNotification(dto);
-            return ResponseEntity.status(HttpStatus.OK).body("updated successfully.");
+            return ResponseEntity.status(HttpStatus.OK).body(dto);
         } catch (EntityNotFoundException e) {
             // 사용자를 찾을 수 없을 때 예외 처리
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
