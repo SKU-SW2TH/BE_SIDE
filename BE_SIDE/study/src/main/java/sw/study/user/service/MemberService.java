@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import sw.study.config.Constant;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.*;
 import sw.study.user.domain.*;
@@ -323,7 +324,7 @@ public class MemberService {
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         // 파일 URL 생성 (웹에서 접근 가능한 경로)
-        String fileUrl = "http://localhost:8080/api/member/profile/" + uniqueFileName;
+        String fileUrl =  Constant.URL + "/api/member/profile/" + uniqueFileName;
 
         // 파일 URL 반환
         return fileUrl;
