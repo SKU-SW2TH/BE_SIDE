@@ -203,12 +203,26 @@ public class MemberController {
         }
     }
 
+    @PostMapping("/init/interest")
+    public ResponseEntity<?> initInterest(@RequestHeader("Authorization") String accessToken,
+                                            @RequestBody InterestRequest interestRequest){
+        try {
+            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
+            List<MemberInterestDTO> dtos = memberService.updateInterest(token, interestRequest);
+            return ResponseEntity.status(HttpStatus.OK).body(dtos);
+        } catch (UserNotFoundException | InterestNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + e.getMessage());
+        }
+    }
+
     @PutMapping("/update/interest")
     public ResponseEntity<?> updateInterest(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody InterestRequest interestRequest){
         try {
             String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
-            List<MemberInterestDTO> dtos = memberService.updateInterest(token, interestRequest);
+            List<MemberInterestDTO> dtos = memberService.initInterest(token, interestRequest);
             return ResponseEntity.status(HttpStatus.OK).body(dtos);
         } catch (UserNotFoundException | InterestNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());

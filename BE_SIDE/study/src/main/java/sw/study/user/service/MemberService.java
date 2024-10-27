@@ -197,6 +197,41 @@ public class MemberService {
     }
 
     @Transactional
+    public List<MemberInterestDTO> initInterest(String token, InterestRequest interestRequest) {
+        List<MemberInterestDTO> dtos = new ArrayList<>();
+
+        String email = extractEmail(token);
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        List<Long> interestIds = interestRequest.getIds();
+        if (interestIds == null) {
+            interestIds = new ArrayList<>(); // null 체크 및 초기화
+        }
+
+        // 관심 항목 추가
+        for (Long interestId : interestIds) {
+            InterestArea interestArea = interestAreaRepository.findById(interestId)
+                    .orElseThrow(() -> new InterestNotFoundException("Interest not found with ID: " + interestId));
+
+            MemberInterest newInterest = MemberInterest.CreateMemberInterest(member, interestArea);
+            memberInterestRepository.save(newInterest);
+        }
+
+        // 업데이트된 관심 분야 DTO 생성
+        List<MemberInterest> updateInterests = memberInterestRepository.findByMemberId(member.getId());
+        for (MemberInterest interest : updateInterests) {
+            MemberInterestDTO dto = new MemberInterestDTO();
+            dto.setId(interest.getId());
+            dto.setInterestId(interest.getInterestArea().getId());
+            dto.setName(interest.getInterestArea().getAreaName());
+            dtos.add(dto);
+        }
+
+        return dtos;
+    }
+
+    @Transactional
     public List<MemberInterestDTO> updateInterest(String token, InterestRequest interestRequest) {
         List<MemberInterestDTO> dtos = new ArrayList<>();
 
