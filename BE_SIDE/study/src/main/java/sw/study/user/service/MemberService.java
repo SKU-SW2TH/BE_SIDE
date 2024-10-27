@@ -236,51 +236,49 @@ public class MemberService {
     public List<MemberInterestDTO> updateInterest(String token, InterestRequest interestRequest) {
         List<MemberInterestDTO> dtos = new ArrayList<>();
 
+        // 토큰에서 이메일 추출
         String email = extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
-        List<Long> interestIds = interestRequest.getIds();
-        if (interestIds == null) {
-            interestIds = new ArrayList<>(); // null 체크 및 초기화
-        }
+        // 요청에서 관심사 ID 목록 가져오기 (null 방지)
+        List<Long> interestIds = Optional.ofNullable(interestRequest.getIds()).orElse(new ArrayList<>());
 
+        // 기존의 관심사를 조회하여 ID 목록으로 변환
         List<MemberInterest> existingInterests = memberInterestRepository.findByMemberId(member.getId());
-
-        Set<Long> newInterestIds = new HashSet<>(interestIds);
         Set<Long> existingInterestIds = existingInterests.stream()
                 .map(memberInterest -> memberInterest.getInterestArea().getId())
                 .collect(Collectors.toSet());
 
-        // 추가할 관심 분야 ID
-        Set<Long> interestsToAdd = new HashSet<>(newInterestIds);
-        interestsToAdd.removeAll(existingInterestIds);
+        // 추가할 관심사: 새로운 요청의 ID 중 기존에 없는 ID들
+        Set<Long> interestsToAdd = interestIds.stream()
+                .filter(id -> !existingInterestIds.contains(id))
+                .collect(Collectors.toSet());
 
-        // 삭제할 관심 분야 ID
-        Set<Long> interestsToRemove = new HashSet<>(existingInterestIds);
-        interestsToRemove.removeAll(newInterestIds);
+        // 삭제할 관심사: 기존 관심사 중 새로운 요청에 없는 ID들
+        Set<Long> interestsToRemove = existingInterestIds.stream()
+                .filter(id -> !interestIds.contains(id))
+                .collect(Collectors.toSet());
 
-        // 관심 항목 추가
+        // 관심사 추가
         for (Long interestId : interestsToAdd) {
             InterestArea interestArea = interestAreaRepository.findById(interestId)
                     .orElseThrow(() -> new InterestNotFoundException("Interest not found with ID: " + interestId));
-
             MemberInterest newInterest = MemberInterest.CreateMemberInterest(member, interestArea);
             memberInterestRepository.save(newInterest);
         }
 
-        // 관심 항목 삭제
+        // 관심사 삭제
         for (Long interestId : interestsToRemove) {
             MemberInterest existingInterest = memberInterestRepository.findByMemberIdAndInterestAreaId(member.getId(), interestId)
                     .orElseThrow(() -> new InterestNotFoundException("Interest not found with ID: " + interestId));
-
             member.removeInterest(existingInterest);
             memberInterestRepository.delete(existingInterest);
         }
 
-        // 업데이트된 관심 분야 DTO 생성
-        List<MemberInterest> updateInterests = memberInterestRepository.findByMemberId(member.getId());
-        for (MemberInterest interest : updateInterests) {
+        // 업데이트된 관심사 목록 DTO 생성
+        List<MemberInterest> updatedInterests = memberInterestRepository.findByMemberId(member.getId());
+        for (MemberInterest interest : updatedInterests) {
             MemberInterestDTO dto = new MemberInterestDTO();
             dto.setId(interest.getId());
             dto.setInterestId(interest.getInterestArea().getId());

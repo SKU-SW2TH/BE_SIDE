@@ -208,7 +208,7 @@ public class MemberController {
                                             @RequestBody InterestRequest interestRequest){
         try {
             String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
-            List<MemberInterestDTO> dtos = memberService.updateInterest(token, interestRequest);
+            List<MemberInterestDTO> dtos = memberService.initInterest(token, interestRequest);
             return ResponseEntity.status(HttpStatus.OK).body(dtos);
         } catch (UserNotFoundException | InterestNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -222,7 +222,7 @@ public class MemberController {
                                             @RequestBody InterestRequest interestRequest){
         try {
             String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
-            List<MemberInterestDTO> dtos = memberService.initInterest(token, interestRequest);
+            List<MemberInterestDTO> dtos = memberService.updateInterest(token, interestRequest);
             return ResponseEntity.status(HttpStatus.OK).body(dtos);
         } catch (UserNotFoundException | InterestNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
