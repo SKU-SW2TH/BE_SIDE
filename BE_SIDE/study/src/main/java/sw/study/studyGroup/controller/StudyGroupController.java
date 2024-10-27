@@ -29,7 +29,7 @@ public class StudyGroupController {
         return ResponseEntity.ok(results);
     }
 
-    @PostMapping // 스터디 그룹 생성
+    @PostMapping("/create") // 스터디 그룹 생성
     public ResponseEntity<StudyGroup> createStudyGroup(
             @RequestBody CreateStudyGroup requestDto) {
 

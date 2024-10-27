@@ -32,7 +32,8 @@ public class StudyGroupService {
     private final ParticipantRepository participantRepository;
     private final WaitingPeopleRepository waitingPeopleRepository;
 
-    // 닉네임을 통한 사용자 검색
+    // 닉네임을 통한 사용자 검색 ( 그룹 생성 시 )
+    // 탐색의 대상은 커뮤니티 사이드에서 사용하는 닉네임 ( default )
     public List<String> searchByNickname(String nickname, int page, int size){
         Pageable pageable = PageRequest.of(page, size);
 
