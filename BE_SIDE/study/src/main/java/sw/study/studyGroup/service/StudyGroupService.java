@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.domain.WaitingPeople;
+import sw.study.studyGroup.dto.InvitedResponse;
+import sw.study.studyGroup.dto.JoinedResponse;
 import sw.study.studyGroup.repository.ParticipantRepository;
 import sw.study.studyGroup.repository.StudyGroupRepository;
 import sw.study.studyGroup.repository.WaitingPeopleRepository;
@@ -86,5 +88,68 @@ public class StudyGroupService {
         }
         return studyGroup;
     }
+
+    // 초대를 받은 스터디그룹 확인하기
+    public List <InvitedResponse> checkInvited(){
+
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String currentUserEmail = userDetails.getUsername(); // 현재 사용자의 이메일
+
+        Member user = memberRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new RuntimeException("User not found")); // 해당 부분은 커스텀 예외 처리 필요
+
+        // 대기 명단에서 로그인된 사용자의 정보만 따로 뺀 후에
+        List<WaitingPeople> invitedGroups = waitingPeopleRepository.findByMemberId(user.getId());
+
+        List<InvitedResponse> invitedResponses = new ArrayList<>();
+
+        // waitingPeople 의 StudyGroup 으로 초대받은 그룹 탐색
+        for(WaitingPeople waitingPerson : invitedGroups){
+            Long groupId = waitingPerson.getStudyGroup().getId();
+            StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                    .orElseThrow(() -> new RuntimeException("Study group not found"));
+
+            InvitedResponse groupInfo = InvitedResponse.createInvitedResponse(
+                    studyGroup.getName(),
+                    studyGroup.getDescription(),
+                    studyGroup.getMemberCount(),
+                    waitingPerson.getCreatedAt() // 초대를 받은 일시
+            );
+            invitedResponses.add(groupInfo);
+        }
+        return invitedResponses;
+    }
+    
+    // 참여중인 스터디 그룹 확인
+    public List <JoinedResponse> checkJoined(){
+
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String currentUserEmail = userDetails.getUsername(); // 현재 사용자의 이메일
+
+        Member user = memberRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new RuntimeException("User not found")); // 해당 부분은 커스텀 예외 처리 필요
+
+        // 얻은 user 객체로 Participant 테이블 확인
+        List<Participant> Participants = participantRepository.findByMemberId(user.getId());
+
+        List<JoinedResponse> joinedGroups  = new ArrayList<>();
+
+        // waitingPeople 의 StudyGroup 으로 초대받은 그룹 탐색
+        for(Participant participants : Participants){
+            Long groupId = participants.getStudyGroup().getId();
+            StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                    .orElseThrow(() -> new RuntimeException("Study group not found"));
+
+            JoinedResponse groupInfo = JoinedResponse.createJoinedResponse(
+                    studyGroup.getName(),
+                    studyGroup.getDescription(),
+                    studyGroup.getMemberCount(),
+                    studyGroup.getCreatedAt() // 초대를 받은 일시
+            );
+            joinedGroups.add(groupInfo);
+        }
+        return joinedGroups;
+    }
+
 
 }
