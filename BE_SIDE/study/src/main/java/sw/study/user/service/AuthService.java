@@ -2,6 +2,8 @@ package sw.study.user.service;
 
 import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -10,24 +12,23 @@ import org.springframework.stereotype.Service;
 import sw.study.config.jwt.TokenDTO;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.InvalidCredentialsException;
+import sw.study.exception.UserNotFoundException;
+import sw.study.user.domain.Member;
 import sw.study.user.dto.LoginRequest;
+import sw.study.user.repository.MemberRepository;
 import sw.study.user.util.RedisUtil;
-
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenProvider tokenProvider;
     private final RedisUtil redisUtil;
+    private final MemberRepository memberRepository;
     private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24;       // 1일
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7;
-
-    public AuthService(AuthenticationManager authenticationManager, TokenProvider tokenProvider, RedisUtil redisUtil) {
-        this.authenticationManager = authenticationManager;
-        this.tokenProvider = tokenProvider;
-        this.redisUtil = redisUtil;
-    }
 
     public TokenDTO login(LoginRequest loginRequest) {
         String refreshTokenKey = "RT:" + loginRequest.getEmail();
@@ -123,6 +124,21 @@ public class AuthService {
             // Redis에서 Refresh Token 삭제
             redisUtil.delete(refreshTokenKey);
         }
+    }
+
+    @Transactional
+    public void deleteMember(String refreshToken) {
+        Claims claims = tokenProvider.parseClaims(refreshToken);
+        String email = claims.getSubject();
+
+        // 회원 삭제 처리
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        member.onDeleted(); // soft delete 방식으로 설정
+
+        // 강제 로그아웃 처리
+        logout(refreshToken);
     }
 
 }

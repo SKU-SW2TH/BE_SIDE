@@ -105,7 +105,7 @@ public class AuthController implements AuthApiDocumentation {
         } catch (Exception e) {
             // 기타 예외 처리
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred while processing your request."); // 500 Internal Server Error
+                    .body(e.getMessage()); // 500 Internal Server Error
         }
     }
 
@@ -135,6 +135,19 @@ public class AuthController implements AuthApiDocumentation {
         } catch (Exception e) {
             // 기타 예외 처리
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 에러가 발생했습니다.");
+        }
+    }
+
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<String> deleteAccount(@RequestHeader("Authorization") String refreshToken) {
+        try {
+            String token = refreshToken.startsWith("Bearer ") ? refreshToken.substring(7) : refreshToken;
+            authService.deleteMember(token);
+            return ResponseEntity.ok("회원 탈퇴가 완료되었습니다.");
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("탈퇴 처리 중 오류가 발생했습니다.");
         }
     }
 

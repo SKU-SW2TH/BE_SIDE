@@ -54,6 +54,11 @@ public class Member {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void onDeleted() {
+        this.deletedAt = LocalDateTime.now();
+        this.isDeleted = true;
+    }
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NotificationSetting> settings = new ArrayList<>();
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
