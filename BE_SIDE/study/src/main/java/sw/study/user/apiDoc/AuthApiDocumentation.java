@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
-import sw.study.config.jwt.TokenDTO;
 import sw.study.user.dto.*;
 
 public interface AuthApiDocumentation {
@@ -26,9 +25,7 @@ public interface AuthApiDocumentation {
     @Parameters(value = {
             @Parameter(name = "email", description = "이메일", example = "ksh123@naver.com"),
             @Parameter(name = "password", description = "비밀번호"),
-            @Parameter(name = "nickname", description = "닉네임", example = "코난123"),
-            @Parameter(name = "profile", description = "프로필 사진"),
-            @Parameter(name = "introduce", description = "자기소개 글", example = "안녕하세요! 저는..."),
+            @Parameter(name = "nickname", description = "닉네임", example = "코난123")
     })
     ResponseEntity<String> join(@RequestBody JoinDto joinDto);
 
