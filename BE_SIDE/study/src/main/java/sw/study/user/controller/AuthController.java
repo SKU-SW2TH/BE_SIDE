@@ -63,8 +63,8 @@ public class AuthController implements AuthApiDocumentation {
 
     @Override
     @PostMapping("/verify-nickname")
-    public ResponseEntity<String> verifyNickname(@RequestBody JoinDto joinDto) {
-        boolean isVerified = memberService.verifyNickname(joinDto);
+    public ResponseEntity<String> verifyNickname(@RequestBody NicknameDto nicknameDto) {
+        boolean isVerified = memberService.verifyNickname(nicknameDto);
 
         if (isVerified)
             return ResponseEntity.ok("사용 가능한 닉네임입니다.");

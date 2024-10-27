@@ -16,7 +16,7 @@ public interface AuthApiDocumentation {
 
     ResponseEntity<String> verifyEmail(@RequestBody EmailVerificationRequest request);
 
-    ResponseEntity<String> verifyNickname(@RequestBody JoinDto joinDto);
+    ResponseEntity<String> verifyNickname(@RequestBody NicknameDto nicknameDto);
 
     @Operation(summary = "회원가입", description = "회원가입 할 때 사용하는 API")
     @ApiResponses(value = {

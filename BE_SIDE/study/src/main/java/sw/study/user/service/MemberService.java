@@ -14,12 +14,9 @@ import sw.study.exception.InvalidPasswordException;
 import sw.study.exception.InvalidTokenException;
 import sw.study.exception.UserNotFoundException;
 import sw.study.user.domain.Member;
-import sw.study.user.dto.JoinDto;
+import sw.study.user.dto.*;
 import sw.study.user.domain.NotificationCategory;
 import sw.study.user.domain.NotificationSetting;
-import sw.study.user.dto.MemberDto;
-import sw.study.user.dto.NotificationSettingDTO;
-import sw.study.user.dto.UpdateProfileRequest;
 import sw.study.user.repository.MemberRepository;
 import sw.study.user.repository.NotificationCategoryRepository;
 import sw.study.user.repository.NotificationSettingRepository;
@@ -59,8 +56,8 @@ public class MemberService {
         return memberRepository.save(member).getId();
     }
 
-    public boolean verifyNickname(JoinDto joinDto) {
-        Optional<Member> findMember = memberRepository.findByNickname(joinDto.getNickname());
+    public boolean verifyNickname(NicknameDto nicknameDto) {
+        Optional<Member> findMember = memberRepository.findByNickname(nicknameDto.getNickname());
         return findMember.isEmpty();
     }
 
