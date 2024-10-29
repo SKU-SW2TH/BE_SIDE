@@ -1,5 +1,6 @@
 package sw.study.user.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.exception.*;
+import sw.study.user.apiDoc.MemberApiDocumentation;
 import sw.study.user.domain.Member;
 import sw.study.user.dto.*;
 import sw.study.user.service.MemberService;
@@ -24,9 +26,11 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/member")
 @RequiredArgsConstructor
-public class MemberController {
+@Tag(name = "Member", description = "Member API")
+public class MemberController implements MemberApiDocumentation {
     private final MemberService memberService;
 
+    @Override
     @GetMapping("/info")
     public ResponseEntity<?> getMemberInfo(@RequestHeader("Authorization") String accessToken) {
         try {
@@ -82,6 +86,7 @@ public class MemberController {
         }
     }
 
+    @Override
     @PutMapping(value = "/update/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateMemberProfile(
             @RequestHeader("Authorization") String accessToken,
@@ -132,6 +137,7 @@ public class MemberController {
         }
     }
 
+    @Override
     @PutMapping("/change/password")
     public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody PasswordChangeRequest request){
@@ -153,6 +159,7 @@ public class MemberController {
         }
     }
 
+    @Override
     @PutMapping("/update/notification")
     public ResponseEntity<?> updateNotification(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody SettingRequest dto){
@@ -168,6 +175,7 @@ public class MemberController {
         }
     }
 
+    @Override
     @GetMapping("/profile/{filename}")
     public ResponseEntity<Resource> getProfile(@PathVariable("filename") String filename) {
         try {
@@ -185,6 +193,7 @@ public class MemberController {
         }
     }
 
+    @Override
     @GetMapping("/interestList")
     public ResponseEntity<?> getInterestList() {
         try {
@@ -198,6 +207,7 @@ public class MemberController {
         }
     }
 
+    @Override
     @PostMapping("/init/interest")
     public ResponseEntity<?> initInterest(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody InterestRequest interestRequest){
@@ -212,6 +222,7 @@ public class MemberController {
         }
     }
 
+    @Override
     @PutMapping("/update/interest")
     public ResponseEntity<?> updateInterest(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody InterestRequest interestRequest){
