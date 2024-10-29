@@ -113,8 +113,18 @@ public interface MemberApiDocumentation {
             @ApiResponse(responseCode = "500", description = "서버 에러 발생")
     })
     ResponseEntity<?> updateInterest(
-            @Parameter(description = "액세스 토큰", required = true)
+            @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
             @RequestHeader("Authorization") String accessToken,
             @Parameter(description = "업데이트할 관심사 요청 데이터", required = true)
             @RequestBody InterestRequest interestRequest);
+
+    @Operation(summary = "읽기 업데이트", description = "알림 읽음을 업데이트 합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "성공"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 에러 발생")
+    })
+    ResponseEntity<?> updateRead(
+            @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
+            @RequestHeader("Authorization") String accessToken);
 }
