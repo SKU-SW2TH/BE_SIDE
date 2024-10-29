@@ -252,4 +252,17 @@ public class MemberController implements MemberApiDocumentation {
         }
     }
 
+    @Override
+    @PutMapping("/update/notification/read")
+    public ResponseEntity<?> updateRead(@RequestHeader("Authorization") String accessToken) {
+        try {
+            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
+            memberService.updateNotificationRead(token); // 철자 수정
+            return ResponseEntity.noContent().build(); // 204 No Content
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
+        }
+    }
 }

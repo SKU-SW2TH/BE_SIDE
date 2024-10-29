@@ -290,26 +290,22 @@ public class MemberService {
         return dtos;
     }
 
-    public List<NotificationDTO> getNotificationList(String token) {
-        String email = extractEmail(token);
+    @Transactional
+    public void updateNotificationRead(String token) {
+        String email = extractEmail(token); // 토큰에서 이메일 추출
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
-        List<Notification> notifications = notificationRepository.findByMemberOrderByCreatedAtDesc(member);
-        List<NotificationDTO> dtos = new ArrayList<>();
+        // 읽지 않은 알림 리스트 가져오기
+        List<Notification> notifications = notificationRepository.findByMemberAndIsReadFalse(member);
 
-        for(Notification notification : notifications) {
-            NotificationDTO dto = new NotificationDTO();
-            dto.setId(notification.getId());
-            dto.setTitle(notification.getTitle());
-            dto.setContent(notification.getContent());
-            dto.setName(notification.getCategory().getCategoryName());
-            dto.setRead(notification.isRead());
-            dto.setCreatedAt(notification.getCreatedAt());
-            dtos.add(dto);
+        // 읽음 상태로 변경하고 저장하기
+        for (Notification notification : notifications) {
+            notification.markAsRead(); // 읽음 처리
         }
 
-        return dtos;
+        // 변경된 알림들을 데이터베이스에 저장
+        notificationRepository.saveAll(notifications);
     }
 
     private String extractEmail(String token) {
