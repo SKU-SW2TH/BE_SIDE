@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.community.domain.Category;
 import sw.study.user.domain.Member;
+import sw.study.user.domain.Notification;
 import sw.study.user.domain.NotificationCategory;
 
 import java.util.ArrayList;
@@ -69,6 +70,11 @@ public class InitDb {
                     "User One", Role.USER, categories
             );
             em.persist(member1);
+
+            Notification notification1 = Notification.createNotification(member1, category1, "테스트1", "테스트1");
+            Notification notification2 = Notification.createNotification(member1, category2, "테스트2", "테스트2");
+            em.persist(notification1);
+            em.persist(notification2);
 
             interest1.addChildInterest(interest2);
             interest1.addChildInterest(interest3);

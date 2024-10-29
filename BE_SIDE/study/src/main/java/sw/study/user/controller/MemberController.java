@@ -15,11 +15,13 @@ import org.springframework.web.multipart.MultipartFile;
 import sw.study.exception.*;
 import sw.study.user.apiDoc.MemberApiDocumentation;
 import sw.study.user.domain.Member;
+import sw.study.user.domain.Notification;
 import sw.study.user.dto.*;
 import sw.study.user.service.MemberService;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,10 +75,23 @@ public class MemberController implements MemberApiDocumentation {
                     })
                     .collect(Collectors.toList());
 
+            List<NotificationDTO> notificationDTOS = member.getNotifications().stream()
+                    .sorted(Comparator.comparing(Notification::getCreatedAt).reversed()) // createdAt 기준 내림차순 정렬
+                    .map(notification -> {
+                        NotificationDTO dto = new NotificationDTO();
+                        dto.setId(notification.getId());
+                        dto.setTitle(notification.getTitle());
+                        dto.setContent(notification.getContent());
+                        dto.setRead(notification.isRead());
+                        dto.setName(notification.getCategory().getCategoryName());
+                        dto.setCreatedAt(notification.getCreatedAt());
+                        return dto;
+                    }).collect(Collectors.toList());
+
             // DTO 설정
             memberDto.setSettings(dtos);
             memberDto.setInterests(interestDtos);
-
+            memberDto.setNotifications(notificationDTOS);
             return ResponseEntity.ok(memberDto);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());

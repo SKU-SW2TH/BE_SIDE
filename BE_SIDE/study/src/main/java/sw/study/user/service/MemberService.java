@@ -38,9 +38,10 @@ public class MemberService {
     private final NotificationSettingRepository notificationSettingRepository;
     private final NotificationCategoryRepository notificationCategoryRepository;
     private final InterestAreaRepository interestAreaRepository;
-    private final MemberInterestRepository interestRepository;
-    private final String uploadDirectory = "BE_SIDE/study/src/main/resources/profile"; // 파일 저장 경로 (서버에서 실제 파일이 저장되는 위치)
     private final MemberInterestRepository memberInterestRepository;
+    private final NotificationRepository notificationRepository;
+    private final String uploadDirectory = "BE_SIDE/study/src/main/resources/profile"; // 파일 저장 경로 (서버에서 실제 파일이 저장되는 위치)
+
 
     @Transactional
     public Long join(JoinDto joinDto) {
@@ -283,6 +284,28 @@ public class MemberService {
             dto.setId(interest.getId());
             dto.setInterestId(interest.getInterestArea().getId());
             dto.setName(interest.getInterestArea().getAreaName());
+            dtos.add(dto);
+        }
+
+        return dtos;
+    }
+
+    public List<NotificationDTO> getNotificationList(String token) {
+        String email = extractEmail(token);
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        List<Notification> notifications = notificationRepository.findByMemberOrderByCreatedAtDesc(member);
+        List<NotificationDTO> dtos = new ArrayList<>();
+
+        for(Notification notification : notifications) {
+            NotificationDTO dto = new NotificationDTO();
+            dto.setId(notification.getId());
+            dto.setTitle(notification.getTitle());
+            dto.setContent(notification.getContent());
+            dto.setName(notification.getCategory().getCategoryName());
+            dto.setRead(notification.isRead());
+            dto.setCreatedAt(notification.getCreatedAt());
             dtos.add(dto);
         }
 

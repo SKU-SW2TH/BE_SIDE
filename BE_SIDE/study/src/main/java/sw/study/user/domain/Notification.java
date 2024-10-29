@@ -34,7 +34,7 @@ public class Notification {
     @NotNull
     private String content;
 
-    private boolean read = false;
+    private boolean isRead = false;
 
     private LocalDateTime createdAt;
 
@@ -49,11 +49,13 @@ public class Notification {
         notification.category = category;
         notification.title = title;
         notification.content = content;
+
+        member.addNotification(notification);
         return notification;
     }
 
     public void markAsRead() {
-        this.read = true;
+        this.isRead = true;
     }
 
 }
