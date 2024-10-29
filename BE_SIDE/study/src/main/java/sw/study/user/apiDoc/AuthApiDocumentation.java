@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import sw.study.user.dto.*;
 
 public interface AuthApiDocumentation {
@@ -63,10 +64,6 @@ public interface AuthApiDocumentation {
             @ApiResponse(responseCode = "401", description = "잘못된 자격 증명입니다."),
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다.")
     })
-    @Parameters(value = {
-            @Parameter(name = "email", description = "이메일", example = "ksh123@naver.com"),
-            @Parameter(name = "password", description = "비밀번호")
-    })
     ResponseEntity<?> login(@RequestBody LoginRequest loginRequest);
 
 
@@ -75,10 +72,8 @@ public interface AuthApiDocumentation {
             @ApiResponse(responseCode = "200", description = "로그아웃 성공."),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생했습니다.")
     })
-    @Parameters(value = {
-            @Parameter(name = "refreshToken", description = "리프레시 토큰", example = "your_refresh_token")
-    })
-    ResponseEntity<String> logout(@RequestBody TokenRequest logoutRequest);
+    ResponseEntity<String> logout(
+            @RequestBody TokenRequest logoutRequest);
 
 
     @Operation(summary = "토큰 재발행", description = "리프레시 토큰을 사용하여 액세스 토큰을 재발행하는 API")
@@ -87,9 +82,5 @@ public interface AuthApiDocumentation {
             @ApiResponse(responseCode = "401", description = "토큰 재발행에 실패했습니다."),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생했습니다.")
     })
-    @Parameters(value = {
-            @Parameter(name = "refreshToken", description = "리프레시 토큰", example = "your_refresh_token")
-    })
     ResponseEntity<?> reissue(@RequestBody TokenRequest tokenRequest);
-
 }
