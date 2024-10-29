@@ -58,18 +58,18 @@ public class AuthController implements AuthApiDocumentation {
         if (isVerified)
             return ResponseEntity.ok("이메일 인증이 완료되었습니다."); // 이메일 인증 성공 시 처리 (프론트엔드에서 이를 확인)
         else
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("인증 코드가 올바르지 않습니다.");
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("인증 코드가 올바르지 않습니다."); // 422
     }
 
     @Override
     @PostMapping("/verify-nickname")
-    public ResponseEntity<String> verifyNickname(@RequestBody JoinDto joinDto) {
-        boolean isVerified = memberService.verifyNickname(joinDto);
+    public ResponseEntity<String> verifyNickname(@RequestBody NicknameDto nicknameDto) {
+        boolean isVerified = memberService.verifyNickname(nicknameDto);
 
         if (isVerified)
             return ResponseEntity.ok("사용 가능한 닉네임입니다.");
         else
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이미 사용 중인 닉네임입니다.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 닉네임입니다.");
     }
 
     @Override
@@ -84,7 +84,7 @@ public class AuthController implements AuthApiDocumentation {
             memberService.join(joinDto);
             return ResponseEntity.ok("회원가입이 완료되었습니다.");
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("이미 사용 중인 이메일입니다.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 이메일입니다.");
         }
     }
 
