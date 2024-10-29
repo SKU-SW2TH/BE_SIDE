@@ -138,6 +138,7 @@ public class AuthController implements AuthApiDocumentation {
         }
     }
 
+    @Override
     @DeleteMapping("/delete-account")
     public ResponseEntity<String> deleteAccount(@RequestHeader("Authorization") String refreshToken) {
         try {
