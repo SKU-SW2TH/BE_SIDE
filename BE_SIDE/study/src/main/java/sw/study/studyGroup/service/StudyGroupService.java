@@ -34,20 +34,33 @@ public class StudyGroupService {
     private final ParticipantRepository participantRepository;
     private final WaitingPeopleRepository waitingPeopleRepository;
 
+    // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
+    private Member currentLogginedInfo() {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String currentUserEmail = userDetails.getUsername(); // 현재 사용자의 이메일
+
+        return memberRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new RuntimeException("User not found")); // 해당 부분은 커스텀 예외 처리 필요
+    }
+
     // 닉네임을 통한 사용자 검색 ( 그룹 생성 시 )
-    // 탐색의 대상은 커뮤니티 사이드에서 사용하는 닉네임 ( default )
+    // 탐색의 대상은 커뮤니티 사이드에서 사용하는 닉네임
     public List<String> searchByNickname(String nickname, int page, int size){
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<Member> members = memberRepository.findMembersByNickname(nickname, pageable);
+        Page<Member> members = memberRepository.findMembersByNicknameStartingWith(nickname, pageable);
+
         List<String> nicknames = new ArrayList<>();
+
+        String logginedUserNickname = currentLogginedInfo().getNickname();
 
         if(members.isEmpty()){
             return Collections.emptyList();
             // 비어있는 리스트 반환
         }
         for(Member member : members){
-            nicknames.add(member.getNickname());
+            if(!logginedUserNickname.equals(member.getNickname()))
+                nicknames.add(member.getNickname());
         }
         return nicknames;
     }
@@ -61,10 +74,7 @@ public class StudyGroupService {
         studyGroupRepository.save(studyGroup);
 
         // 로그인 되어있는 사용자 정보를 가져오기
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String currentUserEmail = userDetails.getUsername(); // 현재 사용자의 이메일
-        Member leader = memberRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("User not found")); // 해당 부분은 커스텀 예외 처리 필요
+        Member leader = currentLogginedInfo();
 
         // 방장은 바로 Participant에 추가해준다.
         Participant leaderParticipant = Participant.createParticipant(leaderNickname, leader, Participant.Role.LEADER);
@@ -92,11 +102,7 @@ public class StudyGroupService {
     // 초대를 받은 스터디그룹 확인하기
     public List <InvitedResponse> checkInvited(){
 
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String currentUserEmail = userDetails.getUsername(); // 현재 사용자의 이메일
-
-        Member user = memberRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("User not found")); // 해당 부분은 커스텀 예외 처리 필요
+        Member user = currentLogginedInfo();
 
         // 대기 명단에서 로그인된 사용자의 정보만 따로 뺀 후에
         List<WaitingPeople> invitedGroups = waitingPeopleRepository.findByMemberId(user.getId());
@@ -119,23 +125,19 @@ public class StudyGroupService {
         }
         return invitedResponses;
     }
-    
+
     // 참여중인 스터디 그룹 확인
-    public List <JoinedResponse> checkJoined(){
+    public List <JoinedResponse> checkJoined() {
 
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String currentUserEmail = userDetails.getUsername(); // 현재 사용자의 이메일
-
-        Member user = memberRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("User not found")); // 해당 부분은 커스텀 예외 처리 필요
+        Member user = currentLogginedInfo();
 
         // 얻은 user 객체로 Participant 테이블 확인
         List<Participant> Participants = participantRepository.findByMemberId(user.getId());
 
-        List<JoinedResponse> joinedGroups  = new ArrayList<>();
+        List<JoinedResponse> joinedGroups = new ArrayList<>();
 
         // waitingPeople 의 StudyGroup 으로 초대받은 그룹 탐색
-        for(Participant participants : Participants){
+        for (Participant participants : Participants) {
             Long groupId = participants.getStudyGroup().getId();
             StudyGroup studyGroup = studyGroupRepository.findById(groupId)
                     .orElseThrow(() -> new RuntimeException("Study group not found"));
@@ -150,6 +152,4 @@ public class StudyGroupService {
         }
         return joinedGroups;
     }
-
-
 }

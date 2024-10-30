@@ -1,7 +1,6 @@
 package sw.study.studyGroup.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.hibernate.internal.util.collections.JoinedList;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,17 +20,17 @@ public class StudyGroupController {
     private final StudyGroupService studyGroupService;
 
     @GetMapping("/searchMembers") // 사용자 검색
-    public ResponseEntity<List<String>> searchMembers(
+    public ResponseEntity<?> searchMembers(
             @RequestParam String nickname,
             @RequestParam int page,
             @RequestParam int size) {
         List<String> results = studyGroupService.searchByNickname(nickname,page,size);
 
-        // 검색되는거 없어도 -> 404 리턴하지 말고 204 리턴 ( 성공 - noContent )
-        if(results.isEmpty()) return ResponseEntity.noContent().build();
+        if(results.isEmpty()) {
+            return ResponseEntity.ok("조회된 결과가 없습니다.");
+            // Status : 200 에 Body 내부 Msg 추가해서 response
+        }
         return ResponseEntity.ok(results);
-        // 예외 처리 해줘야함 ( 본인은 검색되지 않아야 함. )
-        // 프론트에서도 방지가 가능하나, 백엔드에서도 별도로 처리를 해줘야 할듯함.
     }
 
     @PostMapping("/create") // 스터디 그룹 생성
