@@ -10,7 +10,9 @@ import sw.study.studyGroup.dto.InvitedResponse;
 import sw.study.studyGroup.dto.JoinedResponse;
 import sw.study.studyGroup.service.StudyGroupService;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/studyGroup")
@@ -34,7 +36,7 @@ public class StudyGroupController {
     }
 
     @PostMapping("/create") // 스터디 그룹 생성
-    public ResponseEntity<StudyGroup> createStudyGroup(
+    public ResponseEntity<Map<String,Object>> createStudyGroup(
             @RequestBody CreateStudyGroup requestDto) {
 
         StudyGroup createdGroup = studyGroupService.createStudyGroup(
@@ -42,27 +44,38 @@ public class StudyGroupController {
                 requestDto.getDescription(),
                 requestDto.getSelectedNicknames(),
                 requestDto.getLeaderNickname()
+                // 스터디 그룹 생성시
         );
 
-        // 예외처리에 대한 부분 추가 필요.
-        // E.G ) selected Nickname 에 본인이 포함되면 안됨?
-        // 본인은 바로 추가해야되잖아. 조금 더 생각해보기로. 머리 안돌아감
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdGroup);
+        Map<String, Object> apiResponse = new HashMap<>();
+        apiResponse.put("message","스터디 그룹이 성공적으로 생성되었습니다.");
+        apiResponse.put("group",createdGroup);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
 
     @GetMapping("/invitedList")
-    public ResponseEntity<List<InvitedResponse>> checkInvitedList(){
+    public ResponseEntity<?> checkInvitedList() {
         List<InvitedResponse> invitedResponses = studyGroupService.checkInvited();
+
+        if (invitedResponses.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("초대 받은 내역이 존재하지 않습니다."); // 적절한 메시지 반환
+        }
+
         return ResponseEntity.ok(invitedResponses);
-        // 리스트가 비어있을 경우 예외처리 필요.
     }
 
     @GetMapping("/joinedList")
-    public ResponseEntity<List<JoinedResponse>> checckJoinedList(){
+    public ResponseEntity<?> checkJoinedList() {
         List<JoinedResponse> joinedResponses = studyGroupService.checkJoined();
+
+        if (joinedResponses.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("참여중인 스터디그룹이 존재하지 않습니다.");
+        }
+
         return ResponseEntity.ok(joinedResponses);
-        // 초대받은 리스트가 없는 경우 -> 별도의 exception 처리해줘야
-        // 빈 배열을 return 해도 프론트에서 핸들링 자체는 가능할듯 보임.
     }
 
 }

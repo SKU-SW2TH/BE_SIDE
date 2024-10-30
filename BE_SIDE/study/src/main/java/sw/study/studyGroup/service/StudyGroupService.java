@@ -44,7 +44,6 @@ public class StudyGroupService {
     }
 
     // 닉네임을 통한 사용자 검색 ( 그룹 생성 시 )
-    // 탐색의 대상은 커뮤니티 사이드에서 사용하는 닉네임
     public List<String> searchByNickname(String nickname, int page, int size){
         Pageable pageable = PageRequest.of(page, size);
 
@@ -65,7 +64,7 @@ public class StudyGroupService {
         return nicknames;
     }
 
-    // 스터디 그룹 생성 ( 사용자 초대 )
+    // 스터디 그룹 생성 ( + 사용자 초대 )
     public StudyGroup createStudyGroup(
             String groupName, String description, List<String> selectedNicknames, String leaderNickname){
 
@@ -91,10 +90,6 @@ public class StudyGroupService {
                 waitingPeopleRepository.save(waitingPerson);
                 // 대기 명단에 추가
             }
-            else{
-                // 여기서는 어떻게 처리해줘야할지 모르겠음..
-                // 비어있는 방을 우선적으로 만들고 이후에 별도 초대를 할 수도 있음.
-            }
         }
         return studyGroup;
     }
@@ -113,13 +108,12 @@ public class StudyGroupService {
         for(WaitingPeople waitingPerson : invitedGroups){
             Long groupId = waitingPerson.getStudyGroup().getId();
             StudyGroup studyGroup = studyGroupRepository.findById(groupId)
-                    .orElseThrow(() -> new RuntimeException("Study group not found"));
+                    .orElseThrow(() -> new RuntimeException("스터디그룹이 존재하지 않습니다.")); //별도 처리 필요
 
             InvitedResponse groupInfo = InvitedResponse.createInvitedResponse(
                     studyGroup.getName(),
                     studyGroup.getDescription(),
-                    studyGroup.getMemberCount(),
-                    waitingPerson.getCreatedAt() // 초대를 받은 일시
+                    studyGroup.getMemberCount()
             );
             invitedResponses.add(groupInfo);
         }
@@ -140,13 +134,11 @@ public class StudyGroupService {
         for (Participant participants : Participants) {
             Long groupId = participants.getStudyGroup().getId();
             StudyGroup studyGroup = studyGroupRepository.findById(groupId)
-                    .orElseThrow(() -> new RuntimeException("Study group not found"));
-
+                    .orElseThrow(() -> new RuntimeException("스터디그룹이 존재하지 않습니다.")); //별도 처리 필요
             JoinedResponse groupInfo = JoinedResponse.createJoinedResponse(
                     studyGroup.getName(),
                     studyGroup.getDescription(),
-                    studyGroup.getMemberCount(),
-                    studyGroup.getCreatedAt() // 초대를 받은 일시
+                    studyGroup.getMemberCount()
             );
             joinedGroups.add(groupInfo);
         }

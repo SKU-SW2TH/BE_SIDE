@@ -10,16 +10,14 @@ public class InvitedResponse {
     private String groupName;
     private String description;
     private int memberCount;
-    private LocalDateTime createdAt; // 초대 일시
 
-    private InvitedResponse(String groupName, String description, int memberCount, LocalDateTime createdAt) {
+    private InvitedResponse(String groupName, String description, int memberCount) {
         this.groupName = groupName;
         this.description = description;
         this.memberCount = memberCount;
-        this.createdAt = createdAt;
     }
 
-    public static InvitedResponse createInvitedResponse(String groupName, String description, int memberCount, LocalDateTime createdAt) {
-        return new InvitedResponse(groupName, description, memberCount, createdAt);
+    public static InvitedResponse createInvitedResponse(String groupName, String description, int memberCount) {
+        return new InvitedResponse(groupName, description, memberCount);
     }
 }
