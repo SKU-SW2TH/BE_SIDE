@@ -80,7 +80,7 @@ public class MemberService {
         }
     }
 
-    public Member getMemberByToken(String token) {
+    public MemberDto getMemberByToken(String token) {
         // 토큰 유효성 검사
         if (!tokenProvider.validateToken(token)) {
             throw new InvalidTokenException("Invalid or expired token");
@@ -88,13 +88,67 @@ public class MemberService {
 
         String email = extractEmail(token);
 
-        // 이메일로 사용자 조회
-        return memberRepository.findByEmail(email)
+        Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        // MemberDto 생성
+        MemberDto memberDto = new MemberDto();
+        memberDto.setEmail(member.getEmail());
+        memberDto.setNickname(member.getNickname());
+        memberDto.setProfile(member.getProfile());
+        memberDto.setIntroduce(member.getIntroduce());
+        memberDto.setRole(member.getRole().toString());
+
+        // 알림 설정 DTO 변환
+        List<NotificationSettingDTO> dtos = member.getSettings().stream()
+                .map(s -> {
+                    NotificationSettingDTO dto = new NotificationSettingDTO();
+                    NotificationCategoryDTO categoryDTO = new NotificationCategoryDTO();
+                    categoryDTO.setId(s.getCategory().getId());
+                    categoryDTO.setName(s.getCategory().getCategoryName());
+
+                    dto.setSettingId(s.getId());
+                    dto.setEnabled(s.isEnabled());
+                    dto.setCategoryDTO(categoryDTO);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        // 관심 분야 DTO 변환
+        List<MemberInterestDTO> interestDtos = member.getInterests().stream()
+                .map(interest -> {
+                    MemberInterestDTO dto = new MemberInterestDTO();
+                    dto.setId(interest.getId());
+                    dto.setInterestId(interest.getInterestArea().getId());
+                    dto.setName(interest.getInterestArea().getAreaName());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        List<NotificationDTO> notificationDTOS = member.getNotifications().stream()
+                .sorted(Comparator.comparing(Notification::getCreatedAt).reversed()) // createdAt 기준 내림차순 정렬
+                .map(notification -> {
+                    NotificationDTO dto = new NotificationDTO();
+                    dto.setId(notification.getId());
+                    dto.setTitle(notification.getTitle());
+                    dto.setContent(notification.getContent());
+                    dto.setRead(notification.isRead());
+                    dto.setName(notification.getCategory().getCategoryName());
+                    dto.setCreatedAt(notification.getCreatedAt());
+                    return dto;
+                }).collect(Collectors.toList());
+
+        // DTO 설정
+        memberDto.setSettings(dtos);
+        memberDto.setInterests(interestDtos);
+        memberDto.setNotifications(notificationDTOS);
+
+        // 이메일로 사용자 조회
+        return memberDto;
     }
 
     @Transactional
-    public Member updateMemberProfile(String accessToken, UpdateProfileRequest updateProfileRequest, MultipartFile profilePicture) throws IOException{
+    public UpdateProfileResponse updateMemberProfile(String accessToken, UpdateProfileRequest updateProfileRequest, MultipartFile profilePicture) throws IOException{
         String email = extractEmail(accessToken);
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
@@ -119,26 +173,12 @@ public class MemberService {
         }
 
         memberRepository.save(member);
-        return member;
-    }
 
-    @Transactional
-    public Member updateMemberProfileWithoutPicture(String accessToken, UpdateProfileRequest updateProfileRequest) throws IOException{
-        String email = extractEmail(accessToken);
-        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+        UpdateProfileResponse response = new UpdateProfileResponse(
+                member.getNickname(), member.getIntroduce(), member.getProfile()
+        );
 
-        if (updateProfileRequest.getNickname() != null && !updateProfileRequest.getNickname().isEmpty() && !member.getNickname().equals(updateProfileRequest.getNickname())) {
-            checkNicknameDuplication(updateProfileRequest.getNickname());
-            member.updateNickname(updateProfileRequest.getNickname());
-        }
-
-        // 자기소개 업데이트
-        if (updateProfileRequest.getIntroduction() != null && !updateProfileRequest.getIntroduction().isEmpty() && !member.getIntroduce().equals(updateProfileRequest.getIntroduction())) {
-            member.updateIntroduction(updateProfileRequest.getIntroduction());
-        }
-
-        memberRepository.save(member);
-        return member;
+        return response;
     }
 
     @Transactional
@@ -306,6 +346,29 @@ public class MemberService {
 
         // 변경된 알림들을 데이터베이스에 저장
         notificationRepository.saveAll(notifications);
+    }
+
+    public List<NotificationDTO> getNotifications(String token) {
+        String email = extractEmail(token);
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+
+        List<Notification> notifications = notificationRepository.findByMember(member);
+        List<NotificationDTO> dtos = new ArrayList<>();
+
+        for (Notification notification : notifications) {
+            NotificationDTO dto = new NotificationDTO();
+            dto.setId(notification.getId());
+            dto.setTitle(notification.getTitle());
+            dto.setContent(notification.getContent());
+            dto.setName(notification.getCategory().getCategoryName());
+            dto.setRead(notification.isRead());
+            dto.setCreatedAt(notification.getCreatedAt());
+            dtos.add(dto);
+        }
+
+        return dtos;
     }
 
     private String extractEmail(String token) {
