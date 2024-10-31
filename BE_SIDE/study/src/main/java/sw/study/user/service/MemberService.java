@@ -55,9 +55,9 @@ public class MemberService {
         return memberRepository.save(member).getId();
     }
 
-    public boolean verifyNickname(NicknameDto nicknameDto) {
+    public void verifyNickname(NicknameDto nicknameDto)  {
         Optional<Member> findMember = memberRepository.findByNickname(nicknameDto.getNickname());
-        return findMember.isEmpty();
+        if (findMember.isPresent()) throw new DuplicateNicknameException(findMember.get().getNickname());
     }
 
     public boolean verifyEmail(JoinDto joinDto) {
