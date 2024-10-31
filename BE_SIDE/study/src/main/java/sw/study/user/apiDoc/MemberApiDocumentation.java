@@ -23,6 +23,7 @@ public interface MemberApiDocumentation {
     @Operation(summary = "맴버 정보", description = "맴버 정보를 준다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공"),
+            @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
             @ApiResponse(responseCode = "404", description = "유저 없음"),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생")
     })
@@ -69,6 +70,7 @@ public interface MemberApiDocumentation {
     @Operation(summary = "알림 변경", description = "알림을 변경한다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공"),
+            @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
             @ApiResponse(responseCode = "404", description = "사용자를 찾지 못함"),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생")
     })
@@ -97,6 +99,7 @@ public interface MemberApiDocumentation {
             @ApiResponse(responseCode = "200", description = "성공",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = MemberInterestDTO.class)))),
             @ApiResponse(responseCode = "404", description = "사용자 또는 관심사를 찾을 수 없음"),
+            @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
             @ApiResponse(responseCode = "500", description = "서버 에러 발생")
     })
     ResponseEntity<?> initInterest(
@@ -109,6 +112,7 @@ public interface MemberApiDocumentation {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = MemberInterestDTO.class)))),
+            @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
             @ApiResponse(responseCode = "404", description = "사용자 또는 관심사를 찾을 수 없음"),
             @ApiResponse(responseCode = "500", description = "서버 에러 발생")
     })
@@ -121,10 +125,23 @@ public interface MemberApiDocumentation {
     @Operation(summary = "읽기 업데이트", description = "알림 읽음을 업데이트 합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공"),
+            @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
             @ApiResponse(responseCode = "500", description = "서버 에러 발생")
     })
     ResponseEntity<?> updateRead(
+            @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
+            @RequestHeader("Authorization") String accessToken);
+
+
+    @Operation(summary = "알림 리스트", description = "알림 리스트를 보낸다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "성공"),
+            @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 에러 발생")
+    })
+    ResponseEntity<?> getNotificationList(
             @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
             @RequestHeader("Authorization") String accessToken);
 }
