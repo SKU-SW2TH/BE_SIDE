@@ -347,8 +347,29 @@ public class MemberService {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
-
         List<Notification> notifications = notificationRepository.findByMember(member);
+        List<NotificationDTO> dtos = new ArrayList<>();
+
+        for (Notification notification : notifications) {
+            NotificationDTO dto = new NotificationDTO();
+            dto.setId(notification.getId());
+            dto.setTitle(notification.getTitle());
+            dto.setContent(notification.getContent());
+            dto.setName(notification.getCategory().getCategoryName());
+            dto.setRead(notification.isRead());
+            dto.setCreatedAt(notification.getCreatedAt());
+            dtos.add(dto);
+        }
+
+        return dtos;
+    }
+
+    public List<NotificationDTO> unReadNotification(String token) {
+        String email = jwtService.extractEmail(token);
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+
+        List<Notification> notifications = notificationRepository.findByMemberAndIsReadFalse(member);
         List<NotificationDTO> dtos = new ArrayList<>();
 
         for (Notification notification : notifications) {

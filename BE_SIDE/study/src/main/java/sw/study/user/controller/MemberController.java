@@ -224,4 +224,24 @@ public class MemberController implements MemberApiDocumentation {
         }
     }
 
+    @Override
+    @GetMapping("/notification/unread")
+    public ResponseEntity<?> unReadNotification(@RequestHeader("Authorization") String accessToken) {
+        try {
+            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
+            }
+
+            String token = accessToken.substring(7);
+            List<NotificationDTO> dtos = memberService.unReadNotification(token);
+            return ResponseEntity.ok(dtos);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
+        }
+    }
+
 }
