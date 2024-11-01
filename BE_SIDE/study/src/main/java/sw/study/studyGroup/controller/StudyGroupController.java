@@ -11,6 +11,7 @@ import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.dto.CreateStudyGroup;
 import sw.study.studyGroup.dto.InvitedResponse;
 import sw.study.studyGroup.dto.JoinedResponse;
+import sw.study.studyGroup.dto.SearchByNickname;
 import sw.study.studyGroup.service.StudyGroupService;
 
 import java.util.HashMap;
@@ -87,9 +88,12 @@ public class StudyGroupController {
 
     // 초대 수락
     @PostMapping("/{groupId}/accept")
-    public ResponseEntity<?> acceptInvitation(@PathVariable long groupId, String nickName) {
+    public ResponseEntity<?> acceptInvitation(@PathVariable long groupId, @RequestBody SearchByNickname searchByNickname) {
+
+        String nickname = searchByNickname.getNickname();
+
         try {
-            studyGroupService.acceptInvitation(groupId, nickName);
+            studyGroupService.acceptInvitation(groupId, nickname);
             return ResponseEntity.ok("초대를 수락하였습니다.");
         } catch (DuplicateNicknameException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage()); // 409 Conflict
@@ -106,7 +110,4 @@ public class StudyGroupController {
         studyGroupService.rejectInvitation(groupId);
         return ResponseEntity.ok("초대를 거절하였습니다.");
     }
-
-
-
 }
