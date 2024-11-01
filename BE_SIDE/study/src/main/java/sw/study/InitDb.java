@@ -81,7 +81,6 @@ public class InitDb {
             em.persist(category1);
             em.persist(category2);
 
-            categories = new ArrayList<>();
             categories.add(category1);
             categories.add(category2);
         }
@@ -94,8 +93,8 @@ public class InitDb {
             );
             em.persist(member1);
 
-            Notification notification1 = Notification.createNotification(member1, categories.get(0), "테스트1", "테스트1");
-            Notification notification2 = Notification.createNotification(member1, categories.get(1), "테스트2", "테스트2");
+            Notification notification1 = Notification.createNotification(member1, categories.get(0), "테스트1", "테스트1", 1L);
+            Notification notification2 = Notification.createNotification(member1, categories.get(1), "테스트2", "테스트2", 2L);
             em.persist(notification1);
             em.persist(notification2);
         }

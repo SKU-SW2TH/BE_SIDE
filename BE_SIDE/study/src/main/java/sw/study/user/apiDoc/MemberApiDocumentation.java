@@ -137,4 +137,15 @@ public interface MemberApiDocumentation {
     ResponseEntity<?> getNotificationList(
             @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
             @RequestHeader("Authorization") String accessToken);
+
+    @Operation(summary = "읽지 않는 알림 리스트", description = "읽지 않은 알림 리스트를 보낸다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "성공"),
+            @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 에러 발생")
+    })
+    ResponseEntity<?> unReadNotification(
+            @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
+            @RequestHeader("Authorization") String accessToken);
 }
