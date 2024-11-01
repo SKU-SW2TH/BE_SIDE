@@ -79,18 +79,18 @@ public class StudyGroupService {
         Participant leaderParticipant = Participant.createParticipant(leaderNickname, leader, Participant.Role.LEADER);
         participantRepository.save(leaderParticipant);
 
-        // 이후 초대 대상자들은 대기명단에 추가
-        for(String nickname : selectedNicknames){
-            
-            Optional<Member> memberOptional = memberRepository.findByNickname(nickname);
-            // 해당하는 닉네임을 가진 Member 객체를 찾아서
-            if(memberOptional.isPresent()){
-                Member member = memberOptional.get();
-                WaitingPeople waitingPerson = WaitingPeople.createWaitingPerson(member,studyGroup);
-                waitingPeopleRepository.save(waitingPerson);
-                // 대기 명단에 추가
-            }
+        // 초대 대상자들을 한 번에 조회
+        List<Member> members = memberRepository.findByNicknameIn(selectedNicknames);
+
+        // 대기 명단에 추가
+        List<WaitingPeople> waitingPeopleList = new ArrayList<>();
+
+        for (Member member : members) {
+            WaitingPeople waitingPerson = WaitingPeople.createWaitingPerson(member, studyGroup);
+            waitingPeopleList.add(waitingPerson);
         }
+
+        waitingPeopleRepository.saveAll(waitingPeopleList);
         return studyGroup;
     }
 
@@ -100,16 +100,14 @@ public class StudyGroupService {
         Member user = currentLogginedInfo();
 
         // 대기 명단에서 로그인된 사용자의 정보만 따로 뺀 후에
-        List<WaitingPeople> invitedGroups = waitingPeopleRepository.findByMemberId(user.getId());
+        List<WaitingPeople> waitingPeopleList = waitingPeopleRepository.findByMemberId(user.getId());
 
         List<InvitedResponse> invitedResponses = new ArrayList<>();
 
         // waitingPeople 의 StudyGroup 으로 초대받은 그룹 탐색
-        for(WaitingPeople waitingPerson : invitedGroups){
-            Long groupId = waitingPerson.getStudyGroup().getId();
-            StudyGroup studyGroup = studyGroupRepository.findById(groupId)
-                    .orElseThrow(() -> new RuntimeException("스터디그룹이 존재하지 않습니다.")); //별도 처리 필요
+        for(WaitingPeople waitingPerson : waitingPeopleList){
 
+           StudyGroup studyGroup = waitingPerson.getStudyGroup(); // Exception 핸들링 불필요
             InvitedResponse groupInfo = InvitedResponse.createInvitedResponse(
                     studyGroup.getName(),
                     studyGroup.getDescription(),
@@ -130,16 +128,16 @@ public class StudyGroupService {
 
         List<JoinedResponse> joinedGroups = new ArrayList<>();
 
-        // waitingPeople 의 StudyGroup 으로 초대받은 그룹 탐색
+        // participants 의 StudyGroup 으로 초대받은 그룹 탐색
         for (Participant participants : Participants) {
-            Long groupId = participants.getStudyGroup().getId();
-            StudyGroup studyGroup = studyGroupRepository.findById(groupId)
-                    .orElseThrow(() -> new RuntimeException("스터디그룹이 존재하지 않습니다.")); //별도 처리 필요
+            StudyGroup studyGroup = participants.getStudyGroup(); // Exception 핸들링 불필요
+
             JoinedResponse groupInfo = JoinedResponse.createJoinedResponse(
                     studyGroup.getName(),
                     studyGroup.getDescription(),
                     studyGroup.getMemberCount()
             );
+
             joinedGroups.add(groupInfo);
         }
         return joinedGroups;

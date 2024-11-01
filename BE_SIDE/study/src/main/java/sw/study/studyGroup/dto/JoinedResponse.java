@@ -2,8 +2,6 @@ package sw.study.studyGroup.dto;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
 public class JoinedResponse {
     private String groupName;
