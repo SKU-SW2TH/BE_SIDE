@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sw.study.exception.DuplicateNicknameException;
+import sw.study.exception.MaxStudyGroupException;
+import sw.study.exception.StudyGroupFullException;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.dto.CreateStudyGroup;
 import sw.study.studyGroup.dto.InvitedResponse;
@@ -30,7 +33,7 @@ public class StudyGroupController {
 
         if(results.isEmpty()) {
             return ResponseEntity.ok("조회된 결과가 없습니다.");
-            // Status : 200 에 Body 내부 Msg 추가해서 response
+            //해당 부분은 custom Exception 으로 수정 예정
         }
         return ResponseEntity.ok(results);
     }
@@ -44,7 +47,6 @@ public class StudyGroupController {
                 requestDto.getDescription(),
                 requestDto.getSelectedNicknames(),
                 requestDto.getLeaderNickname()
-                // 스터디 그룹 생성시
         );
 
         Map<String, Object> apiResponse = new HashMap<>();
@@ -54,18 +56,22 @@ public class StudyGroupController {
         return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
 
+    // 받은 초대 확인
     @GetMapping("/invitedList")
     public ResponseEntity<?> checkInvitedList() {
         List<InvitedResponse> invitedResponses = studyGroupService.checkInvited();
 
         if (invitedResponses.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("초대 받은 내역이 존재하지 않습니다."); // 적절한 메시지 반환
+                    .body("초대 받은 내역이 존재하지 않습니다.");
+            //해당 부분은 custom Exception 으로 수정 예정
         }
 
         return ResponseEntity.ok(invitedResponses);
     }
 
+
+    // 참가 중인 그룹 확인
     @GetMapping("/joinedList")
     public ResponseEntity<?> checkJoinedList() {
         List<JoinedResponse> joinedResponses = studyGroupService.checkJoined();
@@ -73,9 +79,34 @@ public class StudyGroupController {
         if (joinedResponses.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("참여중인 스터디그룹이 존재하지 않습니다.");
+            //해당 부분은 custom Exception 으로 수정 예정
         }
 
         return ResponseEntity.ok(joinedResponses);
     }
+
+    // 초대 수락
+    @PostMapping("/{groupId}/accept")
+    public ResponseEntity<?> acceptInvitation(@PathVariable long groupId, String nickName) {
+        try {
+            studyGroupService.acceptInvitation(groupId, nickName);
+            return ResponseEntity.ok("초대를 수락하였습니다.");
+        } catch (DuplicateNicknameException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage()); // 409 Conflict
+        } catch (MaxStudyGroupException ex) { // 개인이 참가할 수 있는 최대 그룹 수 초과
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage()); // 403 Forbidden
+        } catch (StudyGroupFullException ex) { // 스터디 그룹 인원이 가득찼을 때
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage()); // 400 Bad Request
+        }
+    }
+
+    // 초대 거절
+    @PostMapping("/{groupId}/reject")
+    public ResponseEntity<?> rejectInvitation(@PathVariable long groupId){
+        studyGroupService.rejectInvitation(groupId);
+        return ResponseEntity.ok("초대를 거절하였습니다.");
+    }
+
+
 
 }

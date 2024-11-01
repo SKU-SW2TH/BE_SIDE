@@ -8,6 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import sw.study.exception.DuplicateNicknameException;
+import sw.study.exception.MaxStudyGroupException;
+import sw.study.exception.StudyGroupFullException;
+import sw.study.exception.UserNotFoundException;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.domain.WaitingPeople;
@@ -40,7 +44,7 @@ public class StudyGroupService {
         String currentUserEmail = userDetails.getUsername(); // 현재 사용자의 이메일
 
         return memberRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("User not found")); // 해당 부분은 커스텀 예외 처리 필요
+                .orElseThrow(() -> new UserNotFoundException("사용자를 조회할 수 없습니다."));
     }
 
     // 닉네임을 통한 사용자 검색 ( 그룹 생성 시 )
@@ -51,14 +55,14 @@ public class StudyGroupService {
 
         List<String> nicknames = new ArrayList<>();
 
-        String logginedUserNickname = currentLogginedInfo().getNickname();
+        String loggedUserNickname = currentLogginedInfo().getNickname();
 
         if(members.isEmpty()){
             return Collections.emptyList();
             // 비어있는 리스트 반환
         }
         for(Member member : members){
-            if(!logginedUserNickname.equals(member.getNickname()))
+            if(!loggedUserNickname.equals(member.getNickname()))
                 nicknames.add(member.getNickname());
         }
         return nicknames;
@@ -90,6 +94,7 @@ public class StudyGroupService {
             waitingPeopleList.add(waitingPerson);
         }
 
+        studyGroup.whoEverInvited(waitingPeopleList.size());
         waitingPeopleRepository.saveAll(waitingPeopleList);
         return studyGroup;
     }
@@ -141,5 +146,56 @@ public class StudyGroupService {
             joinedGroups.add(groupInfo);
         }
         return joinedGroups;
+    }
+
+    //초대 수락
+    public void acceptInvitation(long groupId, String Nickname){
+
+        Member member = currentLogginedInfo();
+        waitingPeopleRepository.deleteByMemberId(member.getId());
+
+        // 닉네임 중복확인
+        if(participantRepository.findByNickname(Nickname)){
+            throw new DuplicateNicknameException("해당 닉네임은 이미 사용중입니다.");
+        }
+
+        Optional<StudyGroup> studyGroup = studyGroupRepository.findById(groupId);
+
+        // 스터디 그룹의 인원이 꽉 찼을 때
+        studyGroup.ifPresent(group -> {
+            if (group.getMemberCount() == 50) {
+                throw new StudyGroupFullException("해당 스터디 그룹은 이미 가득 찬 상태입니다.");
+            }
+        });
+
+        // 사용자가 이미 허용된 수 만큼의 그룹에 참가중이라면
+        if(participantRepository.countByMemberId(member.getId())==20)
+            throw new MaxStudyGroupException("더 이상 스터디그룹에 참가할 수 없습니다.");
+
+        Participant newParticipant = Participant.createParticipant(Nickname, member, Participant.Role.MEMBER);
+        studyGroup.ifPresent(group -> {
+            group.whoEverAccepted(newParticipant);
+            studyGroupRepository.save(group);
+        });
+    }
+
+    //초대 거절
+    public void rejectInvitation(long groupId){
+
+        Member member = currentLogginedInfo();
+
+        // findByMember로 조회하고 지우면 큰일남.. 특정 사용자가 받은 초대 다 지워버림;
+        Optional<WaitingPeople> targetMemberOptional = waitingPeopleRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId);
+
+        if (targetMemberOptional.isPresent()) {
+            WaitingPeople targetMember = targetMemberOptional.get();
+
+            Optional<StudyGroup> studyGroup = studyGroupRepository.findById(groupId);
+            if (studyGroup.isPresent()) {
+                studyGroup.get().whoEverRejected(targetMember);
+                // 특정 그룹의 초대만 삭제해야됨.
+                waitingPeopleRepository.delete(targetMember);
+            }
+        }
     }
 }

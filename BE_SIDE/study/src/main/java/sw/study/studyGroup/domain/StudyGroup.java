@@ -42,6 +42,7 @@ public class StudyGroup {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
     // 해당 엔티티 내부에서의 수정 사항 -> 방 이름 / 설명 / 멤버수, 대기수 변환과 관련
 
     /*
@@ -53,12 +54,23 @@ public class StudyGroup {
     @OneToMany(mappedBy = "studyRoom", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Participant> participants = new ArrayList<>();
 
-    public void whoEverInvited(){
-        this.waitingCount++; // 초대했을때
+    //초대를 했을 때
+    public void whoEverInvited(int size){
+        waitingCount += size;
     }
-    
-    public void whoEverAccepted(){
-        this.memberCount++; // 초대를 수락했을시
+
+    // 초대를 수락했을 떄
+    public void whoEverAccepted(Participant participant){
+        {
+            participants.add(participant);
+            this.memberCount++;
+            this.waitingCount--;
+        }
+    }
+
+    // 초대를 거부했을 때
+    public void whoEverRejected(WaitingPeople waitingPerson){
+        this.waitingCount--;
     }
 
     public static StudyGroup createStudyGroup(String name, String description){
