@@ -55,6 +55,25 @@ public class InitDb {
             em.persist(interest7);
 //           em.flush(); //필요는 없음
 
+            interest1.addChildInterest(interest2);
+            interest1.addChildInterest(interest3);
+            interest1.addChildInterest(interest4);
+            interest2.addChildInterest(interest5);
+            interest3.addChildInterest(interest6);
+            interest4.addChildInterest(interest7);
+        }
+
+
+        public void initCategory() {
+
+            Category category1 = Category.createCategory("FREE");
+            em.persist(category1);
+
+            Category category2 = Category.createCategory("QUESTION");
+            em.persist(category2);
+        }
+
+        private void initMember(){
             NotificationCategory category1 = NotificationCategory.createNotificationCategory("게시판");
             NotificationCategory category2 = NotificationCategory.createNotificationCategory("스터디");
             em.persist(category1);
@@ -75,23 +94,6 @@ public class InitDb {
             Notification notification2 = Notification.createNotification(member1, category2, "테스트2", "테스트2");
             em.persist(notification1);
             em.persist(notification2);
-
-            interest1.addChildInterest(interest2);
-            interest1.addChildInterest(interest3);
-            interest1.addChildInterest(interest4);
-            interest2.addChildInterest(interest5);
-            interest3.addChildInterest(interest6);
-            interest4.addChildInterest(interest7);
-        }
-
-
-        public void initCategory() {
-
-            Category category1 = Category.createCategory("FREE");
-            em.persist(category1);
-
-            Category category2 = Category.createCategory("QUESTION");
-            em.persist(category2);
         }
     }
 }

@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sw.study.exception.DuplicateNicknameException;
 import sw.study.exception.InvalidCredentialsException;
 import sw.study.exception.UserNotFoundException;
 import sw.study.user.apiDoc.AuthApiDocumentation;
@@ -64,12 +65,15 @@ public class AuthController implements AuthApiDocumentation {
     @Override
     @PostMapping("/verify-nickname")
     public ResponseEntity<String> verifyNickname(@RequestBody NicknameDto nicknameDto) {
-        boolean isVerified = memberService.verifyNickname(nicknameDto);
 
-        if (isVerified)
-            return ResponseEntity.ok("사용 가능한 닉네임입니다.");
-        else
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 닉네임입니다.");
+        try {
+            memberService.verifyNickname(nicknameDto);
+            return ResponseEntity.status(HttpStatus.OK).body("사용 가능한 닉네임입니다.");
+        }catch (DuplicateNicknameException e){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @Override
@@ -151,5 +155,4 @@ public class AuthController implements AuthApiDocumentation {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("탈퇴 처리 중 오류가 발생했습니다.");
         }
     }
-
 }
