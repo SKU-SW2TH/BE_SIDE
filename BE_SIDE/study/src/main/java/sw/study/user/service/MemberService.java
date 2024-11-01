@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import sw.study.community.service.S3Service;
 import sw.study.config.Constant;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.*;
@@ -40,6 +41,7 @@ public class MemberService {
     private final InterestAreaRepository interestAreaRepository;
     private final MemberInterestRepository memberInterestRepository;
     private final NotificationRepository notificationRepository;
+    private final S3Service s3Service;
     private final String uploadDirectory = "BE_SIDE/study/src/main/resources/profile"; // 파일 저장 경로 (서버에서 실제 파일이 저장되는 위치)
 
 
@@ -158,13 +160,9 @@ public class MemberService {
         }
 
         // 프로필 사진 업데이트
-        if (profilePicture != null) {
-            // 빈 파일인지 확인
-            if (!profilePicture.isEmpty()) {
-                String profilePicturePath = saveProfilePicture(profilePicture);
-                member.updateProfilePicture(profilePicturePath);
-            }
-            // 빈 파일일 경우, 그냥 건너뛰기
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            String profilePictureUrl = s3Service.upload(profilePicture, "profile/");
+            member.updateProfilePicture(profilePictureUrl);
         }
 
         // 자기소개 업데이트
@@ -174,11 +172,7 @@ public class MemberService {
 
         memberRepository.save(member);
 
-        UpdateProfileResponse response = new UpdateProfileResponse(
-                member.getNickname(), member.getIntroduce(), member.getProfile()
-        );
-
-        return response;
+        return  new UpdateProfileResponse(member.getNickname(), member.getIntroduce(), member.getProfile());
     }
 
     @Transactional
@@ -383,31 +377,6 @@ public class MemberService {
         if (exists) {
             throw new DuplicateNicknameException("Nickname already in use: " + nickname);
         }
-    }
-
-    private String saveProfilePicture(MultipartFile file) throws IOException {
-        // 파일 이름을 고유하게 만들기 위해 UUID를 사용
-        String originalFilename = file.getOriginalFilename();
-        String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
-        String uniqueFileName = UUID.randomUUID().toString() + fileExtension;
-
-        // 저장할 전체 파일 경로 생성
-        Path uploadPath = Paths.get(uploadDirectory);
-        Path filePath = uploadPath.resolve(uniqueFileName);
-
-        // 디렉토리가 없으면 생성
-        if (Files.notExists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        // 파일 저장 (파일이 존재하면 덮어쓰기)
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        // 파일 URL 생성 (웹에서 접근 가능한 경로)
-        String fileUrl =  Constant.URL + "/api/member/profile/" + uniqueFileName;
-
-        // 파일 URL 반환
-        return fileUrl;
     }
 
     private boolean isValidPassword(String password) {

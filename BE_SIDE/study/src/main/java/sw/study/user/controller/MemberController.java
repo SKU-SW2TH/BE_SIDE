@@ -4,27 +4,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.exception.*;
+import sw.study.exception.s3.S3UploadException;
 import sw.study.user.apiDoc.MemberApiDocumentation;
-import sw.study.user.domain.Member;
-import sw.study.user.domain.Notification;
 import sw.study.user.dto.*;
 import sw.study.user.service.MemberService;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/member")
@@ -89,9 +80,8 @@ public class MemberController implements MemberApiDocumentation {
         } catch (FileUploadException e) {
             // 파일 업로드 실패 시 500 Internal Server Error 응답
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("파일 업로드 실패");
-        } catch (IOException e) {
-            // 파일 저장 중 발생하는 I/O 예외 처리
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("파일 저장 중에 에러 발생");
+        }catch (S3UploadException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("S3 업로드 실패: " + e.getMessage());
         } catch (Exception e) {
             // 그 외의 예기치 않은 예외 처리
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
@@ -138,24 +128,6 @@ public class MemberController implements MemberApiDocumentation {
         } catch (Exception e) {
             // 그 외 기타 예외 처리
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
-    @Override
-    @GetMapping("/profile/{filename}")
-    public ResponseEntity<Resource> getProfile(@PathVariable("filename") String filename) {
-        try {
-            Path filePath = Paths.get("BE_SIDE/study/src/main/resources/profile").resolve(filename).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-            if (resource.exists() && resource.isReadable()) {
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-                        .body(resource);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 

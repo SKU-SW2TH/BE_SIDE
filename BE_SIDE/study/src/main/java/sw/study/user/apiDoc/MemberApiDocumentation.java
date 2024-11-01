@@ -79,13 +79,6 @@ public interface MemberApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
                                          @RequestBody SettingRequest dto);
 
-    @Operation(summary = "프로필 사진", description = "프로필 사진 가져오기")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "성공"),
-            @ApiResponse(responseCode = "500", description = "서버 에러가 발생")
-    })
-    ResponseEntity<Resource> getProfile(@PathVariable("filename") String filename);
-
     @Operation(summary = "관심 분야 리스트", description = "관심 분야 리스트를 받는다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공"),
