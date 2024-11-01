@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.community.service.S3Service;
 import sw.study.config.Constant;
+import sw.study.config.jwt.JWTService;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.*;
 import sw.study.user.domain.*;
@@ -42,8 +43,7 @@ public class MemberService {
     private final MemberInterestRepository memberInterestRepository;
     private final NotificationRepository notificationRepository;
     private final S3Service s3Service;
-    private final String uploadDirectory = "BE_SIDE/study/src/main/resources/profile"; // 파일 저장 경로 (서버에서 실제 파일이 저장되는 위치)
-
+    private final JWTService jwtService;
 
     @Transactional
     public Long join(JoinDto joinDto) {
@@ -88,7 +88,7 @@ public class MemberService {
             throw new InvalidTokenException("Invalid or expired token");
         }
 
-        String email = extractEmail(token);
+        String email = jwtService.extractEmail(token);
 
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
@@ -151,7 +151,7 @@ public class MemberService {
 
     @Transactional
     public UpdateProfileResponse updateMemberProfile(String accessToken, UpdateProfileRequest updateProfileRequest, MultipartFile profilePicture) throws IOException{
-        String email = extractEmail(accessToken);
+        String email = jwtService.extractEmail(accessToken);
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
         if (updateProfileRequest.getNickname() != null && !updateProfileRequest.getNickname().isEmpty() && !member.getNickname().equals(updateProfileRequest.getNickname())) {
@@ -177,7 +177,7 @@ public class MemberService {
 
     @Transactional
     public void changePassword(String accessToken, String oldPassword, String newPassword) {
-        String email = extractEmail(accessToken);
+        String email = jwtService.extractEmail(accessToken);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
@@ -236,7 +236,7 @@ public class MemberService {
     public List<MemberInterestDTO> initInterest(String token, InterestRequest interestRequest) {
         List<MemberInterestDTO> dtos = new ArrayList<>();
 
-        String email = extractEmail(token);
+        String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
@@ -272,7 +272,7 @@ public class MemberService {
         List<MemberInterestDTO> dtos = new ArrayList<>();
 
         // 토큰에서 이메일 추출
-        String email = extractEmail(token);
+        String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
@@ -326,7 +326,7 @@ public class MemberService {
 
     @Transactional
     public void updateNotificationRead(String token) {
-        String email = extractEmail(token); // 토큰에서 이메일 추출
+        String email = jwtService.extractEmail(token); // 토큰에서 이메일 추출
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
@@ -343,7 +343,7 @@ public class MemberService {
     }
 
     public List<NotificationDTO> getNotifications(String token) {
-        String email = extractEmail(token);
+        String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
@@ -365,17 +365,10 @@ public class MemberService {
         return dtos;
     }
 
-    private String extractEmail(String token) {
-        Claims claims = tokenProvider.parseClaims(token);
-        String email = claims.getSubject();
-        System.out.println(email);
-        return email;
-    }
-
     private void checkNicknameDuplication(String nickname) {
         boolean exists = memberRepository.existsByNickname(nickname);
         if (exists) {
-            throw new DuplicateNicknameException("Nickname already in use: " + nickname);
+            throw new DuplicateNicknameException("이미 존재하는 닉네임: " + nickname);
         }
     }
 
