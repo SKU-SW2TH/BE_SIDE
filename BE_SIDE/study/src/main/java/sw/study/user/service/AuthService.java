@@ -1,7 +1,7 @@
 package sw.study.user.service;
 
 import io.jsonwebtoken.Claims;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -73,8 +73,7 @@ public class AuthService {
     @Transactional
     public void logout(String refreshToken) {
         // Refresh Token 키를 생성
-        Claims claims = tokenProvider.parseClaims(refreshToken);
-        String email = claims.getSubject();
+        String email = jwtService.extractEmail(refreshToken);
         String refreshTokenKey = "RT:" + email;
 
         // Refresh Token을 조회
@@ -144,7 +143,7 @@ public class AuthService {
         logout(refreshToken);
     }
 
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void restoreMember(String token) {
         String email = jwtService.extractEmail(token);
 

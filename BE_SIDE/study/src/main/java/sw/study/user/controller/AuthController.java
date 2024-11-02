@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sw.study.exception.AccountDisabledException;
 import sw.study.exception.DuplicateNicknameException;
 import sw.study.exception.InvalidCredentialsException;
 import sw.study.exception.UserNotFoundException;
@@ -106,7 +107,11 @@ public class AuthController implements AuthApiDocumentation {
             // 사용자가 존재하지 않는 경우
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(e.getMessage()); // 404 Not Found
-        } catch (Exception e) {
+        } catch (AccountDisabledException e) {
+            // 계정이 비활성화된 경우
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("계정이 비활성화되어 로그인할 수 없습니다."); // 403 Forbidden
+        }catch (Exception e) {
             // 기타 예외 처리
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage()); // 500 Internal Server Error
