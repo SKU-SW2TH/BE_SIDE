@@ -135,8 +135,9 @@ public class AuthService {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        member.onDeleted(); // soft delete 방식으로 설정
+        member.requestDeactivation(); // soft delete 방식으로 설정
 
+        memberRepository.save(member);
         // 강제 로그아웃 처리
         logout(refreshToken);
     }

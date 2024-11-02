@@ -55,8 +55,11 @@ public class Member {
     }
 
     public void onDeleted() {
-        this.deletedAt = LocalDateTime.now();
         this.isDeleted = true;
+    }
+
+    public void requestDeactivation() {
+        this.deletedAt = LocalDateTime.now();
     }
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
