@@ -14,7 +14,6 @@ import sw.study.exception.s3.S3UploadException;
 import sw.study.user.apiDoc.MemberApiDocumentation;
 import sw.study.user.dto.*;
 import sw.study.user.service.MemberService;
-import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -53,7 +52,7 @@ public class MemberController implements MemberApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @RequestParam(value = "nickname", required = false) String nickname,
             @RequestParam(value = "introduction", required = false) String introduction,
-            @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture) throws IOException {
+            @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture) {
         try {
             // 서비스에서 프로필 업데이트 로직 실행
             if (accessToken == null || !accessToken.startsWith("Bearer ")) {
@@ -100,7 +99,7 @@ public class MemberController implements MemberApiDocumentation {
             String token = accessToken.substring(7);
 
             memberService.changePassword(token, request.getOldPassword(), request.getNewPassword());
-            return ResponseEntity.status(HttpStatus.OK).body("비밀전호가 변경되었습니다.");
+            return ResponseEntity.status(HttpStatus.OK).body("비밀번호가 변경되었습니다.");
         } catch (UserNotFoundException e) {
             // 사용자를 찾을 수 없을 때 예외 처리
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -141,7 +140,7 @@ public class MemberController implements MemberApiDocumentation {
             // 예외 로그 기록 (선택적)
             e.printStackTrace(); // 콘솔에 예외 출력
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An unexpected error occurred: " + e.getMessage());
+                    .body("예기치 못한 에러 발생");
         }
     }
 
@@ -162,7 +161,7 @@ public class MemberController implements MemberApiDocumentation {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
         }
     }
 
@@ -182,7 +181,7 @@ public class MemberController implements MemberApiDocumentation {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
         }
     }
 
@@ -201,7 +200,7 @@ public class MemberController implements MemberApiDocumentation {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
         }
     }
 
@@ -220,7 +219,7 @@ public class MemberController implements MemberApiDocumentation {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
         }
     }
 
@@ -240,7 +239,7 @@ public class MemberController implements MemberApiDocumentation {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
         }
     }
 

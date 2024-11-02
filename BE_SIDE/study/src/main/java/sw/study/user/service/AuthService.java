@@ -61,10 +61,10 @@ public class AuthService {
             } else {
                 throw new RuntimeException("토큰 생성에 실패했습니다.");
             }
-        } catch (BadCredentialsException ex) {
-            throw new InvalidCredentialsException("Invalid email or password."); // 사용자 정의 예외 또는 적절한 예외로 처리
-        } catch (Exception ex) {
-            throw new RuntimeException("An error occurred during authentication."); // 기타 예외 처리
+        } catch (BadCredentialsException e) {
+            throw new InvalidCredentialsException("유효하지 않은 이메일 또는 패스워드입니다."); // 사용자 정의 예외 또는 적절한 예외로 처리
+        } catch (Exception e) {
+            throw new RuntimeException("로그인에 실패했습니다."); // 기타 예외 처리
         }
     }
 
@@ -133,7 +133,7 @@ public class AuthService {
 
         // 회원 삭제 처리
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         member.onDeleted(); // soft delete 방식으로 설정
 

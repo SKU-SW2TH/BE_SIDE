@@ -85,13 +85,13 @@ public class MemberService {
     public MemberDto getMemberByToken(String token) {
         // 토큰 유효성 검사
         if (!tokenProvider.validateToken(token)) {
-            throw new InvalidTokenException("Invalid or expired token");
+            throw new InvalidTokenException("유효하지 않은 토큰입니다.");
         }
 
         String email = jwtService.extractEmail(token);
 
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         // MemberDto 생성
         MemberDto memberDto = new MemberDto();
@@ -152,7 +152,7 @@ public class MemberService {
     @Transactional
     public UpdateProfileResponse updateMemberProfile(String accessToken, UpdateProfileRequest updateProfileRequest, MultipartFile profilePicture) throws IOException{
         String email = jwtService.extractEmail(accessToken);
-        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         if (updateProfileRequest.getNickname() != null && !updateProfileRequest.getNickname().isEmpty() && !member.getNickname().equals(updateProfileRequest.getNickname())) {
             checkNicknameDuplication(updateProfileRequest.getNickname());
@@ -179,7 +179,7 @@ public class MemberService {
     public void changePassword(String accessToken, String oldPassword, String newPassword) {
         String email = jwtService.extractEmail(accessToken);
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         // 비밀번호 공백 제거
         String trimmedOldPassword = oldPassword.trim();
@@ -187,23 +187,23 @@ public class MemberService {
 
         // 비밀번호 일치 확인
         if (!encoder.matches(trimmedOldPassword, member.getPassword())) {
-            throw new InvalidPasswordException("Current password is incorrect.");
+            throw new InvalidPasswordException("현재 비밀번호와 일치하지 않습니다.");
         }
 
         // 새 비밀번호 유효성 검사
-        if (isValidPassword(trimmedNewPassword)) {
-            String encodedNewPassword = encoder.encode(trimmedNewPassword);
-            member.changePassword(encodedNewPassword);
-            memberRepository.save(member);
-        } else {
-            throw new InvalidPasswordException("Password does not meet the requirements.");
+        if (!isValidPassword(trimmedNewPassword)) {
+            throw new InvalidPasswordException("비밀번호 유효성 검사에 실패했습니다.");
         }
+
+        String encodedNewPassword = encoder.encode(trimmedNewPassword);
+        member.changePassword(encodedNewPassword);
+        memberRepository.save(member);
     }
 
     @Transactional
     public void updateNotification(SettingRequest dto) {
         NotificationSetting setting = notificationSettingRepository.findById(dto.getSettingId())
-                .orElseThrow(() -> new EntityNotFoundException("NotificationSetting with ID " + dto.getSettingId() + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("ID를 찾지 못했습니다."));
 
         setting.setEnabled(dto.isEnabled());
         notificationSettingRepository.save(setting); // 또는 flush()를 사용할 수 있음
@@ -238,7 +238,7 @@ public class MemberService {
 
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         List<Long> interestIds = interestRequest.getIds();
         if (interestIds == null) {
@@ -248,7 +248,7 @@ public class MemberService {
         // 관심 항목 추가
         for (Long interestId : interestIds) {
             InterestArea interestArea = interestAreaRepository.findById(interestId)
-                    .orElseThrow(() -> new InterestNotFoundException("Interest not found with ID: " + interestId));
+                    .orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
 
             MemberInterest newInterest = MemberInterest.CreateMemberInterest(member, interestArea);
             memberInterestRepository.save(newInterest);
@@ -274,7 +274,7 @@ public class MemberService {
         // 토큰에서 이메일 추출
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         // 요청에서 관심사 ID 목록 가져오기 (null 방지)
         List<Long> interestIds = Optional.ofNullable(interestRequest.getIds()).orElse(new ArrayList<>());
@@ -298,7 +298,7 @@ public class MemberService {
         // 관심사 추가
         for (Long interestId : interestsToAdd) {
             InterestArea interestArea = interestAreaRepository.findById(interestId)
-                    .orElseThrow(() -> new InterestNotFoundException("Interest not found with ID: " + interestId));
+                    .orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
             MemberInterest newInterest = MemberInterest.CreateMemberInterest(member, interestArea);
             memberInterestRepository.save(newInterest);
         }
@@ -306,7 +306,7 @@ public class MemberService {
         // 관심사 삭제
         for (Long interestId : interestsToRemove) {
             MemberInterest existingInterest = memberInterestRepository.findByMemberIdAndInterestAreaId(member.getId(), interestId)
-                    .orElseThrow(() -> new InterestNotFoundException("Interest not found with ID: " + interestId));
+                    .orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
             member.removeInterest(existingInterest);
             memberInterestRepository.delete(existingInterest);
         }
@@ -328,7 +328,7 @@ public class MemberService {
     public void updateNotificationRead(String token) {
         String email = jwtService.extractEmail(token); // 토큰에서 이메일 추출
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         // 읽지 않은 알림 리스트 가져오기
         List<Notification> notifications = notificationRepository.findByMemberAndIsReadFalse(member);
@@ -345,7 +345,7 @@ public class MemberService {
     public List<NotificationDTO> getNotifications(String token) {
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         List<Notification> notifications = notificationRepository.findByMember(member);
         List<NotificationDTO> dtos = new ArrayList<>();
@@ -367,7 +367,7 @@ public class MemberService {
     public List<NotificationDTO> unReadNotification(String token) {
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         List<Notification> notifications = notificationRepository.findByMemberAndIsReadFalse(member);
         List<NotificationDTO> dtos = new ArrayList<>();
