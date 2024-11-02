@@ -9,6 +9,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import sw.study.config.jwt.JWTService;
 import sw.study.config.jwt.TokenDTO;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.InvalidCredentialsException;
@@ -27,6 +28,7 @@ public class AuthService {
     private final TokenProvider tokenProvider;
     private final RedisUtil redisUtil;
     private final MemberRepository memberRepository;
+    private final JWTService jwtService;
     private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24;       // 1일
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7;
 
@@ -140,6 +142,18 @@ public class AuthService {
         memberRepository.save(member);
         // 강제 로그아웃 처리
         logout(refreshToken);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void restoreMember(String token) {
+        String email = jwtService.extractEmail(token);
+
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("해당 회원이 존재하지 않습니다."));
+
+        // 복구 처리
+        member.restore();
+        memberRepository.save(member);
     }
 
 }

@@ -90,6 +90,18 @@ public interface AuthApiDocumentation {
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
             @ApiResponse(responseCode = "500", description = "서버 에러")
     })
-    @Parameter(name = "Authorization", description = "리프레쉬 토큰", example = "Bearer your_refresh_token")
-    ResponseEntity<String> deleteAccount(@RequestHeader("Authorization") String refreshToken);
+    ResponseEntity<String> deleteAccount(
+            @Parameter(name = "Authorization", description = "리프레쉬 토큰", example = "Bearer your_refresh_token")
+            @RequestHeader("Authorization") String refreshToken);
+
+    @Operation(summary = "계정 복구", description = "계정을 복구합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "성공적으로 업데이트됨"),
+            @ApiResponse(responseCode = "401", description = "[ERROR] 유효하지 않은 토큰 형식입니다."),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 에러")
+    })
+    ResponseEntity<String> restoreMember(
+            @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
+            @RequestHeader("Authorization") String accessToken);
 }

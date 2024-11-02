@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -101,6 +102,10 @@ public class MemberService {
         memberDto.setIntroduce(member.getIntroduce());
         memberDto.setRole(member.getRole().toString());
 
+        if (member.getDeletedAt() != null) {
+            memberDto.setDeletedAt(LocalDate.from(member.getDeletedAt()));
+        }
+
         // 알림 설정 DTO 변환
         List<NotificationSettingDTO> dtos = member.getSettings().stream()
                 .map(s -> {
@@ -108,7 +113,6 @@ public class MemberService {
                     NotificationCategoryDTO categoryDTO = new NotificationCategoryDTO();
                     categoryDTO.setId(s.getCategory().getId());
                     categoryDTO.setName(s.getCategory().getCategoryName());
-
                     dto.setSettingId(s.getId());
                     dto.setEnabled(s.isEnabled());
                     dto.setCategoryDTO(categoryDTO);

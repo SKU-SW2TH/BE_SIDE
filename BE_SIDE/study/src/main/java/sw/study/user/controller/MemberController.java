@@ -243,6 +243,4 @@ public class MemberController implements MemberApiDocumentation {
         }
     }
 
-
-
 }

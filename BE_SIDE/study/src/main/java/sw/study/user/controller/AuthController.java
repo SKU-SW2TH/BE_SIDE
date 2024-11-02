@@ -155,4 +155,31 @@ public class AuthController implements AuthApiDocumentation {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("탈퇴 처리 중 오류가 발생했습니다.");
         }
     }
+
+    @Override
+    @PutMapping("/restore")
+    public ResponseEntity<String> restoreMember(@RequestHeader("Authorization") String accessToken) {
+        try {
+            // 토큰 유효성 검사
+            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("[ERROR] 유효하지 않은 토큰 형식입니다.");
+            }
+
+            String token = accessToken.substring(7);
+
+            // 회원 복구 처리
+            authService.restoreMember(token);
+            return ResponseEntity.ok("회원이 성공적으로 복구되었습니다.");
+        } catch (IllegalArgumentException e) {
+            // 토큰 형식 오류 또는 유효하지 않은 요청
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (UserNotFoundException e) {
+            // 회원이 존재하지 않을 때
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }catch (Exception e) {
+            // 그 외 예상치 못한 오류
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("회원 복구 중 오류가 발생했습니다.");
+        }
+    }
 }
