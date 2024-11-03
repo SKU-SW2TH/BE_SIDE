@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 import sw.study.config.Constant;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.*;
+import sw.study.exception.email.DuplicateEmailException;
+import sw.study.exception.email.VerificationCodeGenerationException;
 import sw.study.user.domain.*;
 import sw.study.user.dto.*;
 import sw.study.user.repository.*;
@@ -45,14 +48,25 @@ public class MemberService {
 
     @Transactional
     public Long join(JoinDto joinDto) {
-        List<NotificationCategory> categories = notificationCategoryRepository.findAll();
+        try {
+            List<NotificationCategory> categories = notificationCategoryRepository.findAll();
 
-        Member member = Member.createMember(
-                joinDto.getEmail(), encoder.encode(joinDto.getPassword()),
-                joinDto.getNickname(), Role.USER, categories
-        );
+            // Member 생성 중 예외 발생 가능성
+            Member member = Member.createMember(
+                    joinDto.getEmail(), encoder.encode(joinDto.getPassword()),
+                    joinDto.getNickname(), Role.USER, categories
+            );
 
-        return memberRepository.save(member).getId();
+            // Member 저장 중 예외 발생 가능성
+            return memberRepository.save(member).getId();
+
+        } catch (DataAccessException e) {
+            // 데이터베이스 관련 예외 처리
+            throw new MemberCreationException("회원 가입 중 데이터베이스 오류가 발생했습니다.", e);
+        } catch (Exception e) {
+            // 기타 예상치 못한 예외 처리
+            throw new MemberCreationException("회원 가입 중 오류가 발생했습니다.", e);
+        }
     }
 
     public void verifyNickname(NicknameDto nicknameDto)  {
@@ -60,9 +74,9 @@ public class MemberService {
         if (findMember.isPresent()) throw new DuplicateNicknameException(findMember.get().getNickname());
     }
 
-    public boolean verifyEmail(JoinDto joinDto) {
-        Optional<Member> findMember = memberRepository.findByEmail(joinDto.getEmail());
-        return findMember.isEmpty();
+    public void verifyEmail(String email) {
+        Optional<Member> findMember = memberRepository.findByEmail(email);
+        if (findMember.isPresent()) throw new DuplicateEmailException("이미 사용 중인 이메일입니다.");
     }
 
     public String createCode() {
@@ -76,7 +90,7 @@ public class MemberService {
             return builder.toString();
         } catch (NoSuchAlgorithmException e) {
             log.error("MemberService.createCode() exception occur");
-            throw new IllegalStateException("Secure random algorithm not found", e);
+            throw new VerificationCodeGenerationException("인증 코드 생성 중 오류가 발생했습니다.", e);
         }
     }
 

@@ -7,7 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.exception.DuplicateNicknameException;
 import sw.study.exception.InvalidCredentialsException;
+import sw.study.exception.MemberCreationException;
 import sw.study.exception.UserNotFoundException;
+import sw.study.exception.email.*;
 import sw.study.user.apiDoc.AuthApiDocumentation;
 import sw.study.user.dto.*;
 import sw.study.user.service.EmailVerificationService;
@@ -34,32 +36,57 @@ public class AuthController implements AuthApiDocumentation {
     public ResponseEntity<String> sendVerificationEmail(@RequestBody EmailDto emailDto) {
         String email = emailDto.getEmail();
 
-        // 인증 코드 생성
-        String verificationCode = memberService.createCode();
+        try {
+            // 인증 코드 생성
+            String verificationCode = memberService.createCode();
+
+            // 인증 코드를 Redis에 저장 (만료 시간 10분)
+            emailVerificationService.saveVerificationCode(email, verificationCode);
+
+            // 이메일 발송
+            String subject = "이메일 인증 코드";
+            String text = "이메일 인증 코드는 다음과 같습니다: " + verificationCode;
+            mailService.sendEmail(email, subject, text);
+            return ResponseEntity.ok("인증 코드가 전송되었습니다.");
 
 
-        // 인증 코드를 Redis에 저장 (만료 시간 10분)
-        emailVerificationService.saveVerificationCode(email, verificationCode);
-
-
-        // 이메일 발송
-        String subject = "이메일 인증 코드";
-        String text = "이메일 인증 코드는 다음과 같습니다: " + verificationCode;
-        mailService.sendEmail(email, subject, text);
-
-        return ResponseEntity.ok("인증 코드가 전송되었습니다.");
+        } catch (VerificationCodeGenerationException e) {
+            // 인증 코드 생성 중 오류발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        } catch (VerificationCodeStorageException e) {
+            // 인증 코드를 Redis에 저장 중 오류발생
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage()); // 503
+        } catch (EmailSendException e) {
+            // 이메일 전송 중 오류 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        }
     }
 
     @Override
     @PostMapping("/verify-email")
     public ResponseEntity<String> verifyEmail(@RequestBody EmailVerificationRequest request) {
-        // 인증 코드 검증
-        boolean isVerified = emailVerificationService.verifyCode(request.getEmail(), request.getVerificationCode());
 
-        if (isVerified)
+        try {
+            // 인증 코드 검증
+            emailVerificationService.verifyCode(request.getEmail(), request.getVerificationCode());
+            // 이메일 중복 확인
+            memberService.verifyEmail(request.getEmail());
             return ResponseEntity.ok("이메일 인증이 완료되었습니다."); // 이메일 인증 성공 시 처리 (프론트엔드에서 이를 확인)
-        else
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("인증 코드가 올바르지 않습니다."); // 422
+
+
+        } catch (VerificationCodeMismatchException e) {
+            // 인증번호가 일치하지 않음
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage()); // 422
+        } catch (DuplicateEmailException e){
+            // 이메일 중복
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage()); // 409
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     @Override
@@ -69,9 +96,13 @@ public class AuthController implements AuthApiDocumentation {
         try {
             memberService.verifyNickname(nicknameDto);
             return ResponseEntity.status(HttpStatus.OK).body("사용 가능한 닉네임입니다.");
+
+
         }catch (DuplicateNicknameException e){
+            // 닉네임 중복 발생
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
+            // 기타 예외 발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
@@ -80,15 +111,23 @@ public class AuthController implements AuthApiDocumentation {
     @PostMapping("/join")
     public ResponseEntity<String> join(@RequestBody JoinDto joinDto) {
         // 프론트엔드에서 이메일 인증 완료 여부를 확인 후 회원가입 진행
-
-        // 이메일 중복 확인
-        boolean isVerified = memberService.verifyEmail(joinDto);
-
-        if (isVerified) {
+        try {
+            // 이메일 중복 확인
+            memberService.verifyEmail(joinDto.getEmail());
+            // 회원가입
             memberService.join(joinDto);
             return ResponseEntity.ok("회원가입이 완료되었습니다.");
-        } else {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 이메일입니다.");
+
+
+        } catch (DuplicateEmailException e){
+            // 이메일 중복
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage()); // 409
+        } catch (MemberCreationException e) {
+            // 회원가입 중 발생한 예외
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
         }
     }
 
