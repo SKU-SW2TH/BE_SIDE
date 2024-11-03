@@ -8,13 +8,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import sw.study.exception.DuplicateNicknameException;
-import sw.study.exception.MaxStudyGroupException;
-import sw.study.exception.StudyGroupFullException;
-import sw.study.exception.UserNotFoundException;
+import sw.study.exception.*;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.domain.WaitingPeople;
+import sw.study.studyGroup.dto.GroupParticipants;
 import sw.study.studyGroup.dto.InvitedResponse;
 import sw.study.studyGroup.dto.JoinedResponse;
 import sw.study.studyGroup.repository.ParticipantRepository;
@@ -23,6 +21,7 @@ import sw.study.studyGroup.repository.WaitingPeopleRepository;
 import sw.study.user.domain.Member;
 import sw.study.user.repository.MemberRepository;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -197,5 +196,61 @@ public class StudyGroupService {
                 waitingPeopleRepository.delete(targetMember);
             }
         }
+    }
+
+    //참가자 전체 리스트 확인
+    public List<GroupParticipants> listOfEveryone(long groupId){
+
+        Member member = currentLogginedInfo();
+
+        participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다."));
+
+        List<Participant> participants = participantRepository.findAllByGroupId(groupId);
+
+        List<GroupParticipants> result = new ArrayList<>();
+
+        // 응답 DTO ( 닉네임, 신분 )
+        for (Participant p : participants) {
+            result.add(GroupParticipants.createGroupParticipants(
+                    p.getNickname(), p.getRole()));
+        }
+        return result;
+    }
+
+    // 운영진 리스트 확인 (방장 포함)
+    public List<GroupParticipants> listOfManagers(long groupId){
+
+        Member member = currentLogginedInfo();
+
+        participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다."));
+
+        List<Participant> participants = participantRepository.findAllByGroupIdAndRole(groupId, Participant.Role.MANAGER);
+
+        List<GroupParticipants> result = new ArrayList<>();
+        for (Participant p : participants) {
+            result.add(GroupParticipants.createGroupParticipants(p.getNickname(), p.getRole()));
+        }
+
+        return result;
+    }
+
+    // 팀원 리스트 확인
+    public List<GroupParticipants> listOfMembers(long groupId){
+
+        Member member = currentLogginedInfo();
+
+        participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다."));
+
+        List<Participant> participants = participantRepository.findAllByGroupIdAndRole(groupId, Participant.Role.MEMBER);
+
+        List<GroupParticipants> result = new ArrayList<>();
+        for (Participant p : participants) {
+            result.add(GroupParticipants.createGroupParticipants(p.getNickname(), p.getRole()));
+        }
+
+        return result;
     }
 }

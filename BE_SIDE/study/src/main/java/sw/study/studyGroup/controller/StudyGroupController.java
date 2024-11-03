@@ -7,11 +7,9 @@ import org.springframework.web.bind.annotation.*;
 import sw.study.exception.DuplicateNicknameException;
 import sw.study.exception.MaxStudyGroupException;
 import sw.study.exception.StudyGroupFullException;
+import sw.study.exception.UnauthorizedException;
 import sw.study.studyGroup.domain.StudyGroup;
-import sw.study.studyGroup.dto.CreateStudyGroup;
-import sw.study.studyGroup.dto.InvitedResponse;
-import sw.study.studyGroup.dto.JoinedResponse;
-import sw.study.studyGroup.dto.SearchByNickname;
+import sw.study.studyGroup.dto.*;
 import sw.study.studyGroup.service.StudyGroupService;
 
 import java.util.HashMap;
@@ -71,7 +69,6 @@ public class StudyGroupController {
         return ResponseEntity.ok(invitedResponses);
     }
 
-
     // 참가 중인 그룹 확인
     @GetMapping("/joinedList")
     public ResponseEntity<?> checkJoinedList() {
@@ -109,5 +106,44 @@ public class StudyGroupController {
     public ResponseEntity<?> rejectInvitation(@PathVariable long groupId){
         studyGroupService.rejectInvitation(groupId);
         return ResponseEntity.ok("초대를 거절하였습니다.");
+    }
+
+    // 모든 참가자 확인
+    @GetMapping("/{groupId}/list/all")
+    public ResponseEntity<?> listOfAll(@PathVariable long groupId) {
+        try {
+            List<GroupParticipants> participants = studyGroupService.listOfEveryone(groupId);
+            return ResponseEntity.ok(participants);
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+        }
+    }
+
+    // 운영진 리스트 확인
+    @GetMapping("/{groupId}/list/managers")
+    public ResponseEntity<?> listOfManagers(@PathVariable long groupId) {
+        try {
+            List<GroupParticipants> managers = studyGroupService.listOfManagers(groupId);
+            return ResponseEntity.ok(managers);
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+        }
+    }
+
+    // 팀원 리스트 확인
+    @GetMapping("/{groupId}/list/members")
+    public ResponseEntity<?> listOfMembers(@PathVariable long groupId) {
+        try {
+            List<GroupParticipants> members = studyGroupService.listOfMembers(groupId);
+            return ResponseEntity.ok(members);
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+        }
     }
 }
