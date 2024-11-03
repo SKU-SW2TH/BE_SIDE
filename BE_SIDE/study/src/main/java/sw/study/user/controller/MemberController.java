@@ -42,7 +42,7 @@ public class MemberController implements MemberApiDocumentation {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An unexpected error occurred: " + e.getMessage());
+                    .body("예상지 못한 오류 발생");
         }
     }
 
