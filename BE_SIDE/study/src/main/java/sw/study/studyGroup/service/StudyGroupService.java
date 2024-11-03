@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import sw.study.exception.*;
 import sw.study.studyGroup.domain.Participant;
+import sw.study.studyGroup.domain.Participant.Role;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.domain.WaitingPeople;
 import sw.study.studyGroup.dto.GroupParticipants;
@@ -79,7 +80,7 @@ public class StudyGroupService {
         Member leader = currentLogginedInfo();
 
         // 방장은 바로 Participant에 추가해준다.
-        Participant leaderParticipant = Participant.createParticipant(leaderNickname, leader, Participant.Role.LEADER);
+        Participant leaderParticipant = Participant.createParticipant(leaderNickname, leader, Role.LEADER);
         participantRepository.save(leaderParticipant);
 
         // 초대 대상자들을 한 번에 조회
@@ -154,7 +155,7 @@ public class StudyGroupService {
         waitingPeopleRepository.deleteByMemberId(member.getId());
 
         // 닉네임 중복확인
-        if(participantRepository.findByNickname(Nickname)){
+        if(participantRepository.validateByNickname(Nickname)){
             throw new DuplicateNicknameException("해당 닉네임은 이미 사용중입니다.");
         }
 
@@ -171,7 +172,7 @@ public class StudyGroupService {
         if(participantRepository.countByMemberId(member.getId())==20)
             throw new MaxStudyGroupException("더 이상 스터디그룹에 참가할 수 없습니다.");
 
-        Participant newParticipant = Participant.createParticipant(Nickname, member, Participant.Role.MEMBER);
+        Participant newParticipant = Participant.createParticipant(Nickname, member, Role.MEMBER);
         studyGroup.ifPresent(group -> {
             group.whoEverAccepted(newParticipant);
             studyGroupRepository.save(group);
@@ -226,7 +227,7 @@ public class StudyGroupService {
         participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다."));
 
-        List<Participant> participants = participantRepository.findAllByGroupIdAndRole(groupId, Participant.Role.MANAGER);
+        List<Participant> participants = participantRepository.findAllByGroupIdAndRole(groupId, Role.MANAGER);
 
         List<GroupParticipants> result = new ArrayList<>();
         for (Participant p : participants) {
@@ -244,7 +245,7 @@ public class StudyGroupService {
         participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다."));
 
-        List<Participant> participants = participantRepository.findAllByGroupIdAndRole(groupId, Participant.Role.MEMBER);
+        List<Participant> participants = participantRepository.findAllByGroupIdAndRole(groupId, Role.MEMBER);
 
         List<GroupParticipants> result = new ArrayList<>();
         for (Participant p : participants) {
@@ -252,5 +253,82 @@ public class StudyGroupService {
         }
 
         return result;
+    }
+
+    // 그룹 내에서 초대된 리스트 확인
+    public List<String> listOfWaiting(long groupId) {
+
+        Member member = currentLogginedInfo();
+
+        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+
+        Role role = participant.getRole();
+
+        if (role == Role.MEMBER) {
+            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+        }
+
+        List<WaitingPeople> waitingList = waitingPeopleRepository.findByGroupId(groupId);
+        List<String> result = new ArrayList<>();
+
+        for (WaitingPeople target : waitingList) {
+            result.add(target.getMember().getNickname());
+        }
+
+        return result;
+    }
+
+    // 특정 사용자 초대 취소
+    public boolean cancelInvitation(long groupId, String nickname) {
+
+        Member member = currentLogginedInfo();
+
+        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+
+        Role role = participant.getRole();
+
+        if (role == Role.MEMBER) {
+            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+        }
+
+        Optional<Member> target = memberRepository.findByNickname(nickname);
+
+        if (target.isPresent()) {
+            Optional<WaitingPeople> waitingPeopleOpt = waitingPeopleRepository.findByMemberIdAndStudyGroupId(target.get().getId(), groupId);
+
+            if (waitingPeopleOpt.isPresent()) {
+                waitingPeopleRepository.delete(waitingPeopleOpt.get());
+                return true; // 초대 취소 처리
+            }
+        } else {
+            throw new UserNotFoundException("해당 닉네임을 가진 사용자가 존재하지 않습니다.");
+        }
+        return false;
+    }
+
+    // 그룹 내 권한 변경
+    public void changeRole(long groupId, String nickname) {
+
+        Member member = currentLogginedInfo();
+
+        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+
+        Role role = participant.getRole();
+
+        if (role == Role.MEMBER) {
+            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+        }
+
+        Participant target = participantRepository.findParticipantByNickname(nickname);
+
+        if(target.getRole()==Role.MEMBER){
+            target.promote();
+        }
+        else if(target.getRole()==Role.MANAGER){
+            target.demote();
+        }
     }
 }

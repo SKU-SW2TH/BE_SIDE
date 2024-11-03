@@ -15,4 +15,6 @@ public interface WaitingPeopleRepository extends JpaRepository<WaitingPeople,Lon
     void deleteByMemberId(Long memberId); // 초대 거절 : 대기명단 삭제
 
     Optional<WaitingPeople> findByMemberIdAndStudyGroupId(Long memberId, Long groupId);
+
+    List<WaitingPeople> findByGroupId(Long groupId); // 특정 그룹 내 초대 명단 확인
 }

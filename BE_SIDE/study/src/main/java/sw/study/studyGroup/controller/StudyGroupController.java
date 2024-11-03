@@ -4,14 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sw.study.exception.DuplicateNicknameException;
-import sw.study.exception.MaxStudyGroupException;
-import sw.study.exception.StudyGroupFullException;
-import sw.study.exception.UnauthorizedException;
+import sw.study.exception.*;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.dto.*;
 import sw.study.studyGroup.service.StudyGroupService;
 
+import java.security.Permission;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -141,6 +139,55 @@ public class StudyGroupController {
             List<GroupParticipants> members = studyGroupService.listOfMembers(groupId);
             return ResponseEntity.ok(members);
         } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+        }
+    }
+
+    // 그룹 내 신분 변경
+    @PatchMapping("/{groupId}/participant/{nickname}/changeRole")
+    public ResponseEntity<?> changeRole(
+            @PathVariable long groupId,
+            @PathVariable String nickname) {
+        try {
+            studyGroupService.changeRole(groupId, nickname);
+            return ResponseEntity.ok("성공적으로 권한이 수정되었습니다.");
+        } catch (UnauthorizedException | PermissionDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+        }
+    }
+
+    // 그룹 내 초대 대기 인원 확인
+    @GetMapping("/{groupId}/waitingList")
+    public ResponseEntity<?> checkWaiting(@PathVariable long groupId){
+        try{
+            List<String> nicknames = studyGroupService.listOfWaiting(groupId);
+            return ResponseEntity.ok(nicknames);
+        } catch (UnauthorizedException | PermissionDeniedException e) {
+            // 특정 스터디그룹에 참가하지 않은 비정상적 케이스
+            // 혹은 그룹 내에서 권한이 부여되지 않은 경우
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+        }
+    }
+
+    // 그룹 내 초대 취소
+    @DeleteMapping("/{groupId}/waitingList/cancellation/{nickname}")
+    public ResponseEntity<?> rejectInvitation(
+            @PathVariable long groupId,
+            @PathVariable String nickname) {
+        try {
+            boolean isCancelled = studyGroupService.cancelInvitation(groupId, nickname);
+            if (isCancelled) {
+                return ResponseEntity.ok("초대를 취소 하였습니다.");
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("초대 취소에 실패하였습니다.");
+            }
+        } catch (UnauthorizedException | PermissionDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");

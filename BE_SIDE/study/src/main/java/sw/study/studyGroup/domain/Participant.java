@@ -43,6 +43,14 @@ public class Participant {
         LEADER, MANAGER, MEMBER, MENTOR
     }
 
+    public void promote(){
+        if(this.role==Role.MEMBER) this.role=Role.MANAGER;
+    }
+
+    public void demote(){
+        if(this.role==Role.MANAGER) this.role = Role.MEMBER;
+    }
+
     public static Participant createParticipant(String nickname, Member member, Role role) {
         Participant participant = new Participant();
         participant.member = member;
@@ -52,4 +60,6 @@ public class Participant {
         participant.updatedAt = LocalDateTime.now();
         return participant;
     }
+
+
 }
