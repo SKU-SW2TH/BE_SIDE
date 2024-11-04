@@ -1,7 +1,7 @@
 package sw.study.user.service;
 
 import io.jsonwebtoken.Claims;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -9,6 +9,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import sw.study.config.jwt.JWTService;
 import sw.study.config.jwt.TokenDTO;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.InvalidCredentialsException;
@@ -27,6 +28,7 @@ public class AuthService {
     private final TokenProvider tokenProvider;
     private final RedisUtil redisUtil;
     private final MemberRepository memberRepository;
+    private final JWTService jwtService;
     private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24;       // 1일
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7;
 
@@ -61,18 +63,17 @@ public class AuthService {
             } else {
                 throw new RuntimeException("토큰 생성에 실패했습니다.");
             }
-        } catch (BadCredentialsException ex) {
-            throw new InvalidCredentialsException("Invalid email or password."); // 사용자 정의 예외 또는 적절한 예외로 처리
-        } catch (Exception ex) {
-            throw new RuntimeException("An error occurred during authentication."); // 기타 예외 처리
+        } catch (BadCredentialsException e) {
+            throw new InvalidCredentialsException("유효하지 않은 이메일 또는 패스워드입니다."); // 사용자 정의 예외 또는 적절한 예외로 처리
+        } catch (Exception e) {
+            throw new RuntimeException("로그인에 실패했습니다."); // 기타 예외 처리
         }
     }
 
     @Transactional
     public void logout(String refreshToken) {
         // Refresh Token 키를 생성
-        Claims claims = tokenProvider.parseClaims(refreshToken);
-        String email = claims.getSubject();
+        String email = jwtService.extractEmail(refreshToken);
         String refreshTokenKey = "RT:" + email;
 
         // Refresh Token을 조회
@@ -133,12 +134,25 @@ public class AuthService {
 
         // 회원 삭제 처리
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        member.onDeleted(); // soft delete 방식으로 설정
+        member.requestDeactivation(); // soft delete 방식으로 설정
 
+        memberRepository.save(member);
         // 강제 로그아웃 처리
         logout(refreshToken);
+    }
+
+    @Transactional
+    public void restoreMember(String token) {
+        String email = jwtService.extractEmail(token);
+
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("해당 회원이 존재하지 않습니다."));
+
+        // 복구 처리
+        member.restore();
+        memberRepository.save(member);
     }
 
 }

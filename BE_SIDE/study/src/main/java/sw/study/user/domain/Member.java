@@ -5,9 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import sw.study.admin.domain.Punishment;
 import sw.study.admin.domain.Report;
-import sw.study.user.domain.NotificationSetting;
 import sw.study.user.role.Role;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,11 +52,6 @@ public class Member {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void onDeleted() {
-        this.deletedAt = LocalDateTime.now();
-        this.isDeleted = true;
-    }
-
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NotificationSetting> settings = new ArrayList<>();
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
@@ -89,6 +82,17 @@ public class Member {
         return member;
     }
 
+    public void onDeleted() {
+        this.isDeleted = true;
+    }
+
+    public void requestDeactivation() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void restore() {
+        this.deletedAt = null;
+    }
 
     public void addSetting(NotificationSetting setting) {
         settings.add(setting);
