@@ -87,16 +87,11 @@ public class InitDb {
 
         private void initMember(){
             Member member1 = Member.createMember(
-                    "limjh0703@naver.com",
-                    encoder.encode("1q2w3e4r!"), // 비밀번호 암호화
+                    "ksh990409@naver.com",
+                    encoder.encode("123qwe!!!"), // 비밀번호 암호화
                     "User One", Role.USER, categories
             );
             em.persist(member1);
-
-            Notification notification1 = Notification.createNotification(member1, categories.get(0), "테스트1", "테스트1", 1L);
-            Notification notification2 = Notification.createNotification(member1, categories.get(1), "테스트2", "테스트2", 2L);
-            em.persist(notification1);
-            em.persist(notification2);
         }
     }
 }

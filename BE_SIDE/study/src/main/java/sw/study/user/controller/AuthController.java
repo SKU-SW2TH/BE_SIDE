@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sw.study.config.Constant;
 import sw.study.exception.AccountDisabledException;
 import sw.study.exception.DuplicateNicknameException;
 import sw.study.exception.InvalidCredentialsException;
@@ -225,5 +226,70 @@ public class AuthController implements AuthApiDocumentation {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("회원 복구 중 오류가 발생했습니다.");
         }
+
+
     }
+
+    @PostMapping("/send/reset-token")
+    public ResponseEntity<String> sendResetToken(@RequestBody String email) {
+        try {
+            String token = authService.generatePasswordResetToken(email);
+
+            // 이메일 발송
+            String url = Constant.URL + "/reset-password";
+            String subject = "비밀번호 변경";
+            String text = "비밀번호 변경을 위해 접속해주세요: " + url;
+            mailService.sendEmail(email, subject, text);
+            return ResponseEntity.ok(token);
+
+        } catch (EmailSendException e) {
+            // 이메일 전송 중 오류 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        }
+    }
+
+    @GetMapping("/valid-reset-token")
+    public ResponseEntity<String> validResetToken(@RequestHeader("Authorization") String token) {
+        try{
+            // 토큰 유효성 검사
+            if (token == null || !token.startsWith("Bearer ")) throw new IllegalArgumentException("[ERROR] 유효하지 않은 토큰 형식입니다.");
+            token = token.substring(7);
+
+            authService.validPasswordResetToken(token);
+            return ResponseEntity.ok("토큰 인증을 성공하였습니다.");
+        } catch (IllegalArgumentException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 401
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 401
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        }
+    }
+
+    @PatchMapping("/change-password")
+    public ResponseEntity<String> changePassword(@RequestHeader("Authorization") String token, @RequestBody String newPassword) {
+
+        try {
+            // 토큰 유효성 검사
+            if (token == null || !token.startsWith("Bearer ")) throw new IllegalArgumentException("[ERROR] 유효하지 않은 토큰 형식입니다.");
+            token = token.substring(7);
+
+            authService.changePassword(token, newPassword);
+            return ResponseEntity.ok("비밀번호가 변경되었습니다.");
+
+
+        } catch (IllegalArgumentException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 401
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        }
+
+    }
+
 }
