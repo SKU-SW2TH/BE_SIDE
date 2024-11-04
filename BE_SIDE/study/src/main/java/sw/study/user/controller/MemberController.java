@@ -4,26 +4,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.exception.*;
+import sw.study.exception.s3.S3UploadException;
 import sw.study.user.apiDoc.MemberApiDocumentation;
-import sw.study.user.domain.Member;
-import sw.study.user.domain.Notification;
 import sw.study.user.dto.*;
 import sw.study.user.service.MemberService;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/member")
@@ -36,68 +27,22 @@ public class MemberController implements MemberApiDocumentation {
     @GetMapping("/info")
     public ResponseEntity<?> getMemberInfo(@RequestHeader("Authorization") String accessToken) {
         try {
-            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken; // "Bearer " 이후 부분 추출
+            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
+            }
+            String token = accessToken.substring(7);
 
             // 토큰 검증 및 사용자 정보 조회 로직
-            Member member = memberService.getMemberByToken(token);
+            MemberDto memberDTO = memberService.getMemberByToken(token);
 
-            // MemberDto 생성
-            MemberDto memberDto = new MemberDto();
-            memberDto.setEmail(member.getEmail());
-            memberDto.setNickname(member.getNickname());
-            memberDto.setProfile(member.getProfile());
-            memberDto.setIntroduce(member.getIntroduce());
-            memberDto.setRole(member.getRole().toString());
-
-            // 알림 설정 DTO 변환
-            List<NotificationSettingDTO> dtos = member.getSettings().stream()
-                    .map(s -> {
-                        NotificationSettingDTO dto = new NotificationSettingDTO();
-                        NotificationCategoryDTO categoryDTO = new NotificationCategoryDTO();
-                        categoryDTO.setId(s.getCategory().getId());
-                        categoryDTO.setName(s.getCategory().getCategoryName());
-
-                        dto.setSettingId(s.getId());
-                        dto.setEnabled(s.isEnabled());
-                        dto.setCategoryDTO(categoryDTO);
-                        return dto;
-                    })
-                    .collect(Collectors.toList());
-
-            // 관심 분야 DTO 변환
-            List<MemberInterestDTO> interestDtos = member.getInterests().stream()
-                    .map(interest -> {
-                        MemberInterestDTO dto = new MemberInterestDTO();
-                        dto.setId(interest.getId());
-                        dto.setInterestId(interest.getInterestArea().getId());
-                        dto.setName(interest.getInterestArea().getAreaName());
-                        return dto;
-                    })
-                    .collect(Collectors.toList());
-
-            List<NotificationDTO> notificationDTOS = member.getNotifications().stream()
-                    .sorted(Comparator.comparing(Notification::getCreatedAt).reversed()) // createdAt 기준 내림차순 정렬
-                    .map(notification -> {
-                        NotificationDTO dto = new NotificationDTO();
-                        dto.setId(notification.getId());
-                        dto.setTitle(notification.getTitle());
-                        dto.setContent(notification.getContent());
-                        dto.setRead(notification.isRead());
-                        dto.setName(notification.getCategory().getCategoryName());
-                        dto.setCreatedAt(notification.getCreatedAt());
-                        return dto;
-                    }).collect(Collectors.toList());
-
-            // DTO 설정
-            memberDto.setSettings(dtos);
-            memberDto.setInterests(interestDtos);
-            memberDto.setNotifications(notificationDTOS);
-            return ResponseEntity.ok(memberDto);
+            return ResponseEntity.ok(memberDTO);
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }  catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An unexpected error occurred: " + e.getMessage());
+                    .body("예상지 못한 오류 발생");
         }
     }
 
@@ -107,48 +52,38 @@ public class MemberController implements MemberApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @RequestParam(value = "nickname", required = false) String nickname,
             @RequestParam(value = "introduction", required = false) String introduction,
-            @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture) throws IOException {
+            @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture) {
         try {
             // 서비스에서 프로필 업데이트 로직 실행
-            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken; // "Bearer " 이후 부분 추출
-
-            Member member;
-            UpdateProfileRequest updateProfileRequest = new UpdateProfileRequest(nickname, introduction);
-
-            if (profilePicture != null && !profilePicture.isEmpty()) {
-                // Call service to update member profile with the new picture
-                member = memberService.updateMemberProfile(token, updateProfileRequest, profilePicture);
-            } else {
-                // Call service to update member profile without the picture
-                member = memberService.updateMemberProfileWithoutPicture(token, updateProfileRequest);
+            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
             }
+            String token = accessToken.substring(7);
 
-            UpdateProfileResponse response = new UpdateProfileResponse(
-                    member.getNickname(),
-                    member.getIntroduce(),
-                    member.getProfile()
-            );
+            UpdateProfileRequest updateProfileRequest = new UpdateProfileRequest(nickname, introduction);
+            UpdateProfileResponse response = memberService.updateMemberProfile(token, updateProfileRequest, profilePicture);
 
             // 성공적으로 업데이트되면 200 OK 응답
             return ResponseEntity.status(HttpStatus.OK).body(response);
-        } catch (DuplicateNicknameException ex) {
+        } catch (DuplicateNicknameException e) {
             // 닉네임 중복 시 409 Conflict 반환
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
-        }catch (UserNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }  catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (UserNotFoundException e) {
             // 사용자를 찾지 못한 경우 404 Not Found 응답
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        } catch (InvalidTokenException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (InvalidTokenException e) {
             // 잘못된 토큰이면 401 Unauthorized 응답
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid access token");
-        } catch (FileUploadException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않는 토큰입니다.");
+        } catch (FileUploadException e) {
             // 파일 업로드 실패 시 500 Internal Server Error 응답
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("File upload failed");
-        } catch (IOException ex) {
-            // 파일 저장 중 발생하는 I/O 예외 처리
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error while saving file");
-        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("파일 업로드 실패");
+        }catch (S3UploadException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("S3 업로드 실패: " + e.getMessage());
+        } catch (Exception e) {
             // 그 외의 예기치 않은 예외 처리
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -158,15 +93,20 @@ public class MemberController implements MemberApiDocumentation {
                                             @RequestBody PasswordChangeRequest request){
         try {
             // 현재 비밀번호 확인 및 비밀번호 변경 처리
-            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
+            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
+            }
+            String token = accessToken.substring(7);
 
             memberService.changePassword(token, request.getOldPassword(), request.getNewPassword());
-            return ResponseEntity.status(HttpStatus.OK).body("Password updated successfully.");
+            return ResponseEntity.status(HttpStatus.OK).body("비밀번호가 변경되었습니다.");
         } catch (UserNotFoundException e) {
             // 사용자를 찾을 수 없을 때 예외 처리
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (InvalidPasswordException e) {
             // 비밀번호 유효성 검사 실패 예외 처리
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }  catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             // 그 외 기타 예외 처리
@@ -191,24 +131,6 @@ public class MemberController implements MemberApiDocumentation {
     }
 
     @Override
-    @GetMapping("/profile/{filename}")
-    public ResponseEntity<Resource> getProfile(@PathVariable("filename") String filename) {
-        try {
-            Path filePath = Paths.get("BE_SIDE/study/src/main/resources/profile").resolve(filename).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-            if (resource.exists() && resource.isReadable()) {
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-                        .body(resource);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    @Override
     @GetMapping("/interestList")
     public ResponseEntity<?> getInterestList() {
         try {
@@ -218,7 +140,7 @@ public class MemberController implements MemberApiDocumentation {
             // 예외 로그 기록 (선택적)
             e.printStackTrace(); // 콘솔에 예외 출력
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An unexpected error occurred: " + e.getMessage());
+                    .body("예기치 못한 에러 발생");
         }
     }
 
@@ -227,13 +149,19 @@ public class MemberController implements MemberApiDocumentation {
     public ResponseEntity<?> initInterest(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody InterestRequest interestRequest){
         try {
-            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
+            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
+            }
+            String token = accessToken.substring(7);
+
             List<MemberInterestDTO> dtos = memberService.initInterest(token, interestRequest);
             return ResponseEntity.status(HttpStatus.OK).body(dtos);
         } catch (UserNotFoundException | InterestNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
         }
     }
 
@@ -242,13 +170,18 @@ public class MemberController implements MemberApiDocumentation {
     public ResponseEntity<?> updateInterest(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody InterestRequest interestRequest){
         try {
-            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
+            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
+            }
+            String token = accessToken.substring(7);
             List<MemberInterestDTO> dtos = memberService.updateInterest(token, interestRequest);
             return ResponseEntity.status(HttpStatus.OK).body(dtos);
         } catch (UserNotFoundException | InterestNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
         }
     }
 
@@ -256,13 +189,58 @@ public class MemberController implements MemberApiDocumentation {
     @PutMapping("/update/notification/read")
     public ResponseEntity<?> updateRead(@RequestHeader("Authorization") String accessToken) {
         try {
-            String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
+            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
+            }
+            String token = accessToken.substring(7);
             memberService.updateNotificationRead(token); // 철자 수정
             return ResponseEntity.noContent().build(); // 204 No Content
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
         }
     }
+
+    @Override
+    @GetMapping("/notificationList")
+    public ResponseEntity<?> getNotificationList(@RequestHeader("Authorization") String accessToken) {
+        try {
+            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
+            }
+            String token = accessToken.substring(7);
+            List<NotificationDTO> dtos = memberService.getNotifications(token);
+            return ResponseEntity.ok(dtos);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
+        }
+    }
+
+    @Override
+    @GetMapping("/notification/unread")
+    public ResponseEntity<?> unReadNotification(@RequestHeader("Authorization") String accessToken) {
+        try {
+            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
+            }
+
+            String token = accessToken.substring(7);
+            List<NotificationDTO> dtos = memberService.unReadNotification(token);
+            return ResponseEntity.ok(dtos);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
+        }
+    }
+
 }

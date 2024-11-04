@@ -25,6 +25,7 @@ public class InitDb {
     public void init() {
         initService.initInterestArea();
         initService.initCategory();
+        initService.initNotificationCategory();
     }
 
     @Component
@@ -34,6 +35,7 @@ public class InitDb {
 
         private final EntityManager em;
         private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        private List<NotificationCategory> categories = new ArrayList<>();
 
         public void initInterestArea() {
 
@@ -73,16 +75,17 @@ public class InitDb {
             em.persist(category2);
         }
 
-        private void initMember(){
+        public void initNotificationCategory() {
             NotificationCategory category1 = NotificationCategory.createNotificationCategory("게시판");
             NotificationCategory category2 = NotificationCategory.createNotificationCategory("스터디");
             em.persist(category1);
             em.persist(category2);
 
-            List<NotificationCategory> categories = new ArrayList<>();
             categories.add(category1);
             categories.add(category2);
+        }
 
+        private void initMember(){
             Member member1 = Member.createMember(
                     "limjh0703@naver.com",
                     encoder.encode("1q2w3e4r!"), // 비밀번호 암호화
@@ -90,8 +93,8 @@ public class InitDb {
             );
             em.persist(member1);
 
-            Notification notification1 = Notification.createNotification(member1, category1, "테스트1", "테스트1");
-            Notification notification2 = Notification.createNotification(member1, category2, "테스트2", "테스트2");
+            Notification notification1 = Notification.createNotification(member1, categories.get(0), "테스트1", "테스트1", 1L);
+            Notification notification2 = Notification.createNotification(member1, categories.get(1), "테스트2", "테스트2", 2L);
             em.persist(notification1);
             em.persist(notification2);
         }

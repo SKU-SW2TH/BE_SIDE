@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sw.study.exception.AccountDisabledException;
 import sw.study.exception.DuplicateNicknameException;
 import sw.study.exception.InvalidCredentialsException;
 import sw.study.exception.MemberCreationException;
@@ -145,7 +146,11 @@ public class AuthController implements AuthApiDocumentation {
             // 사용자가 존재하지 않는 경우
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(e.getMessage()); // 404 Not Found
-        } catch (Exception e) {
+        } catch (AccountDisabledException e) {
+            // 계정이 비활성화된 경우
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("계정이 비활성화되어 로그인할 수 없습니다."); // 403 Forbidden
+        }catch (Exception e) {
             // 기타 예외 처리
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage()); // 500 Internal Server Error
@@ -192,6 +197,33 @@ public class AuthController implements AuthApiDocumentation {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("탈퇴 처리 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Override
+    @PutMapping("/restore")
+    public ResponseEntity<String> restoreMember(@RequestHeader("Authorization") String accessToken) {
+        try {
+            // 토큰 유효성 검사
+            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("[ERROR] 유효하지 않은 토큰 형식입니다.");
+            }
+
+            String token = accessToken.substring(7);
+
+            // 회원 복구 처리
+            authService.restoreMember(token);
+            return ResponseEntity.ok("회원이 성공적으로 복구되었습니다.");
+        } catch (IllegalArgumentException e) {
+            // 토큰 형식 오류 또는 유효하지 않은 요청
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (UserNotFoundException e) {
+            // 회원이 존재하지 않을 때
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }catch (Exception e) {
+            // 그 외 예상치 못한 오류
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("회원 복구 중 오류가 발생했습니다.");
         }
     }
 }
