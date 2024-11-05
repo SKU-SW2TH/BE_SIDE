@@ -5,9 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import sw.study.admin.domain.Punishment;
 import sw.study.admin.domain.Report;
-import sw.study.user.domain.NotificationSetting;
 import sw.study.user.role.Role;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +34,7 @@ public class Member {
     private boolean isDeleted = false; // 삭제 여부를 확인
     private boolean isSuspended = false; // 정지 여부를 확인
     private int warningCnt = 0; // 누적 경고 횟수
+
 
     @Enumerated(EnumType.STRING)
     private Role role;
