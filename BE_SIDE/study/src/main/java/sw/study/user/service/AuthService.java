@@ -13,10 +13,7 @@ import org.springframework.stereotype.Service;
 import sw.study.config.jwt.JWTService;
 import sw.study.config.jwt.TokenDTO;
 import sw.study.config.jwt.TokenProvider;
-import sw.study.exception.InvalidCredentialsException;
-import sw.study.exception.InvalidPasswordException;
-import sw.study.exception.SamePasswordException;
-import sw.study.exception.UserNotFoundException;
+import sw.study.exception.*;
 import sw.study.user.domain.Member;
 import sw.study.user.dto.LoginRequest;
 import sw.study.user.repository.MemberRepository;
@@ -174,7 +171,7 @@ public class AuthService {
     public void validPasswordResetToken(String token) {
         String email = jwtService.extractEmail(token);
         if(!redisUtil.getData("PT:" + email).equals(token)) {
-            throw new RuntimeException("유효성 검사를 통과하지 못했습니다.");
+            throw new InvalidTokenException("유효성 검사를 통과하지 못했습니다.");
         }
     }
 
