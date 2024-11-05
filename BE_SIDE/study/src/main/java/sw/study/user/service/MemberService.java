@@ -16,6 +16,7 @@ import sw.study.config.jwt.JWTService;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.*;
 import sw.study.exception.email.DuplicateEmailException;
+import sw.study.exception.email.EmailNotFoundException;
 import sw.study.exception.email.VerificationCodeGenerationException;
 import sw.study.user.domain.*;
 import sw.study.user.dto.*;
@@ -80,6 +81,11 @@ public class MemberService {
     public void verifyEmail(String email) {
         Optional<Member> findMember = memberRepository.findByEmail(email);
         if (findMember.isPresent()) throw new DuplicateEmailException("이미 사용 중인 이메일입니다.");
+    }
+
+    public void checkEmail(String email) {
+        Optional<Member> findMember = memberRepository.findByEmail(email);
+        if (findMember.isEmpty()) throw new EmailNotFoundException("가입되어 있지 않은 이메일 입니다.");
     }
 
     public String createCode() {

@@ -6,11 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.config.Constant;
-import sw.study.exception.AccountDisabledException;
-import sw.study.exception.DuplicateNicknameException;
-import sw.study.exception.InvalidCredentialsException;
-import sw.study.exception.MemberCreationException;
-import sw.study.exception.UserNotFoundException;
+import sw.study.exception.*;
 import sw.study.exception.email.*;
 import sw.study.user.apiDoc.AuthApiDocumentation;
 import sw.study.user.dto.*;
@@ -230,22 +226,30 @@ public class AuthController implements AuthApiDocumentation {
 
     }
 
-    @PostMapping("/send/reset-token")
+    @PostMapping("/send-reset-token")
     public ResponseEntity<String> sendResetToken(@RequestBody String email) {
         try {
-            String token = authService.generatePasswordResetToken(email);
+
+            // 이메일 존재 여부 확인
+            memberService.checkEmail(email);
 
             // 이메일 발송
             String url = Constant.URL + "/reset-password";
             String subject = "비밀번호 변경";
             String text = "비밀번호 변경을 위해 접속해주세요: " + url;
             mailService.sendEmail(email, subject, text);
+            String token = authService.generatePasswordResetToken(email);
             return ResponseEntity.ok(token);
+
 
         } catch (EmailSendException e) {
             // 이메일 전송 중 오류 발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        } catch (EmailNotFoundException e) {
+            // 이메일을 찾을 수 없음
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
         } catch (Exception e) {
+            // 기타 예외 발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
         }
     }
@@ -285,11 +289,13 @@ public class AuthController implements AuthApiDocumentation {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 401
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
+        } catch (SamePasswordException e) {
+            // 변경하려는 비밀번호가 기존 비밀번호와 같습니다.
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400
         } catch (Exception e) {
             // 기타 예외 발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
         }
-
     }
 
 }
