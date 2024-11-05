@@ -73,4 +73,6 @@ public class Comment {
     public void addParentComment(Comment parent) {
         this.parent = parent;
     }
+
+    public void addPost(Post post) { this.post = post; }
 }
