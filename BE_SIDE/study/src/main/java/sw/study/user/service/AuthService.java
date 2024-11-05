@@ -15,6 +15,7 @@ import sw.study.config.jwt.TokenDTO;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.InvalidCredentialsException;
 import sw.study.exception.InvalidPasswordException;
+import sw.study.exception.SamePasswordException;
 import sw.study.exception.UserNotFoundException;
 import sw.study.user.domain.Member;
 import sw.study.user.dto.LoginRequest;
@@ -184,10 +185,13 @@ public class AuthService {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        // 비밀번호 공백 제거
+        // 비밀번호 공백 제거 및 암호화
         String trimmedNewPassword = newPassword.trim();
-
         String encodedNewPassword = encoder.encode(trimmedNewPassword);
+
+        // 기존 비밀번호와 새 비밀번호가 같은지 확인
+        if (member.getPassword().equals(encodedNewPassword)) throw new SamePasswordException("변경하려는 비밀번호가 기존 비밀번호와 같습니다.");
+        
         member.changePassword(encodedNewPassword);
         memberRepository.save(member);
 

@@ -6,11 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.config.Constant;
-import sw.study.exception.AccountDisabledException;
-import sw.study.exception.DuplicateNicknameException;
-import sw.study.exception.InvalidCredentialsException;
-import sw.study.exception.MemberCreationException;
-import sw.study.exception.UserNotFoundException;
+import sw.study.exception.*;
 import sw.study.exception.email.*;
 import sw.study.user.apiDoc.AuthApiDocumentation;
 import sw.study.user.dto.*;
@@ -293,11 +289,13 @@ public class AuthController implements AuthApiDocumentation {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 401
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
+        } catch (SamePasswordException e) {
+            // 변경하려는 비밀번호가 기존 비밀번호와 같습니다.
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400
         } catch (Exception e) {
             // 기타 예외 발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
         }
-
     }
 
 }
