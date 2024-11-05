@@ -37,6 +37,7 @@ public class Member {
     private boolean isSuspended = false; // 정지 여부를 확인
     private int warningCnt = 0; // 누적 경고 횟수
 
+    @Enumerated(EnumType.STRING)
     private Role role;
 
     private LocalDateTime createdAt;
@@ -52,11 +53,6 @@ public class Member {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    public void onDeleted() {
-        this.deletedAt = LocalDateTime.now();
-        this.isDeleted = true;
     }
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
@@ -89,6 +85,17 @@ public class Member {
         return member;
     }
 
+    public void onDeleted() {
+        this.isDeleted = true;
+    }
+
+    public void requestDeactivation() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void restore() {
+        this.deletedAt = null;
+    }
 
     public void addSetting(NotificationSetting setting) {
         settings.add(setting);

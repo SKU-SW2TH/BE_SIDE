@@ -28,26 +28,24 @@ public class PostFile {
     private String url;
     private boolean isDeleted = false;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
 
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 
     //== 생성 메서드 ==//
-    public static PostFile create(Post post, Member member, String url) {
+    public static PostFile createPostFile(Member member, String url) {
         PostFile file = new PostFile();
-        file.post = post;
         file.member = member;
         file.url = url;
 
         return file;
+    }
+
+
+    public void addPost(Post post) {
+        this.post = post;
     }
 }
