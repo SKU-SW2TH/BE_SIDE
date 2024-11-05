@@ -230,22 +230,30 @@ public class AuthController implements AuthApiDocumentation {
 
     }
 
-    @PostMapping("/send/reset-token")
+    @PostMapping("/send-reset-token")
     public ResponseEntity<String> sendResetToken(@RequestBody String email) {
         try {
-            String token = authService.generatePasswordResetToken(email);
+
+            // 이메일 존재 여부 확인
+            memberService.checkEmail(email);
 
             // 이메일 발송
             String url = Constant.URL + "/reset-password";
             String subject = "비밀번호 변경";
             String text = "비밀번호 변경을 위해 접속해주세요: " + url;
             mailService.sendEmail(email, subject, text);
+            String token = authService.generatePasswordResetToken(email);
             return ResponseEntity.ok(token);
+
 
         } catch (EmailSendException e) {
             // 이메일 전송 중 오류 발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        } catch (EmailNotFoundException e) {
+            // 이메일을 찾을 수 없음
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
         } catch (Exception e) {
+            // 기타 예외 발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
         }
     }
