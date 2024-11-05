@@ -22,6 +22,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final TokenProvider tokenProvider; // JWT 토큰을 처리하는 TokenProvider 인스턴스
     private final RedisUtil redisUtil; // RedisTemplate 인스턴스 추가
+    private final JWTService jwtService;
 
     // JWT 토큰의 인증 정보를 현재 쓰레드의 SecurityContext에 저장하는 역할 수행
     @Override
@@ -34,17 +35,22 @@ public class JwtFilter extends OncePerRequestFilter {
         // 정상 토큰이면 해당 토큰으로 Authentication을 가져와서 SecurityContext에 저장
         if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
             Object isLogoutObj = redisUtil.getBlackList("BlackList_" + jwt);
+            String email = jwtService.extractEmail(jwt);
+            String isReset = redisUtil.getData("PT:" + email);
             boolean isLogout = (isLogoutObj != null && isLogoutObj instanceof Boolean) ? (Boolean) isLogoutObj : false;
 
-            // 로그아웃되지 않은 경우
-            if (!isLogout) {
-                Authentication authentication = tokenProvider.getAuthentication(jwt); // 토큰에서 인증 정보를 가져옴
-                SecurityContextHolder.getContext().setAuthentication(authentication); // SecurityContext에 인증 정보를 저장
-            } else {
-                // 로그아웃된 경우 적절한 처리 (예: 오류 응답 반환)
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "로그아웃된 사용자입니다.");
-                return;
+            if(isReset == null){
+                // 로그아웃되지 않은 경우
+                if (!isLogout) {
+                    Authentication authentication = tokenProvider.getAuthentication(jwt); // 토큰에서 인증 정보를 가져옴
+                    SecurityContextHolder.getContext().setAuthentication(authentication); // SecurityContext에 인증 정보를 저장
+                } else {
+                    // 로그아웃된 경우 적절한 처리 (예: 오류 응답 반환)
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "로그아웃된 사용자입니다.");
+                    return;
+                }
             }
+
         }
 
         filterChain.doFilter(request, response); // 다음 필터로 요청을 전달
@@ -59,4 +65,5 @@ public class JwtFilter extends OncePerRequestFilter {
         }
         return null; // 토큰이 없거나 유효하지 않은 경우 null 반환
     }
+
 }

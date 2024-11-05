@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class NotificationSettingDTO {
-    long categoryId;
+    Long settingId; // 알림 설정 ID
     boolean isEnabled;
+    NotificationCategoryDTO categoryDTO;
 }

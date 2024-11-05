@@ -23,6 +23,7 @@ public class TokenProvider {
     private static final String BEARER_TYPE = "Bearer";
     private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24;            // 1일
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7;  // 7일
+    private static final long PASSWORD_RESET_TOKEN_EXPIRE_TIME = 1000 * 60 * 10;// 10분
 
     private final Key key;
     private final RedisUtil redisUtil;
@@ -206,4 +207,15 @@ public class TokenProvider {
         return redisUtil.hasKeyBlackList(blacklistKey); // 블랙리스트에 존재하는지 체크
     }
 
+    public String generatePasswordResetToken(String email) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + PASSWORD_RESET_TOKEN_EXPIRE_TIME);
+
+        return Jwts.builder()
+                .setSubject(email) // 복호화에 사용한다.
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
+    }
 }

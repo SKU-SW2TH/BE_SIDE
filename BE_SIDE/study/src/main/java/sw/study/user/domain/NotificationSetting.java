@@ -37,6 +37,11 @@ public class NotificationSetting {
         this.createdAt = LocalDateTime.now();
     }
 
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public static NotificationSetting createSetting(Member member, NotificationCategory category) {
         NotificationSetting setting = new NotificationSetting();
         setting.member = member;

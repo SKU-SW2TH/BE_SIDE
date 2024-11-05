@@ -16,6 +16,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import sw.study.config.jwt.JWTService;
 import sw.study.config.jwt.JwtFilter;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.user.service.MemberDetailsServiceImpl;
@@ -29,6 +30,7 @@ public class WebConfig {
     private final MemberDetailsServiceImpl memberDetailsService;
     private final TokenProvider tokenProvider;
     private final RedisUtil redisUtil;
+    private final JWTService jwtService;
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
@@ -61,7 +63,7 @@ public class WebConfig {
         // );
 
         // JwtFilter를 UsernamePasswordAuthenticationFilter 앞에 추가
-        http.addFilterBefore(new JwtFilter(tokenProvider, redisUtil), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new JwtFilter(tokenProvider, redisUtil, jwtService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build(); // 보안 필터 체인을 빌드하여 반환
     }
