@@ -1,6 +1,7 @@
 package sw.study.user.service;
 
 import io.jsonwebtoken.Claims;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,11 +14,14 @@ import sw.study.config.jwt.JWTService;
 import sw.study.config.jwt.TokenDTO;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.InvalidCredentialsException;
+import sw.study.exception.InvalidPasswordException;
 import sw.study.exception.UserNotFoundException;
 import sw.study.user.domain.Member;
 import sw.study.user.dto.LoginRequest;
 import sw.study.user.repository.MemberRepository;
 import sw.study.user.util.RedisUtil;
+
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -29,8 +33,10 @@ public class AuthService {
     private final RedisUtil redisUtil;
     private final MemberRepository memberRepository;
     private final JWTService jwtService;
+    private final BCryptPasswordEncoder encoder;
     private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24;       // 1일
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7;
+    private static final long PASSWORD_RESET_TOKEN_EXPIRE_TIME = 1000 * 60 * 10;// 10분
 
     public TokenDTO login(LoginRequest loginRequest) {
         String refreshTokenKey = "RT:" + loginRequest.getEmail();
@@ -155,4 +161,36 @@ public class AuthService {
         memberRepository.save(member);
     }
 
+    // 이메일을 입력받아서 jwt토큰을 생성하고, 이를 Redis에 저장, 사용자에게 반환
+    public String generatePasswordResetToken(String email) {
+        String token = tokenProvider.generatePasswordResetToken(email);
+        redisUtil.setData("PT:" + email, token, PASSWORD_RESET_TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
+        return token;
+    }
+
+    // 비밀번호 변경 토큰의 유효성 검사를 하는 메서드
+    public void validPasswordResetToken(String token) {
+        String email = jwtService.extractEmail(token);
+        if(redisUtil.getData("PT:" + email) != token) {
+            throw new RuntimeException("유효성 검사를 통과하지 못했습니다.");
+        }
+    }
+
+    // 비밀번호 변경시키는 메서드
+    @Transactional
+    public void changePassword(String token, String newPassword) {
+        String email = jwtService.extractEmail(token);
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 비밀번호 공백 제거
+        String trimmedNewPassword = newPassword.trim();
+
+        String encodedNewPassword = encoder.encode(trimmedNewPassword);
+        member.changePassword(encodedNewPassword);
+        memberRepository.save(member);
+
+        // redis에서 해당 토큰 삭제
+        redisUtil.delete("PT:" + email);
+    }
 }

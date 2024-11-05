@@ -6,6 +6,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sw.study.exception.email.EmailSendException;
 
 @Slf4j
 @Service
@@ -24,6 +25,7 @@ public class MailService {
         } catch (RuntimeException e) {
             log.debug("MailService.sendEmail exception occur toEmail: {}, " +
                     "title: {}, text: {}", toEmail, title, text);
+            throw new EmailSendException("이메일 전송 중 오류가 발생했습니다.", e);
         }
     }
 

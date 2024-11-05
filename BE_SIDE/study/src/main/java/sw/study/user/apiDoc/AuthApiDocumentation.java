@@ -15,6 +15,10 @@ public interface AuthApiDocumentation {
     @Operation(summary = "이메일 인증 코드 발송", description = "이메일 인증 코드를 발송하는 API")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "인증 코드가 전송되었습니다."),
+            @ApiResponse(responseCode = "500", description = "인증 코드 생성 중 오류가 발생했습니다."),
+            @ApiResponse(responseCode = "503", description = "인증 코드를 저장하는 중 오류가 발생했습니다."),
+            @ApiResponse(responseCode = "500", description = "이메일 전송 중 오류가 발생했습니다."),
+            @ApiResponse(responseCode = "500", description = "예기치 못한 오류가 발생했습니다.")
     })
     @Parameters(value = {
             @Parameter(name = "email", description = "이메일", example = "ksh123@naver.com")
@@ -25,7 +29,9 @@ public interface AuthApiDocumentation {
     @Operation(summary = "이메일 인증 코드 확인", description = "이메일 인증 코드 확인 API")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "이메일 인증이 완료되었습니다."),
-            @ApiResponse(responseCode = "422", description = "인증 코드가 올바르지 않습니다.")
+            @ApiResponse(responseCode = "409", description = "이미 사용 중인 이메일입니다."),
+            @ApiResponse(responseCode = "422", description = "인증 코드가 올바르지 않습니다."),
+            @ApiResponse(responseCode = "500", description = "예기치 못한 오류가 발생했습니다.")
     })
     @Parameters(value = {
             @Parameter(name = "email", description = "이메일", example = "ksh123@naver.com"),
@@ -37,7 +43,8 @@ public interface AuthApiDocumentation {
     @Operation(summary = "닉네임 중복 확인", description = "닉네임 중복 확인 API")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용 가능한 닉네임입니다."),
-            @ApiResponse(responseCode = "409", description = "이미 사용 중인 닉네임입니다.")
+            @ApiResponse(responseCode = "409", description = "이미 사용 중인 닉네임입니다."),
+            @ApiResponse(responseCode = "500", description = "예기치 못한 오류가 발생했습니다.")
     })
     @Parameters(value = {
             @Parameter(name = "nickname", description = "닉네임", example = "코난123")
@@ -48,7 +55,10 @@ public interface AuthApiDocumentation {
     @Operation(summary = "회원가입", description = "회원가입 할 때 사용하는 API")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "회원가입이 완료되었습니다."),
-            @ApiResponse(responseCode = "409", description = "이미 사용 중인 이메일입니다.")
+            @ApiResponse(responseCode = "409", description = "이미 사용 중인 이메일입니다."),
+            @ApiResponse(responseCode = "500", description = "회원 가입 중 오류가 발생했습니다."),
+            @ApiResponse(responseCode = "500", description = "회원 가입 중 데이터베이스 오류가 발생했습니다."),
+            @ApiResponse(responseCode = "500", description = "예기치 못한 오류가 발생했습니다.")
     })
     @Parameters(value = {
             @Parameter(name = "email", description = "이메일", example = "ksh123@naver.com"),
