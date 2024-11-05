@@ -187,11 +187,11 @@ public class AuthService {
 
         // 비밀번호 공백 제거 및 암호화
         String trimmedNewPassword = newPassword.trim();
-        String encodedNewPassword = encoder.encode(trimmedNewPassword);
 
         // 기존 비밀번호와 새 비밀번호가 같은지 확인
-        if (member.getPassword().equals(encodedNewPassword)) throw new SamePasswordException("변경하려는 비밀번호가 기존 비밀번호와 같습니다.");
-        
+        if (encoder.matches(trimmedNewPassword, member.getPassword())) throw new SamePasswordException("변경하려는 비밀번호가 기존 비밀번호와 같습니다.");
+
+        String encodedNewPassword = encoder.encode(trimmedNewPassword);
         member.changePassword(encodedNewPassword);
         memberRepository.save(member);
 
