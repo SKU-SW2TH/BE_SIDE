@@ -26,12 +26,12 @@ public class NotificationService {
     private final NotificationSettingRepository notificationSettingRepository;
 
     @Transactional
-    public void sendNotification(Member member, String title, String content, String name, Long targetId) {
-        if (member == null || title == null || content == null || targetId == null) {
+    public void sendNotification(Member member, String title, String content, String type, Long targetId) {
+        if (member == null || title == null || content == null) {
             throw new IllegalArgumentException("파라미터가 null입니다.");
         }
 
-        NotificationCategory category = notificationCategoryRepository.findByCategoryName(name)
+        NotificationCategory category = notificationCategoryRepository.findByCategoryName(type)
                 .orElseThrow(() -> new NoSuchElementException("카테고리를 찾지 못했습니다."));
 
         Optional<NotificationSetting> notificationSetting = notificationSettingRepository.findByMemberAndCategory(member, category);

@@ -163,6 +163,7 @@ public class AuthService {
 
     // 이메일을 입력받아서 jwt토큰을 생성하고, 이를 Redis에 저장, 사용자에게 반환
     public String generatePasswordResetToken(String email) {
+        email = email.replace("\"", ""); // 큰 따옴표 제거
         String token = tokenProvider.generatePasswordResetToken(email);
         redisUtil.setData("PT:" + email, token, PASSWORD_RESET_TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
         return token;
@@ -171,7 +172,7 @@ public class AuthService {
     // 비밀번호 변경 토큰의 유효성 검사를 하는 메서드
     public void validPasswordResetToken(String token) {
         String email = jwtService.extractEmail(token);
-        if(redisUtil.getData("PT:" + email) != token) {
+        if(!redisUtil.getData("PT:" + email).equals(token)) {
             throw new RuntimeException("유효성 검사를 통과하지 못했습니다.");
         }
     }
