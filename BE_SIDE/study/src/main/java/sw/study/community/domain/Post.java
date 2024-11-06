@@ -27,7 +27,7 @@ public class Post {
 
     @ManyToOne
     @JoinColumn(name = "category_id")
-    private Category category;
+    private Category category;  // 1: 자유게시판, 2: 질문게시판
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     private List<PostFile> files = new ArrayList<>();
