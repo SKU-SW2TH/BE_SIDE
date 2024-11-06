@@ -35,7 +35,8 @@ public class Member {
     private boolean isSuspended = false; // 정지 여부를 확인
     private int warningCnt = 0; // 누적 경고 횟수
 
-    @Enumerated(EnumType.ORDINAL)
+
+    @Enumerated(EnumType.STRING)
     private Role role;
 
     private LocalDateTime createdAt;

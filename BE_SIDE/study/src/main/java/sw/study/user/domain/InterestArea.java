@@ -29,8 +29,6 @@ public class InterestArea {
     @JoinColumn(name = "parent_id")
     private InterestArea parent;
 
-    //얘는 생성날짜 수정날짜 필요 없을듯?
-
 
     //== 생성 메서드 ==//
     public static InterestArea createInterest(int level, String FieldName) {

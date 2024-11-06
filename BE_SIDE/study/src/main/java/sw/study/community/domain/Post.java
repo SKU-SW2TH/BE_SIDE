@@ -3,6 +3,7 @@ package sw.study.community.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import sw.study.user.domain.InterestArea;
 import sw.study.user.domain.Member;
 
 import java.time.LocalDateTime;
@@ -28,14 +29,17 @@ public class Post {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @OneToMany(mappedBy = "post") // 게시판 쪽에 있어야 불러오기 편한거 아닌가?
-    private List<Comment> comments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "post") // 게시판 쪽에 있어야 불러오기 편한거 아닌가?
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     private List<PostFile> files = new ArrayList<>();
 
-    @OneToMany(mappedBy = "post") // 게시판 쪽에 있어야 불러오기 편한거 아닌가?
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostLike> likes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostInterest> interests = new ArrayList<>();
 
     private String title;
     private String content;
@@ -44,9 +48,6 @@ public class Post {
     private int reportCount = 0;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    // 삭제 여부를 변경하는 것도 수정에 포함되는데 이게 꼭 필요할까?
-    // 삭제 여부가 true인 게시글의 updateAt가 곧 삭제 날짜 아닌가?
 
 
     @PrePersist
@@ -60,7 +61,9 @@ public class Post {
 
 
     //== 생성 메서드 ==//
-    public static Post createPost(String title, String content, Category category, Member member) {
+    public static Post createPost(String title, String content, Category category,
+                                  Member member, List<InterestArea> interestAreas,
+                                  List<String> urls) {
         Post post = new Post();
         post.title = title;
         post.content = content;
@@ -68,7 +71,33 @@ public class Post {
         post.member = member;
         post.category = category;
 
+        for (InterestArea interestArea : interestAreas) {
+            PostInterest postInterest = PostInterest.createPostInterest(interestArea);
+            post.addInterest(postInterest);
+        }
+
+        for (String url : urls) {
+            PostFile postFile = PostFile.createPostFile(member, url);
+            post.addFile(postFile);
+        }
+
         return post;
+    }
+
+    //== 연관 관계 편의 메서드 ==//
+    public void addComment(Comment comment) {
+        this.comments.add(comment);
+        comment.addPost(this);
+    }
+
+    public void addFile(PostFile file) {
+        this.files.add(file);
+        file.addPost(this);
+    }
+
+    public void addInterest(PostInterest interest) {
+        this.interests.add(interest);
+        interest.addPost(this);
     }
 
     //== 비지니스 로직 ==//
