@@ -274,7 +274,8 @@ public class MemberService {
             InterestArea interestArea = interestAreaRepository.findById(interestId)
                     .orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
 
-            MemberInterest newInterest = MemberInterest.CreateMemberInterest(member, interestArea);
+            MemberInterest newInterest = MemberInterest.CreateMemberInterest(interestArea);
+            member.addInterest(newInterest);
             memberInterestRepository.save(newInterest);
         }
 
@@ -323,7 +324,8 @@ public class MemberService {
         for (Long interestId : interestsToAdd) {
             InterestArea interestArea = interestAreaRepository.findById(interestId)
                     .orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
-            MemberInterest newInterest = MemberInterest.CreateMemberInterest(member, interestArea);
+            MemberInterest newInterest = MemberInterest.CreateMemberInterest(interestArea);
+            member.addInterest(newInterest);
             memberInterestRepository.save(newInterest);
         }
 
