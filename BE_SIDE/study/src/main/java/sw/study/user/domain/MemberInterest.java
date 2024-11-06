@@ -26,13 +26,15 @@ public class MemberInterest {
     private InterestArea interestArea;
 
     //== 생성 메서드 ==//
-    public static MemberInterest CreateMemberInterest(Member member, InterestArea interestArea) {
+    public static MemberInterest CreateMemberInterest(InterestArea interestArea) {
         MemberInterest memberInterest = new MemberInterest();
-        memberInterest.member = member;
         memberInterest.interestArea = interestArea;
-
-        member.addInterest(memberInterest);
 
         return memberInterest;
     }
+
+    public void addMember(Member member) {
+        this.member = member;
+    }
+
 }
