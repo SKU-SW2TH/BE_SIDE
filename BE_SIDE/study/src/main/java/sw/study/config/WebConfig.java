@@ -23,6 +23,8 @@ import sw.study.user.service.MemberDetailsServiceImpl;
 import sw.study.user.util.RedisUtil;
 import java.util.List;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 @Configuration
 @RequiredArgsConstructor
 @EnableWebSecurity
@@ -40,6 +42,7 @@ public class WebConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // HTTP 기본 인증 비활성화
+        http.cors(withDefaults()); // cors 설정 적용
         http.httpBasic(AbstractHttpConfigurer::disable)
                 // CSRF 보호 비활성화 (REST API의 경우 일반적으로 비활성화)
                 .csrf(AbstractHttpConfigurer::disable)
