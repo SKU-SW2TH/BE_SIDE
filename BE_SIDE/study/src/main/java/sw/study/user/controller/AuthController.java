@@ -198,7 +198,7 @@ public class AuthController implements AuthApiDocumentation {
     }
 
     @Override
-    @PutMapping("/restore")
+    @PatchMapping("/restore")
     public ResponseEntity<String> restoreMember(@RequestHeader("Authorization") String accessToken) {
         try {
             // 토큰 유효성 검사
