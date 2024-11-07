@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import sw.study.exception.*;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.Participant.Role;
@@ -26,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -79,6 +79,7 @@ public class StudyGroupService {
     }
 
     // 스터디 그룹 생성 ( + 사용자 초대 )
+    @Transactional
     public StudyGroup createStudyGroup(
             String groupName, String description, List<String> selectedNicknames, String leaderNickname){
 
@@ -159,6 +160,7 @@ public class StudyGroupService {
     }
 
     //초대 수락
+    @Transactional
     public void acceptInvitation(long groupId, String Nickname){
 
         Member member = currentLogginedInfo();
@@ -190,6 +192,7 @@ public class StudyGroupService {
     }
 
     //초대 거절
+    @Transactional
     public void rejectInvitation(long groupId){
 
         Member member = currentLogginedInfo();
@@ -290,6 +293,7 @@ public class StudyGroupService {
     }
 
     // 특정 사용자 초대 취소
+    @Transactional
     public boolean cancelInvitation(long groupId, String nickname) {
 
         Member member = currentLogginedInfo();
@@ -319,6 +323,7 @@ public class StudyGroupService {
     }
 
     // 그룹 내 권한 변경
+    @Transactional
     public void changeRole(long groupId, String nickname) {
 
         Member member = currentLogginedInfo();
@@ -343,6 +348,7 @@ public class StudyGroupService {
     }
 
     // 그룹 내 닉네임 변경
+    @Transactional
     public void changeParticipantNickname(long groupId, String nickname){
 
         Member member = currentLogginedInfo();
@@ -358,6 +364,7 @@ public class StudyGroupService {
     }
 
     // 그룹 내 신규 초대
+    @Transactional
     public void inviteNewMember(long groupId, List<String> selectedNicknames){
 
         Member member = currentLogginedInfo();
@@ -385,7 +392,9 @@ public class StudyGroupService {
         studyGroup.whoEverInvited(waitingPeopleList.size());
         waitingPeopleRepository.saveAll(waitingPeopleList);
     }
+
     // 그룹 탈퇴
+    @Transactional
     public void quitGroup(long groupId) {
 
         Member member = currentLogginedInfo();
@@ -407,6 +416,7 @@ public class StudyGroupService {
 
 
     // 그룹 내 특정 사용자 추방
+    @Transactional
     public void userKick(long groupId, String nickname) {
 
         Member member = currentLogginedInfo();
