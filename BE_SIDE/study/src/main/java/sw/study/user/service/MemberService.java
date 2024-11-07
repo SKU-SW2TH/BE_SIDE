@@ -121,6 +121,7 @@ public class MemberService {
         memberDto.setProfile(member.getProfile());
         memberDto.setIntroduce(member.getIntroduce());
         memberDto.setRole(member.getRole().toString());
+        memberDto.set_deleted(memberDto.is_deleted());
 
         if (member.getDeletedAt() != null) {
             memberDto.setDeletedAt(LocalDate.from(member.getDeletedAt()));
@@ -151,23 +152,9 @@ public class MemberService {
                 })
                 .collect(Collectors.toList());
 
-        List<NotificationDTO> notificationDTOS = member.getNotifications().stream()
-                .sorted(Comparator.comparing(Notification::getCreatedAt).reversed()) // createdAt 기준 내림차순 정렬
-                .map(notification -> {
-                    NotificationDTO dto = new NotificationDTO();
-                    dto.setId(notification.getId());
-                    dto.setTitle(notification.getTitle());
-                    dto.setContent(notification.getContent());
-                    dto.setRead(notification.isRead());
-                    dto.setName(notification.getCategory().getCategoryName());
-                    dto.setCreatedAt(notification.getCreatedAt());
-                    return dto;
-                }).collect(Collectors.toList());
-
         // DTO 설정
         memberDto.setSettings(dtos);
         memberDto.setInterests(interestDtos);
-        memberDto.setNotifications(notificationDTOS);
 
         // 이메일로 사용자 조회
         return memberDto;
@@ -373,21 +360,20 @@ public class MemberService {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        List<Notification> notifications = notificationRepository.findByMember(member);
-        List<NotificationDTO> dtos = new ArrayList<>();
+        List<NotificationDTO> notificationDTOS = member.getNotifications().stream()
+                .sorted(Comparator.comparing(Notification::getCreatedAt).reversed()) // createdAt 기준 내림차순 정렬
+                .map(notification -> {
+                    NotificationDTO dto = new NotificationDTO();
+                    dto.setId(notification.getId());
+                    dto.setTitle(notification.getTitle());
+                    dto.setContent(notification.getContent());
+                    dto.setRead(notification.isRead());
+                    dto.setName(notification.getCategory().getCategoryName());
+                    dto.setCreatedAt(notification.getCreatedAt());
+                    return dto;
+                }).collect(Collectors.toList());
 
-        for (Notification notification : notifications) {
-            NotificationDTO dto = new NotificationDTO();
-            dto.setId(notification.getId());
-            dto.setTitle(notification.getTitle());
-            dto.setContent(notification.getContent());
-            dto.setName(notification.getCategory().getCategoryName());
-            dto.setRead(notification.isRead());
-            dto.setCreatedAt(notification.getCreatedAt());
-            dtos.add(dto);
-        }
-
-        return dtos;
+        return notificationDTOS;
     }
 
     public List<NotificationDTO> unReadNotification(String token) {
