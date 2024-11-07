@@ -77,7 +77,7 @@ public class Member {
 
         // 알림설정 저장
         for(NotificationCategory category : categories) {
-            NotificationSetting setting = NotificationSetting.createSetting(member, category);
+            NotificationSetting setting = NotificationSetting.createSetting(category);
             member.addSetting(setting); // 설정을 Member에 추가
         }
 
@@ -98,10 +98,12 @@ public class Member {
 
     public void addSetting(NotificationSetting setting) {
         settings.add(setting);
+        setting.addMember(this);
     }
 
     public void addInterest(MemberInterest interest) {
         interests.add(interest);
+        interest.addMember(this);
     }
 
     public void addNotification(Notification notification) {

@@ -47,7 +47,7 @@ public class MemberController implements MemberApiDocumentation {
     }
 
     @Override
-    @PutMapping(value = "/update/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(value = "/update/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateMemberProfile(
             @RequestHeader("Authorization") String accessToken,
             @RequestParam(value = "nickname", required = false) String nickname,
@@ -88,7 +88,7 @@ public class MemberController implements MemberApiDocumentation {
     }
 
     @Override
-    @PutMapping("/change/password")
+    @PatchMapping("/change/password")
     public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody PasswordChangeRequest request){
         try {
@@ -115,7 +115,7 @@ public class MemberController implements MemberApiDocumentation {
     }
 
     @Override
-    @PutMapping("/update/notification")
+    @PatchMapping("/update/notification")
     public ResponseEntity<?> updateNotification(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody SettingRequest dto){
         try {
@@ -186,7 +186,7 @@ public class MemberController implements MemberApiDocumentation {
     }
 
     @Override
-    @PutMapping("/update/notification/read")
+    @PatchMapping("/update/notification/read")
     public ResponseEntity<?> updateRead(@RequestHeader("Authorization") String accessToken) {
         try {
             if (accessToken == null || !accessToken.startsWith("Bearer ")) {
