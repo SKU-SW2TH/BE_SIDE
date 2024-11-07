@@ -5,9 +5,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.*;
+import sw.study.config.Constant;
+import sw.study.exception.SamePasswordException;
+import sw.study.exception.UserNotFoundException;
+import sw.study.exception.email.EmailNotFoundException;
+import sw.study.exception.email.EmailSendException;
 import sw.study.user.dto.*;
 
 public interface AuthApiDocumentation {
@@ -114,4 +119,40 @@ public interface AuthApiDocumentation {
     ResponseEntity<String> restoreMember(
             @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
             @RequestHeader("Authorization") String accessToken);
+
+
+    @Operation(summary = "비밀번호 재설정 페이지에서 사용될 resetToken 전송", description = "비밀번호 재설정 페이지에서 사용될 resetToken 전송하는 API")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "비밀번호 재설정 페이지에서 사용될 resetToken 전송"),
+            @ApiResponse(responseCode = "404", description = "가입되어 있지 않은 이메일 입니다."),
+            @ApiResponse(responseCode = "500", description = "이메일 전송 중 오류가 발생했습니다."),
+            @ApiResponse(responseCode = "500", description = "예기치 못한 오류가 발생했습니다.")
+    })
+    @Parameters(value = {
+            @Parameter(name = "email", description = "이메일 ※전송 시 큰 따옴표는 제거하고 보내야함", example = "ksh990409@naver.com")
+    })
+    ResponseEntity<String> sendResetToken(@RequestBody String email);
+
+
+    @Operation(summary = "resetToken의 유효성 검사 ", description = "비밀번호 재설정 페이지에서 resetToken의 유효성을 검사하는 API")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "토큰 인증을 성공하였습니다."),
+            @ApiResponse(responseCode = "401", description = "[ERROR] 유효하지 않은 토큰 형식입니다."),
+            @ApiResponse(responseCode = "401", description = "유효성 검사를 통과하지 못했습니다."),
+            @ApiResponse(responseCode = "500", description = "예기치 못한 오류가 발생했습니다.")
+    })
+    public ResponseEntity<String> validResetToken(@RequestHeader("Authorization") String token);
+
+    @Operation(summary = "비회원 상태로 비밀번호 변경", description = "비회원 상태로 비밀번호 변경하는 API")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "비밀번호가 변경되었습니다."),
+            @ApiResponse(responseCode = "400", description = "변경하려는 비밀번호가 기존 비밀번호와 같습니다."),
+            @ApiResponse(responseCode = "401", description = "[ERROR] 유효하지 않은 토큰 형식입니다."),
+            @ApiResponse(responseCode = "404", description = "가입되어 있지 않은 이메일 입니다."),
+            @ApiResponse(responseCode = "500", description = "예기치 못한 오류가 발생했습니다.")
+    })
+    @Parameters(value = {
+            @Parameter(name = "newPassword", description = "새로운 비밀번호 ※전송 시 큰 따옴표는 제거하고 보내야함", example = "pok123!!")
+    })
+    public ResponseEntity<String> changePassword(@RequestHeader("Authorization") String token, @RequestBody String newPassword);
 }
