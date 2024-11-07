@@ -22,4 +22,6 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
 
     List<Participant> findAllByGroupId(Long groupId); // 전체 사용자 조회
     List<Participant> findAllByGroupIdAndRole(Long groupId, Participant.Role role); // 신분에 따른 조회
+
+    Optional<Participant> findByGroupIdAndNickname(Long groupId,String nickname); // 추방 시 or 그룹 내부에서 닉네임 변경시
 }

@@ -51,6 +51,11 @@ public class Participant {
         if(this.role==Role.MANAGER) this.role = Role.MEMBER;
     }
 
+    public void changedNickname(String nickname){
+        this.nickname = nickname;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public static Participant createParticipant(String nickname, Member member, Role role) {
         Participant participant = new Participant();
         participant.member = member;
@@ -60,6 +65,4 @@ public class Participant {
         participant.updatedAt = LocalDateTime.now();
         return participant;
     }
-
-
 }

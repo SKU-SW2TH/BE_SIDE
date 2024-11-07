@@ -22,11 +22,11 @@ import sw.study.studyGroup.repository.WaitingPeopleRepository;
 import sw.study.user.domain.Member;
 import sw.study.user.repository.MemberRepository;
 
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -47,22 +47,32 @@ public class StudyGroupService {
                 .orElseThrow(() -> new UserNotFoundException("사용자를 조회할 수 없습니다."));
     }
 
-    // 닉네임을 통한 사용자 검색 ( 그룹 생성 시 )
-    public List<String> searchByNickname(String nickname, int page, int size){
+    // 닉네임을 통한 사용자 검색 ( 그룹 생성 시 / 생성 이후 신규 초대 모두 핸들링  )
+    public List<String> searchByNickname(String nickname, int page, int size, Long groupId){
         Pageable pageable = PageRequest.of(page, size);
 
         Page<Member> members = memberRepository.findMembersByNicknameStartingWith(nickname, pageable);
-
         List<String> nicknames = new ArrayList<>();
 
         String loggedUserNickname = currentLogginedInfo().getNickname();
 
+        List<String> existingParticipants = new ArrayList<>(); // 방 생성 이후 (groupId 존재)
+
+        if(groupId != null){
+            existingParticipants = participantRepository.findAllByGroupId(groupId)
+                    .stream()
+                    .map(participant -> participant.getMember().getNickname())
+                    .toList();
+        }
+
         if(members.isEmpty()){
             return Collections.emptyList();
-            // 비어있는 리스트 반환
+            // 비어있는 리스트 반환 ( 검색된 결과가 없을 경우에 )
         }
         for(Member member : members){
-            if(!loggedUserNickname.equals(member.getNickname()))
+            // 로그인된 사용자  / 기존 참가자는 제외
+            if(!loggedUserNickname.equals(member.getNickname())
+            &&!existingParticipants.contains(member.getNickname()))
                 nicknames.add(member.getNickname());
         }
         return nicknames;
@@ -330,5 +340,92 @@ public class StudyGroupService {
         else if(target.getRole()==Role.MANAGER){
             target.demote();
         }
+    }
+
+    // 그룹 내 닉네임 변경
+    public void changeParticipantNickname(long groupId, String nickname){
+
+        Member member = currentLogginedInfo();
+
+        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+
+        Optional<Participant> isTaken = participantRepository.findByGroupIdAndNickname(groupId, nickname);
+
+        if(isTaken.isPresent()) throw new DuplicateNicknameException("이미 사용중인 닉네임입니다.");
+
+        participant.changedNickname(nickname);
+    }
+
+    // 그룹 내 신규 초대
+    public void inviteNewMember(long groupId, List<String> selectedNicknames){
+
+        Member member = currentLogginedInfo();
+
+        StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                .orElseThrow(() -> new StudyGroupNotFoundException("해당 그룹이 존재하지 않습니다."));
+
+        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+
+        if (participant.getRole()== Role.MEMBER) {
+            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+        }
+
+        List<Member> members = memberRepository.findByNicknameIn(selectedNicknames);
+
+        // 대기 명단에 추가
+        List<WaitingPeople> waitingPeopleList = new ArrayList<>();
+
+        for (Member newbie : members) {
+            WaitingPeople waitingPerson = WaitingPeople.createWaitingPerson(newbie, studyGroup);
+            waitingPeopleList.add(waitingPerson);
+        }
+
+        studyGroup.whoEverInvited(waitingPeopleList.size());
+        waitingPeopleRepository.saveAll(waitingPeopleList);
+    }
+    // 그룹 탈퇴
+    public void quitGroup(long groupId) {
+
+        Member member = currentLogginedInfo();
+
+        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+
+        if (participant.getRole() == Role.LEADER) {
+            throw new PermissionDeniedException("스터디장은 그룹을 나갈 수 없습니다.");
+        }
+
+        studyGroupRepository.findById(groupId).ifPresent(studyGroup -> {
+            studyGroup.getParticipants().remove(participant);
+            //participantRepository.delete(participant);
+            //양방향 리스트 : list.remove() 에 의해 고아가 되고 자동으로 삭제됨 (orphanRemoval)
+            studyGroup.whoEverQuit();
+        });
+    }
+
+
+    // 그룹 내 특정 사용자 추방
+    public void userKick(long groupId, String nickname) {
+
+        Member member = currentLogginedInfo();
+
+        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+
+        if (participant.getRole()!= Role.LEADER) {
+            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+        }
+
+        studyGroupRepository.findById(groupId).ifPresent(
+                studyGroup -> {
+                    Optional<Participant> target = participantRepository.findByGroupIdAndNickname(groupId, nickname);
+                    target.ifPresent(value -> studyGroup.getParticipants().remove(value));
+                    // 여러 닉네임을 여러 그룹에서 사용하는 경우 -> 수정 필요
+                    // 이 또한 orphanRemoval 덕분에 repo.delete 할 필요 없다.
+                    studyGroup.whoEverKicked();
+                }
+        );
     }
 }

@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.exception.*;
+import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.dto.*;
 import sw.study.studyGroup.service.StudyGroupService;
@@ -25,8 +26,9 @@ public class StudyGroupController {
     public ResponseEntity<?> searchMembers(
             @RequestParam String nickname,
             @RequestParam int page,
-            @RequestParam int size) {
-        List<String> results = studyGroupService.searchByNickname(nickname,page,size);
+            @RequestParam int size,
+            @RequestParam(required = false) Long groupId) {
+        List<String> results = studyGroupService.searchByNickname(nickname,page,size,groupId);
 
         if(results.isEmpty()) {
             return ResponseEntity.ok("조회된 결과가 없습니다.");
@@ -191,6 +193,57 @@ public class StudyGroupController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+        }
+    }
+
+    // 그룹 내 닉네임 변경
+    @PatchMapping("/{groupId}/participants/nickname")
+    public ResponseEntity<?> changeNickname(
+            @PathVariable long groupId,
+            @RequestBody SearchByNickname nicknameDto){
+        try{
+            studyGroupService.changeParticipantNickname(groupId, nicknameDto.getNickname());
+            return ResponseEntity.ok("닉네임 변경에 성공하였습니다.");
+        }catch (UnauthorizedException e){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }catch (DuplicateNicknameException e){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
+    }
+
+    // 그룹 내 신규 초대
+    @PostMapping("/{groupId}/participants/invite")
+    public ResponseEntity<?> inviteNewMember(@PathVariable long groupId,
+                                             @RequestBody InviteNewMember listOfMembers){
+        try {
+            studyGroupService.inviteNewMember(groupId, listOfMembers.getSelectedNicknames());
+            return ResponseEntity.ok(String.format("총 %d 명에게 초대가 전송되었습니다.", listOfMembers.getSelectedNicknames().size()));
+        } catch (StudyGroupNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (UnauthorizedException | PermissionDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    // 사용자 추방
+    @DeleteMapping("/{groupId}/participants/kick/{nickname}")
+    public ResponseEntity<?> kickParticipant(@PathVariable long groupId, @PathVariable String nickname){
+        try {
+            studyGroupService.userKick(groupId, nickname);
+            return ResponseEntity.ok(String.format("%s 님을 추방하였습니다.", nickname));
+        } catch (UnauthorizedException | PermissionDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    // 그룹 탈퇴
+    @DeleteMapping("/{groupId}/quit")
+    public ResponseEntity<?> quitStudyGroup(@PathVariable long groupId){
+        try {
+            studyGroupService.quitGroup(groupId);
+            return ResponseEntity.ok("해당 스터디그룹을 탈퇴하였습니다.");
+        } catch (UnauthorizedException | PermissionDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
 }

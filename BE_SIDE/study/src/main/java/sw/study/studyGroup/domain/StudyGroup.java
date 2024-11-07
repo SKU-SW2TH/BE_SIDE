@@ -61,16 +61,23 @@ public class StudyGroup {
 
     // 초대를 수락했을 떄
     public void whoEverAccepted(Participant participant){
-        {
-            participants.add(participant);
-            this.memberCount++;
-            this.waitingCount--;
-        }
+        participants.add(participant);
+        this.memberCount++;
+        this.waitingCount--;
     }
 
     // 초대를 거부했을 때
     public void whoEverRejected(WaitingPeople waitingPerson){
         this.waitingCount--;
+    }
+
+    // 그룹을 탈퇴했을 때
+    public void whoEverQuit(){
+        this.memberCount--;
+    }
+
+    public void whoEverKicked(){
+        this.memberCount--;
     }
 
     public static StudyGroup createStudyGroup(String name, String description){
