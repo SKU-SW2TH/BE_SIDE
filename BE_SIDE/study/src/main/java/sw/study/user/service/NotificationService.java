@@ -37,7 +37,8 @@ public class NotificationService {
         Optional<NotificationSetting> notificationSetting = notificationSettingRepository.findByMemberAndCategory(member, category);
 
         if (notificationSetting.isPresent() && notificationSetting.get().isEnabled()) {
-            Notification notification = Notification.createNotification(member, category, title, content, targetId);
+            Notification notification = Notification.createNotification(category, title, content, targetId);
+            member.addNotification(notification);
             notificationRepository.save(notification);
         }
     }
