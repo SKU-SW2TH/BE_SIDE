@@ -100,6 +100,18 @@ public class Post {
         interest.addPost(this);
     }
 
-    //== 비지니스 로직 ==//
+    public void addLike(PostLike like) {
+        this.likes.add(like);
+        like.addPost(this);
+    }
 
+    //== 비지니스 로직 ==//
+    public void deletePost() {
+        this.isDeleted = true;
+    }
+
+    public void removeLike(PostLike postLike) {
+        this.likes.remove(postLike);
+        postLike.addPost(null); // Post를 null로 설정하여 양방향 관계를 유지
+    }
 }
