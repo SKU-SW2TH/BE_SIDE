@@ -48,7 +48,7 @@ public class StudyGroupService {
     }
 
     // 닉네임을 통한 사용자 검색 ( 그룹 생성 시 / 생성 이후 신규 초대 모두 핸들링  )
-    public List<String> searchByNickname(String nickname, int page, int size, Long groupId){
+    public List<String> searchByNickname(String nickname, int page, int size, Long groupId) {
         Pageable pageable = PageRequest.of(page, size);
 
         Page<Member> members = memberRepository.findMembersByNicknameStartingWith(nickname, pageable);
@@ -58,21 +58,21 @@ public class StudyGroupService {
 
         List<String> existingParticipants = new ArrayList<>(); // 방 생성 이후 (groupId 존재)
 
-        if(groupId != null){
-            existingParticipants = participantRepository.findAllByGroupId(groupId)
+        if (groupId != null) {
+            existingParticipants = participantRepository.findAllByStudyGroupId(groupId)
                     .stream()
                     .map(participant -> participant.getMember().getNickname())
                     .toList();
         }
 
-        if(members.isEmpty()){
+        if (members.isEmpty()) {
             return Collections.emptyList();
             // 비어있는 리스트 반환 ( 검색된 결과가 없을 경우에 )
         }
-        for(Member member : members){
+        for (Member member : members) {
             // 로그인된 사용자  / 기존 참가자는 제외
-            if(!loggedUserNickname.equals(member.getNickname())
-            &&!existingParticipants.contains(member.getNickname()))
+            if (!loggedUserNickname.equals(member.getNickname())
+                    && !existingParticipants.contains(member.getNickname()))
                 nicknames.add(member.getNickname());
         }
         return nicknames;
@@ -81,7 +81,7 @@ public class StudyGroupService {
     // 스터디 그룹 생성 ( + 사용자 초대 )
     @Transactional
     public StudyGroup createStudyGroup(
-            String groupName, String description, List<String> selectedNicknames, String leaderNickname){
+            String groupName, String description, List<String> selectedNicknames, String leaderNickname) {
 
         // 스터디 그룹 생성 
         StudyGroup studyGroup = StudyGroup.createStudyGroup(groupName, description);
@@ -111,7 +111,7 @@ public class StudyGroupService {
     }
 
     // 초대를 받은 스터디그룹 확인하기
-    public List <InvitedResponse> checkInvited(){
+    public List<InvitedResponse> checkInvited() {
 
         Member user = currentLogginedInfo();
 
@@ -121,9 +121,9 @@ public class StudyGroupService {
         List<InvitedResponse> invitedResponses = new ArrayList<>();
 
         // waitingPeople 의 StudyGroup 으로 초대받은 그룹 탐색
-        for(WaitingPeople waitingPerson : waitingPeopleList){
+        for (WaitingPeople waitingPerson : waitingPeopleList) {
 
-           StudyGroup studyGroup = waitingPerson.getStudyGroup(); // Exception 핸들링 불필요
+            StudyGroup studyGroup = waitingPerson.getStudyGroup(); // Exception 핸들링 불필요
             InvitedResponse groupInfo = InvitedResponse.createInvitedResponse(
                     studyGroup.getName(),
                     studyGroup.getDescription(),
@@ -135,7 +135,7 @@ public class StudyGroupService {
     }
 
     // 참여중인 스터디 그룹 확인
-    public List <JoinedResponse> checkJoined() {
+    public List<JoinedResponse> checkJoined() {
 
         Member user = currentLogginedInfo();
 
@@ -161,13 +161,13 @@ public class StudyGroupService {
 
     //초대 수락
     @Transactional
-    public void acceptInvitation(long groupId, String Nickname){
+    public void acceptInvitation(long groupId, String Nickname) {
 
         Member member = currentLogginedInfo();
         waitingPeopleRepository.deleteByMemberId(member.getId());
 
         // 닉네임 중복확인
-        if(participantRepository.validateByNickname(Nickname)){
+        if (participantRepository.findByNickname(Nickname)) {
             throw new DuplicateNicknameException("해당 닉네임은 이미 사용중입니다.");
         }
 
@@ -181,7 +181,7 @@ public class StudyGroupService {
         });
 
         // 사용자가 이미 허용된 수 만큼의 그룹에 참가중이라면
-        if(participantRepository.countByMemberId(member.getId())==20)
+        if (participantRepository.countByMemberId(member.getId()) == 20)
             throw new MaxStudyGroupException("더 이상 스터디그룹에 참가할 수 없습니다.");
 
         Participant newParticipant = Participant.createParticipant(Nickname, member, Role.MEMBER);
@@ -193,12 +193,12 @@ public class StudyGroupService {
 
     //초대 거절
     @Transactional
-    public void rejectInvitation(long groupId){
+    public void rejectInvitation(long groupId) {
 
         Member member = currentLogginedInfo();
 
         // findByMember로 조회하고 지우면 큰일남.. 특정 사용자가 받은 초대 다 지워버림;
-        Optional<WaitingPeople> targetMemberOptional = waitingPeopleRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId);
+        Optional<WaitingPeople> targetMemberOptional = waitingPeopleRepository.findByMemberIdAndStudyGroup_Id(member.getId(), groupId);
 
         if (targetMemberOptional.isPresent()) {
             WaitingPeople targetMember = targetMemberOptional.get();
@@ -213,14 +213,14 @@ public class StudyGroupService {
     }
 
     //참가자 전체 리스트 확인
-    public List<GroupParticipants> listOfEveryone(long groupId){
+    public List<GroupParticipants> listOfEveryone(long groupId) {
 
         Member member = currentLogginedInfo();
 
-        participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+        participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다."));
 
-        List<Participant> participants = participantRepository.findAllByGroupId(groupId);
+        List<Participant> participants = participantRepository.findAllByStudyGroupId(groupId);
 
         List<GroupParticipants> result = new ArrayList<>();
 
@@ -233,14 +233,14 @@ public class StudyGroupService {
     }
 
     // 운영진 리스트 확인 (방장 포함)
-    public List<GroupParticipants> listOfManagers(long groupId){
+    public List<GroupParticipants> listOfManagers(long groupId) {
 
         Member member = currentLogginedInfo();
 
-        participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+        participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다."));
 
-        List<Participant> participants = participantRepository.findAllByGroupIdAndRole(groupId, Role.MANAGER);
+        List<Participant> participants = participantRepository.findAllByStudyGroupIdAndRole(groupId, Role.MANAGER);
 
         List<GroupParticipants> result = new ArrayList<>();
         for (Participant p : participants) {
@@ -251,14 +251,14 @@ public class StudyGroupService {
     }
 
     // 팀원 리스트 확인
-    public List<GroupParticipants> listOfMembers(long groupId){
+    public List<GroupParticipants> listOfMembers(long groupId) {
 
         Member member = currentLogginedInfo();
 
-        participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+        participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다."));
 
-        List<Participant> participants = participantRepository.findAllByGroupIdAndRole(groupId, Role.MEMBER);
+        List<Participant> participants = participantRepository.findAllByStudyGroupIdAndRole(groupId, Role.MEMBER);
 
         List<GroupParticipants> result = new ArrayList<>();
         for (Participant p : participants) {
@@ -273,7 +273,7 @@ public class StudyGroupService {
 
         Member member = currentLogginedInfo();
 
-        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+        Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
 
         Role role = participant.getRole();
@@ -282,7 +282,7 @@ public class StudyGroupService {
             throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
         }
 
-        List<WaitingPeople> waitingList = waitingPeopleRepository.findByGroupId(groupId);
+        List<WaitingPeople> waitingList = waitingPeopleRepository.findByStudyGroup_Id(groupId);
         List<String> result = new ArrayList<>();
 
         for (WaitingPeople target : waitingList) {
@@ -298,7 +298,7 @@ public class StudyGroupService {
 
         Member member = currentLogginedInfo();
 
-        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+        Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
 
         Role role = participant.getRole();
@@ -310,7 +310,7 @@ public class StudyGroupService {
         Optional<Member> target = memberRepository.findByNickname(nickname);
 
         if (target.isPresent()) {
-            Optional<WaitingPeople> waitingPeopleOpt = waitingPeopleRepository.findByMemberIdAndStudyGroupId(target.get().getId(), groupId);
+            Optional<WaitingPeople> waitingPeopleOpt = waitingPeopleRepository.findByMemberIdAndStudyGroup_Id(target.get().getId(), groupId);
 
             if (waitingPeopleOpt.isPresent()) {
                 waitingPeopleRepository.delete(waitingPeopleOpt.get());
@@ -328,7 +328,7 @@ public class StudyGroupService {
 
         Member member = currentLogginedInfo();
 
-        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+        Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
 
         Role role = participant.getRole();
@@ -339,43 +339,42 @@ public class StudyGroupService {
 
         Participant target = participantRepository.findParticipantByNickname(nickname);
 
-        if(target.getRole()==Role.MEMBER){
+        if (target.getRole() == Role.MEMBER) {
             target.promote();
-        }
-        else if(target.getRole()==Role.MANAGER){
+        } else if (target.getRole() == Role.MANAGER) {
             target.demote();
         }
     }
 
     // 그룹 내 닉네임 변경
     @Transactional
-    public void changeParticipantNickname(long groupId, String nickname){
+    public void changeParticipantNickname(long groupId, String nickname) {
 
         Member member = currentLogginedInfo();
 
-        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+        Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
 
-        Optional<Participant> isTaken = participantRepository.findByGroupIdAndNickname(groupId, nickname);
+        Optional<Participant> isTaken = participantRepository.findByStudyGroupIdAndNickname(groupId, nickname);
 
-        if(isTaken.isPresent()) throw new DuplicateNicknameException("이미 사용중인 닉네임입니다.");
+        if (isTaken.isPresent()) throw new DuplicateNicknameException("이미 사용중인 닉네임입니다.");
 
         participant.changedNickname(nickname);
     }
 
     // 그룹 내 신규 초대
     @Transactional
-    public void inviteNewMember(long groupId, List<String> selectedNicknames){
+    public void inviteNewMember(long groupId, List<String> selectedNicknames) {
 
         Member member = currentLogginedInfo();
 
         StudyGroup studyGroup = studyGroupRepository.findById(groupId)
                 .orElseThrow(() -> new StudyGroupNotFoundException("해당 그룹이 존재하지 않습니다."));
 
-        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+        Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
 
-        if (participant.getRole()== Role.MEMBER) {
+        if (participant.getRole() == Role.MEMBER) {
             throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
         }
 
@@ -399,7 +398,7 @@ public class StudyGroupService {
 
         Member member = currentLogginedInfo();
 
-        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+        Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
 
         if (participant.getRole() == Role.LEADER) {
@@ -421,16 +420,16 @@ public class StudyGroupService {
 
         Member member = currentLogginedInfo();
 
-        Participant participant = participantRepository.findByMemberIdAndGroupId(member.getId(), groupId)
+        Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
 
-        if (participant.getRole()!= Role.LEADER) {
+        if (participant.getRole() != Role.LEADER) {
             throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
         }
 
         studyGroupRepository.findById(groupId).ifPresent(
                 studyGroup -> {
-                    Optional<Participant> target = participantRepository.findByGroupIdAndNickname(groupId, nickname);
+                    Optional<Participant> target = participantRepository.findByStudyGroupIdAndNickname(groupId, nickname);
                     target.ifPresent(value -> studyGroup.getParticipants().remove(value));
                     // 여러 닉네임을 여러 그룹에서 사용하는 경우 -> 수정 필요
                     // 이 또한 orphanRemoval 덕분에 repo.delete 할 필요 없다.

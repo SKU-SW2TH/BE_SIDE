@@ -51,7 +51,7 @@ public class StudyGroup {
     */
 
     // 양방향 관계 설정을 위한 참가자 리스트
-    @OneToMany(mappedBy = "studyRoom", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "studyGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Participant> participants = new ArrayList<>();
 
     //초대를 했을 때
