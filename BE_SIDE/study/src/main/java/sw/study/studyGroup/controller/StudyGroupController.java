@@ -5,12 +5,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.exception.*;
-import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.dto.*;
 import sw.study.studyGroup.service.StudyGroupService;
 
-import java.security.Permission;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +22,7 @@ public class StudyGroupController {
 
     @GetMapping("/searchMembers") // 사용자 검색
     public ResponseEntity<?> searchMembers(
+            @RequestHeader("Authorization") String accessToken,
             @RequestParam String nickname,
             @RequestParam int page,
             @RequestParam int size,
@@ -39,6 +38,7 @@ public class StudyGroupController {
 
     @PostMapping("/create") // 스터디 그룹 생성
     public ResponseEntity<Map<String,Object>> createStudyGroup(
+            @RequestHeader("Authorization") String accessToken,
             @RequestBody CreateStudyGroup requestDto) {
 
         StudyGroup createdGroup = studyGroupService.createStudyGroup(
@@ -57,7 +57,7 @@ public class StudyGroupController {
 
     // 받은 초대 확인
     @GetMapping("/invitedList")
-    public ResponseEntity<?> checkInvitedList() {
+    public ResponseEntity<?> checkInvitedList(@RequestHeader("Authorization") String accessToken) {
         List<InvitedResponse> invitedResponses = studyGroupService.checkInvited();
 
         if (invitedResponses.isEmpty()) {
@@ -71,7 +71,7 @@ public class StudyGroupController {
 
     // 참가 중인 그룹 확인
     @GetMapping("/joinedList")
-    public ResponseEntity<?> checkJoinedList() {
+    public ResponseEntity<?> checkJoinedList(@RequestHeader("Authorization") String accessToken) {
         List<JoinedResponse> joinedResponses = studyGroupService.checkJoined();
 
         if (joinedResponses.isEmpty()) {
@@ -85,7 +85,10 @@ public class StudyGroupController {
 
     // 초대 수락
     @PostMapping("/{groupId}/accept")
-    public ResponseEntity<?> acceptInvitation(@PathVariable long groupId, @RequestBody SearchByNickname searchByNickname) {
+    public ResponseEntity<?> acceptInvitation(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable long groupId,
+            @RequestBody SearchByNickname searchByNickname) {
 
         String nickname = searchByNickname.getNickname();
 
@@ -103,14 +106,18 @@ public class StudyGroupController {
 
     // 초대 거절
     @PostMapping("/{groupId}/reject")
-    public ResponseEntity<?> rejectInvitation(@PathVariable long groupId){
+    public ResponseEntity<?> rejectInvitation(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable long groupId){
         studyGroupService.rejectInvitation(groupId);
         return ResponseEntity.ok("초대를 거절하였습니다.");
     }
 
     // 모든 참가자 확인
     @GetMapping("/{groupId}/list/all")
-    public ResponseEntity<?> listOfAll(@PathVariable long groupId) {
+    public ResponseEntity<?> listOfAll(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable long groupId) {
         try {
             List<GroupParticipants> participants = studyGroupService.listOfEveryone(groupId);
             return ResponseEntity.ok(participants);
@@ -123,7 +130,9 @@ public class StudyGroupController {
 
     // 운영진 리스트 확인
     @GetMapping("/{groupId}/list/managers")
-    public ResponseEntity<?> listOfManagers(@PathVariable long groupId) {
+    public ResponseEntity<?> listOfManagers(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable long groupId) {
         try {
             List<GroupParticipants> managers = studyGroupService.listOfManagers(groupId);
             return ResponseEntity.ok(managers);
@@ -136,7 +145,9 @@ public class StudyGroupController {
 
     // 팀원 리스트 확인
     @GetMapping("/{groupId}/list/members")
-    public ResponseEntity<?> listOfMembers(@PathVariable long groupId) {
+    public ResponseEntity<?> listOfMembers(
+            @PathVariable long groupId,
+            @RequestHeader("Authorization") String accessToken) {
         try {
             List<GroupParticipants> members = studyGroupService.listOfMembers(groupId);
             return ResponseEntity.ok(members);
@@ -150,6 +161,7 @@ public class StudyGroupController {
     // 그룹 내 신분 변경
     @PatchMapping("/{groupId}/participant/{nickname}/changeRole")
     public ResponseEntity<?> changeRole(
+            @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
             @PathVariable String nickname) {
         try {
@@ -164,7 +176,9 @@ public class StudyGroupController {
 
     // 그룹 내 초대 대기 인원 확인
     @GetMapping("/{groupId}/waitingList")
-    public ResponseEntity<?> checkWaiting(@PathVariable long groupId){
+    public ResponseEntity<?> checkWaiting(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable long groupId){
         try{
             List<String> nicknames = studyGroupService.listOfWaiting(groupId);
             return ResponseEntity.ok(nicknames);
@@ -180,6 +194,7 @@ public class StudyGroupController {
     // 그룹 내 초대 취소
     @DeleteMapping("/{groupId}/waitingList/cancellation/{nickname}")
     public ResponseEntity<?> rejectInvitation(
+            @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
             @PathVariable String nickname) {
         try {
@@ -199,6 +214,7 @@ public class StudyGroupController {
     // 그룹 내 닉네임 변경
     @PatchMapping("/{groupId}/participants/nickname")
     public ResponseEntity<?> changeNickname(
+            @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
             @RequestBody SearchByNickname nicknameDto){
         try{
@@ -213,8 +229,10 @@ public class StudyGroupController {
 
     // 그룹 내 신규 초대
     @PostMapping("/{groupId}/participants/invite")
-    public ResponseEntity<?> inviteNewMember(@PathVariable long groupId,
-                                             @RequestBody InviteNewMember listOfMembers){
+    public ResponseEntity<?> inviteNewMember(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable long groupId,
+            @RequestBody InviteNewMember listOfMembers){
         try {
             studyGroupService.inviteNewMember(groupId, listOfMembers.getSelectedNicknames());
             return ResponseEntity.ok(String.format("총 %d 명에게 초대가 전송되었습니다.", listOfMembers.getSelectedNicknames().size()));
@@ -227,7 +245,10 @@ public class StudyGroupController {
 
     // 사용자 추방
     @DeleteMapping("/{groupId}/participants/kick/{nickname}")
-    public ResponseEntity<?> kickParticipant(@PathVariable long groupId, @PathVariable String nickname){
+    public ResponseEntity<?> kickParticipant(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable long groupId,
+            @PathVariable String nickname){
         try {
             studyGroupService.userKick(groupId, nickname);
             return ResponseEntity.ok(String.format("%s 님을 추방하였습니다.", nickname));
@@ -238,7 +259,9 @@ public class StudyGroupController {
 
     // 그룹 탈퇴
     @DeleteMapping("/{groupId}/quit")
-    public ResponseEntity<?> quitStudyGroup(@PathVariable long groupId){
+    public ResponseEntity<?> quitStudyGroup(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable long groupId){
         try {
             studyGroupService.quitGroup(groupId);
             return ResponseEntity.ok("해당 스터디그룹을 탈퇴하였습니다.");
