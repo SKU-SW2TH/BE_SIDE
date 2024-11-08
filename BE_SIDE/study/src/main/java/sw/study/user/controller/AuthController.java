@@ -198,7 +198,7 @@ public class AuthController implements AuthApiDocumentation {
     }
 
     @Override
-    @PutMapping("/restore")
+    @PatchMapping("/restore")
     public ResponseEntity<String> restoreMember(@RequestHeader("Authorization") String accessToken) {
         try {
             // 토큰 유효성 검사
@@ -226,6 +226,7 @@ public class AuthController implements AuthApiDocumentation {
 
     }
 
+    @Override
     @PostMapping("/send-reset-token")
     public ResponseEntity<String> sendResetToken(@RequestBody String email) {
         try {
@@ -254,6 +255,7 @@ public class AuthController implements AuthApiDocumentation {
         }
     }
 
+    @Override
     @GetMapping("/valid-reset-token")
     public ResponseEntity<String> validResetToken(@RequestHeader("Authorization") String token) {
         try{
@@ -264,8 +266,10 @@ public class AuthController implements AuthApiDocumentation {
             authService.validPasswordResetToken(token);
             return ResponseEntity.ok("토큰 인증을 성공하였습니다.");
         } catch (IllegalArgumentException e){
+            // [ERROR] 유효하지 않은 토큰 형식입니다.
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 401
-        } catch (RuntimeException e) {
+        } catch (InvalidTokenException e) {
+            // 유효성 검사를 통과하지 못했습니다.
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 401
         } catch (Exception e) {
             // 기타 예외 발생
@@ -273,6 +277,7 @@ public class AuthController implements AuthApiDocumentation {
         }
     }
 
+    @Override
     @PatchMapping("/change-password")
     public ResponseEntity<String> changePassword(@RequestHeader("Authorization") String token, @RequestBody String newPassword) {
 

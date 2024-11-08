@@ -3,6 +3,7 @@ package sw.study;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,8 +14,12 @@ import sw.study.user.domain.NotificationCategory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import sw.study.user.domain.InterestArea;
+import sw.study.user.repository.NotificationCategoryRepository;
 import sw.study.user.role.Role;
+import sw.study.user.service.NotificationService;
 
 @Component
 @RequiredArgsConstructor
@@ -26,6 +31,7 @@ public class InitDb {
         initService.initInterestArea();
         initService.initCategory();
         initService.initNotificationCategory();
+        initService.initMember();
     }
 
     @Component
@@ -33,6 +39,7 @@ public class InitDb {
     @RequiredArgsConstructor
     static class InitService {
 
+        private final NotificationCategoryRepository notificationCategoryRepository;
         private final EntityManager em;
         private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         private List<NotificationCategory> categories = new ArrayList<>();
@@ -85,11 +92,14 @@ public class InitDb {
             categories.add(category2);
         }
 
-        private void initMember(){
+        public void initMember(){
+
+            List<NotificationCategory> notificationCategories = notificationCategoryRepository.findAll();
+
             Member member1 = Member.createMember(
-                    "ksh990409@naver.com",
-                    encoder.encode("123qwe!!!"), // 비밀번호 암호화
-                    "User One", Role.USER, categories
+                    "bj10111@naver.com",
+                    encoder.encode("jong631012@"), // 비밀번호 암호화
+                    "park", Role.USER, notificationCategories
             );
             em.persist(member1);
         }
