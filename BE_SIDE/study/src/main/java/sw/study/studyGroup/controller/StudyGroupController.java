@@ -131,7 +131,7 @@ public class StudyGroupController {
     public ResponseEntity<?> acceptInvitation(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
-            @RequestBody SearchByNickname searchByNickname) {
+            @RequestBody nicknameDto searchByNickname) {
 
         String nickname = searchByNickname.getNickname();
 
@@ -301,7 +301,7 @@ public class StudyGroupController {
     public ResponseEntity<?> changeNickname(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
-            @RequestBody SearchByNickname nicknameDto){
+            @RequestBody nicknameDto nicknameDto){
         try{
             studyGroupService.changeParticipantNickname(groupId, nicknameDto.getNickname());
             return ResponseEntity.ok("닉네임 변경에 성공하였습니다.");

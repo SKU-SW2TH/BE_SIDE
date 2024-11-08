@@ -125,6 +125,7 @@ public class StudyGroupService {
 
             StudyGroup studyGroup = waitingPerson.getStudyGroup(); // Exception 핸들링 불필요
             InvitedResponse groupInfo = InvitedResponse.createInvitedResponse(
+                    studyGroup.getId(),
                     studyGroup.getName(),
                     studyGroup.getDescription(),
                     studyGroup.getMemberCount()
@@ -149,6 +150,7 @@ public class StudyGroupService {
             StudyGroup studyGroup = participants.getStudyGroup(); // Exception 핸들링 불필요
 
             JoinedResponse groupInfo = JoinedResponse.createJoinedResponse(
+                    studyGroup.getId(),
                     studyGroup.getName(),
                     studyGroup.getDescription(),
                     studyGroup.getMemberCount()
