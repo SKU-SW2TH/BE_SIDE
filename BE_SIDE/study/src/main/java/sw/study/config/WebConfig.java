@@ -16,11 +16,14 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import sw.study.config.jwt.JWTService;
 import sw.study.config.jwt.JwtFilter;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.user.service.MemberDetailsServiceImpl;
 import sw.study.user.util.RedisUtil;
 import java.util.List;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @RequiredArgsConstructor
@@ -29,6 +32,7 @@ public class WebConfig {
     private final MemberDetailsServiceImpl memberDetailsService;
     private final TokenProvider tokenProvider;
     private final RedisUtil redisUtil;
+    private final JWTService jwtService;
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
@@ -38,6 +42,7 @@ public class WebConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // HTTP 기본 인증 비활성화
+        http.cors(withDefaults()); // cors 설정 적용
         http.httpBasic(AbstractHttpConfigurer::disable)
                 // CSRF 보호 비활성화 (REST API의 경우 일반적으로 비활성화)
                 .csrf(AbstractHttpConfigurer::disable)
@@ -61,7 +66,7 @@ public class WebConfig {
         // );
 
         // JwtFilter를 UsernamePasswordAuthenticationFilter 앞에 추가
-        http.addFilterBefore(new JwtFilter(tokenProvider, redisUtil), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new JwtFilter(tokenProvider, redisUtil, jwtService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build(); // 보안 필터 체인을 빌드하여 반환
     }
@@ -81,8 +86,9 @@ public class WebConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));  // 모든 출처 허용
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        //configuration.setAllowedOrigins(List.of("*"));  // 모든 출처 허용
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8080"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 

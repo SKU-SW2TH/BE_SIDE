@@ -28,13 +28,15 @@ public class Notification {
     @JoinColumn(name = "category_id") // 외래키 이름 설정
     private NotificationCategory category;
 
-    @NotNull
+    private Long targetId;
+
+    @Column(nullable = false)
     private String title;
 
-    @NotNull
+    @Column(nullable = false)
     private String content;
 
-    private boolean read = false;
+    private boolean isRead = false;
 
     private LocalDateTime createdAt;
 
@@ -43,17 +45,20 @@ public class Notification {
         this.createdAt = LocalDateTime.now();
     }
 
-    public static Notification createNotification(Member member, NotificationCategory category, String title, String content) {
+    public static Notification createNotification(Member member, NotificationCategory category, String title, String content, Long targetId) {
         Notification notification = new Notification();
         notification.member = member;
         notification.category = category;
         notification.title = title;
         notification.content = content;
+        notification.targetId = targetId;
+
+        member.addNotification(notification);
         return notification;
     }
 
     public void markAsRead() {
-        this.read = true;
+        this.isRead = true;
     }
 
 }

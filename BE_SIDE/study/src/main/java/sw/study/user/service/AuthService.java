@@ -1,33 +1,40 @@
 package sw.study.user.service;
 
 import io.jsonwebtoken.Claims;
-import jakarta.transaction.Transactional;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import sw.study.config.jwt.JWTService;
 import sw.study.config.jwt.TokenDTO;
 import sw.study.config.jwt.TokenProvider;
-import sw.study.exception.InvalidCredentialsException;
+import sw.study.exception.*;
+import sw.study.user.domain.Member;
 import sw.study.user.dto.LoginRequest;
+import sw.study.user.repository.MemberRepository;
 import sw.study.user.util.RedisUtil;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenProvider tokenProvider;
     private final RedisUtil redisUtil;
+    private final MemberRepository memberRepository;
+    private final JWTService jwtService;
+    private final BCryptPasswordEncoder encoder;
     private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24;       // 1일
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7;
-
-    public AuthService(AuthenticationManager authenticationManager, TokenProvider tokenProvider, RedisUtil redisUtil) {
-        this.authenticationManager = authenticationManager;
-        this.tokenProvider = tokenProvider;
-        this.redisUtil = redisUtil;
-    }
+    private static final long PASSWORD_RESET_TOKEN_EXPIRE_TIME = 1000 * 60 * 10;// 10분
 
     public TokenDTO login(LoginRequest loginRequest) {
         String refreshTokenKey = "RT:" + loginRequest.getEmail();
@@ -60,18 +67,17 @@ public class AuthService {
             } else {
                 throw new RuntimeException("토큰 생성에 실패했습니다.");
             }
-        } catch (BadCredentialsException ex) {
-            throw new InvalidCredentialsException("Invalid email or password."); // 사용자 정의 예외 또는 적절한 예외로 처리
-        } catch (Exception ex) {
-            throw new RuntimeException("An error occurred during authentication."); // 기타 예외 처리
+        } catch (BadCredentialsException e) {
+            throw new InvalidCredentialsException("유효하지 않은 이메일 또는 패스워드입니다."); // 사용자 정의 예외 또는 적절한 예외로 처리
+        } catch (Exception e) {
+            throw new RuntimeException("로그인에 실패했습니다."); // 기타 예외 처리
         }
     }
 
     @Transactional
     public void logout(String refreshToken) {
         // Refresh Token 키를 생성
-        Claims claims = tokenProvider.parseClaims(refreshToken);
-        String email = claims.getSubject();
+        String email = jwtService.extractEmail(refreshToken);
         String refreshTokenKey = "RT:" + email;
 
         // Refresh Token을 조회
@@ -125,4 +131,68 @@ public class AuthService {
         }
     }
 
+    @Transactional
+    public void deleteMember(String refreshToken) {
+        Claims claims = tokenProvider.parseClaims(refreshToken);
+        String email = claims.getSubject();
+
+        // 회원 삭제 처리
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        member.requestDeactivation(); // soft delete 방식으로 설정
+
+        memberRepository.save(member);
+        // 강제 로그아웃 처리
+        logout(refreshToken);
+    }
+
+    @Transactional
+    public void restoreMember(String token) {
+        String email = jwtService.extractEmail(token);
+
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("해당 회원이 존재하지 않습니다."));
+
+        // 복구 처리
+        member.restore();
+        memberRepository.save(member);
+    }
+
+    // 이메일을 입력받아서 jwt토큰을 생성하고, 이를 Redis에 저장, 사용자에게 반환
+    public String generatePasswordResetToken(String email) {
+        email = email.replace("\"", ""); // 큰 따옴표 제거
+        String token = tokenProvider.generatePasswordResetToken(email);
+        redisUtil.setData("PT:" + email, token, PASSWORD_RESET_TOKEN_EXPIRE_TIME, TimeUnit.MILLISECONDS);
+        return token;
+    }
+
+    // 비밀번호 변경 토큰의 유효성 검사를 하는 메서드
+    public void validPasswordResetToken(String token) {
+        String email = jwtService.extractEmail(token);
+        if(!redisUtil.getData("PT:" + email).equals(token)) {
+            throw new InvalidTokenException("유효성 검사를 통과하지 못했습니다.");
+        }
+    }
+
+    // 비밀번호 변경시키는 메서드
+    @Transactional
+    public void changePassword(String token, String newPassword) {
+        String email = jwtService.extractEmail(token);
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 비밀번호 공백 제거 및 암호화
+        String trimmedNewPassword = newPassword.trim();
+
+        // 기존 비밀번호와 새 비밀번호가 같은지 확인
+        if (encoder.matches(trimmedNewPassword, member.getPassword())) throw new SamePasswordException("변경하려는 비밀번호가 기존 비밀번호와 같습니다.");
+
+        String encodedNewPassword = encoder.encode(trimmedNewPassword);
+        member.changePassword(encodedNewPassword);
+        memberRepository.save(member);
+
+        // redis에서 해당 토큰 삭제
+        redisUtil.delete("PT:" + email);
+    }
 }

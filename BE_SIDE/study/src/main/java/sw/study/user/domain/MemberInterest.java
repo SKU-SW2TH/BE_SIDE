@@ -25,15 +25,16 @@ public class MemberInterest {
     @JoinColumn(name = "interest_area_id")
     private InterestArea interestArea;
 
-    // 회원, 관심분야 각각 하나씩 받아서 저장하는 메서드?
-    // 그럼 1대1 대응 아닌가?
-    // 이게 맞는거 같긴함
     //== 생성 메서드 ==//
-    public static MemberInterest CreateMemberInterest(Member member, InterestArea interestArea) {
+    public static MemberInterest CreateMemberInterest(InterestArea interestArea) {
         MemberInterest memberInterest = new MemberInterest();
-        memberInterest.member = member;
         memberInterest.interestArea = interestArea;
 
         return memberInterest;
     }
+
+    public void addMember(Member member) {
+        this.member = member;
+    }
+
 }

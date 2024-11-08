@@ -37,11 +37,19 @@ public class NotificationSetting {
         this.createdAt = LocalDateTime.now();
     }
 
-    public static NotificationSetting createSetting(Member member, NotificationCategory category) {
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public static NotificationSetting createSetting(NotificationCategory category) {
         NotificationSetting setting = new NotificationSetting();
-        setting.member = member;
         setting.category = category;
         return setting;
+    }
+
+    public void addMember(Member member) {
+        this.member = member;
     }
 
     public void setEnabled(boolean isEnabled) {
