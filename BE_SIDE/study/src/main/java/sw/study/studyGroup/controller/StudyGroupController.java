@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.exception.*;
+import sw.study.exception.studyGroup.*;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.dto.*;
 import sw.study.studyGroup.service.StudyGroupService;
