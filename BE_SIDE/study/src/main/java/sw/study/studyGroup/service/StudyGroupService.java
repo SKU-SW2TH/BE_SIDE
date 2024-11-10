@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import sw.study.config.jwt.JWTService;
 import sw.study.exception.*;
 import sw.study.exception.studyGroup.*;
 import sw.study.studyGroup.domain.DailyLog;
@@ -39,25 +40,34 @@ public class StudyGroupService {
     private final ParticipantRepository participantRepository;
     private final WaitingPeopleRepository waitingPeopleRepository;
     private final DailyLogRepository dailyLogRepository;
-    private final NoticeRepository noticeRepository;
+
+    private final JWTService jwtService;
 
     // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
-    private Member currentLogginedInfo() {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String currentUserEmail = userDetails.getUsername(); // 현재 사용자의 이메일
+    private Member currentLogginedInfo(String accessToken) {
+        // accessToken 유효성 검사
+        if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다.");
+        }
 
-        return memberRepository.findByEmail(currentUserEmail)
+        // "Bearer " 부분 제거 후 실제 토큰만 추출
+        String token = accessToken.substring(7);
+
+        String email = jwtService.extractEmail(token);
+
+        return memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 조회할 수 없습니다."));
     }
 
-    // 닉네임을 통한 사용자 검색 ( 그룹 생성 시 / 생성 이후 신규 초대 모두 핸들링  )
-    public List<String> searchByNickname(String nickname, int page, int size, Long groupId) {
+    // 닉네임을 통한 사용자 검색 ( 그룹 생성 시 / 생성 이후 신규 초대 모두 핸들링 )
+    public List<String> searchByNickname(String accessToken, String nickname, int page, int size, Long groupId) {
         Pageable pageable = PageRequest.of(page, size);
 
         Page<Member> members = memberRepository.findMembersByNicknameStartingWith(nickname, pageable);
         List<String> nicknames = new ArrayList<>();
 
-        String loggedUserNickname = currentLogginedInfo().getNickname();
+        Member loggedUser = currentLogginedInfo(accessToken);
+        String loggedUserNickname = loggedUser.getNickname();
 
         List<String> existingParticipants = new ArrayList<>(); // 방 생성 이후 (groupId 존재)
 
@@ -84,14 +94,14 @@ public class StudyGroupService {
     // 스터디 그룹 생성 ( + 사용자 초대 )
     @Transactional
     public StudyGroup createStudyGroup(
-            String groupName, String description, List<String> selectedNicknames, String leaderNickname) {
+            String accessToken, String groupName, String description, List<String> selectedNicknames, String leaderNickname) {
 
         // 스터디 그룹 생성 
         StudyGroup studyGroup = StudyGroup.createStudyGroup(groupName, description);
         studyGroupRepository.save(studyGroup);
 
         // 로그인 되어있는 사용자 정보를 가져오기
-        Member leader = currentLogginedInfo();
+        Member leader = currentLogginedInfo(accessToken);
 
         // 방장은 바로 Participant에 추가해준다.
         Participant leaderParticipant = Participant.createParticipant(leaderNickname, leader, Role.LEADER);
@@ -114,9 +124,9 @@ public class StudyGroupService {
     }
 
     // 초대를 받은 스터디그룹 확인하기
-    public List<InvitedResponse> checkInvited() {
+    public List<InvitedResponse> checkInvited(String accessToken) {
 
-        Member user = currentLogginedInfo();
+        Member user = currentLogginedInfo(accessToken);
 
         // 대기 명단에서 로그인된 사용자의 정보만 따로 뺀 후에
         List<WaitingPeople> waitingPeopleList = waitingPeopleRepository.findByMemberId(user.getId());
@@ -139,9 +149,9 @@ public class StudyGroupService {
     }
 
     // 참여중인 스터디 그룹 확인
-    public List<JoinedResponse> checkJoined() {
+    public List<JoinedResponse> checkJoined(String accessToken) {
 
-        Member user = currentLogginedInfo();
+        Member user = currentLogginedInfo(accessToken);
 
         // 얻은 user 객체로 Participant 테이블 확인
         List<Participant> Participants = participantRepository.findByMemberId(user.getId());
@@ -166,9 +176,9 @@ public class StudyGroupService {
 
     //초대 수락
     @Transactional
-    public void acceptInvitation(long groupId, String Nickname) {
+    public void acceptInvitation(String accessToken, long groupId, String Nickname) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
         waitingPeopleRepository.deleteByMemberId(member.getId());
 
         // 닉네임 중복확인
@@ -198,9 +208,9 @@ public class StudyGroupService {
 
     //초대 거절
     @Transactional
-    public void rejectInvitation(long groupId) {
+    public void rejectInvitation(String accessToken, long groupId) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         // findByMember로 조회하고 지우면 큰일남.. 특정 사용자가 받은 초대 다 지워버림;
         Optional<WaitingPeople> targetMemberOptional = waitingPeopleRepository.findByMemberIdAndStudyGroup_Id(member.getId(), groupId);
@@ -218,9 +228,9 @@ public class StudyGroupService {
     }
 
     //참가자 전체 리스트 확인
-    public List<GroupParticipants> listOfEveryone(long groupId) {
+    public List<GroupParticipants> listOfEveryone(String accessToken, long groupId) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다."));
@@ -238,9 +248,9 @@ public class StudyGroupService {
     }
 
     // 운영진 리스트 확인 (방장 포함)
-    public List<GroupParticipants> listOfManagers(long groupId) {
+    public List<GroupParticipants> listOfManagers(String accessToken, long groupId) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다."));
@@ -256,9 +266,9 @@ public class StudyGroupService {
     }
 
     // 팀원 리스트 확인
-    public List<GroupParticipants> listOfMembers(long groupId) {
+    public List<GroupParticipants> listOfMembers(String accessToken, long groupId) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다."));
@@ -274,9 +284,9 @@ public class StudyGroupService {
     }
 
     // 그룹 내에서 초대된 리스트 확인
-    public List<String> listOfWaiting(long groupId) {
+    public List<String> listOfWaiting(String accessToken, long groupId) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
@@ -299,9 +309,9 @@ public class StudyGroupService {
 
     // 특정 사용자 초대 취소
     @Transactional
-    public boolean cancelInvitation(long groupId, String nickname) {
+    public boolean cancelInvitation(String accessToken, long groupId, String nickname) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
@@ -329,9 +339,9 @@ public class StudyGroupService {
 
     // 그룹 내 권한 변경
     @Transactional
-    public void changeRole(long groupId, String nickname) {
+    public void changeRole(String accessToken, long groupId, String nickname) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
@@ -353,9 +363,9 @@ public class StudyGroupService {
 
     // 그룹 내 닉네임 변경
     @Transactional
-    public void changeParticipantNickname(long groupId, String nickname) {
+    public void changeParticipantNickname(String accessToken, long groupId, String nickname) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
@@ -369,9 +379,9 @@ public class StudyGroupService {
 
     // 그룹 내 신규 초대
     @Transactional
-    public void inviteNewMember(long groupId, List<String> selectedNicknames) {
+    public void inviteNewMember(String accessToken, long groupId, List<String> selectedNicknames) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         StudyGroup studyGroup = studyGroupRepository.findById(groupId)
                 .orElseThrow(() -> new StudyGroupNotFoundException("해당 그룹이 존재하지 않습니다."));
@@ -399,9 +409,9 @@ public class StudyGroupService {
 
     // 그룹 탈퇴
     @Transactional
-    public void quitGroup(long groupId) {
+    public void quitGroup(String accessToken, long groupId) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
@@ -421,9 +431,9 @@ public class StudyGroupService {
 
     // 그룹 내 특정 사용자 추방
     @Transactional
-    public void userKick(long groupId, String nickname) {
+    public void userKick(String accessToken, long groupId, String nickname) {
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
@@ -444,9 +454,9 @@ public class StudyGroupService {
     }
 
     // 데일리 로그 작성
-    public void createDailyLog(long groupId, String title, String content){
+    public void createDailyLog(String accessToken, long groupId, String title, String content){
 
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
@@ -460,9 +470,9 @@ public class StudyGroupService {
 
     // 데일리 로그 조회
     @Transactional(readOnly = true)
-    public List<DailyLogResponseDto> listOfDailyLog(long groupId){
+    public List<DailyLogResponseDto> listOfDailyLog(String accessToken, long groupId){
         
-        Member member = currentLogginedInfo();
+        Member member = currentLogginedInfo(accessToken);
 
         participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
@@ -473,8 +483,8 @@ public class StudyGroupService {
     }
 
     // 데일리 로그 수정
-    public void updateDailyLog(long groupId, long logId, String title,String content){
-        Member member = currentLogginedInfo();
+    public void updateDailyLog(String accessToken, long groupId, long logId, String title,String content){
+        Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
@@ -489,8 +499,8 @@ public class StudyGroupService {
     }
 
     // 데일리 로그 삭제
-    public void deleteDailyLog(long groupId, long logId){
-        Member member = currentLogginedInfo();
+    public void deleteDailyLog(String accessToken, long groupId, long logId){
+        Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
