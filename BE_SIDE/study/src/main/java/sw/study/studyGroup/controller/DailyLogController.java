@@ -10,6 +10,7 @@ import sw.study.exception.studyGroup.StudyGroupNotFoundException;
 import sw.study.exception.studyGroup.UnauthorizedException;
 import sw.study.studyGroup.dto.DailyLogRequestDto;
 import sw.study.studyGroup.dto.DailyLogResponseDto;
+import sw.study.studyGroup.service.DailyLogService;
 import sw.study.studyGroup.service.StudyGroupService;
 
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.List;
 public class DailyLogController {
 
     private final StudyGroupService studyGroupService;
+    private final DailyLogService dailyLogService;
 
     // 데일리 로그 작성
     @PostMapping("/create")
@@ -29,7 +31,7 @@ public class DailyLogController {
             @PathVariable long groupId,
             @RequestBody DailyLogRequestDto requestDto) {
         try {
-            studyGroupService.createDailyLog(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
+            dailyLogService.createDailyLog(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
             return ResponseEntity.status(HttpStatus.CREATED).body("데일리 로그가 성공적으로 작성되었습니다.");
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
@@ -46,7 +48,7 @@ public class DailyLogController {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId) {
         try {
-            List<DailyLogResponseDto> logs = studyGroupService.listOfDailyLog(accessToken, groupId);
+            List<DailyLogResponseDto> logs = dailyLogService.listOfDailyLog(accessToken, groupId);
             return ResponseEntity.ok().body(logs); // 리스트 반환
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
@@ -63,7 +65,7 @@ public class DailyLogController {
             @PathVariable long logId,
             @RequestBody DailyLogRequestDto requestDto) {
         try {
-            studyGroupService.updateDailyLog(accessToken, groupId, logId, requestDto.getTitle(), requestDto.getContent());
+            dailyLogService.updateDailyLog(accessToken, groupId, logId, requestDto.getTitle(), requestDto.getContent());
             return ResponseEntity.status(HttpStatus.OK).body("데일리 로그가 성공적으로 수정되었습니다.");
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
@@ -81,7 +83,7 @@ public class DailyLogController {
             @PathVariable long groupId,
             @PathVariable long logId) {
         try {
-            studyGroupService.deleteDailyLog(accessToken,groupId, logId);
+            dailyLogService.deleteDailyLog(accessToken,groupId, logId);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("데일리 로그가 성공적으로 삭제되었습니다.");
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
