@@ -50,6 +50,8 @@ public class WebConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         // 특정 경로에 대한 접근 허용
                         .requestMatchers("/api/auth/**", "/api/member/**").permitAll()
+                        // 인증이 필요한 API 경로
+                        .requestMatchers("/api/studyGroup/**").authenticated()
                         // 나머지 모든 요청을 허용 (이 부분은 필요에 따라 수정 가능)
                         .anyRequest().permitAll()
                 )
