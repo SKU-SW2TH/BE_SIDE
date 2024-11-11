@@ -1,7 +1,5 @@
 package sw.study.user.service;
 
-import io.jsonwebtoken.Claims;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.community.service.S3Service;
-import sw.study.config.Constant;
 import sw.study.config.jwt.JWTService;
 import sw.study.config.jwt.TokenProvider;
 import sw.study.exception.*;
@@ -24,10 +21,6 @@ import sw.study.user.repository.*;
 import sw.study.user.role.Role;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDate;
@@ -44,8 +37,8 @@ public class MemberService {
     private final TokenProvider tokenProvider;
     private final NotificationSettingRepository notificationSettingRepository;
     private final NotificationCategoryRepository notificationCategoryRepository;
-    private final InterestAreaRepository interestAreaRepository;
-    private final MemberInterestRepository memberInterestRepository;
+    private final AreaRepository areaRepository;
+    private final MemberAreaRepository memberAreaRepository;
     private final NotificationRepository notificationRepository;
     private final S3Service s3Service;
     private final JWTService jwtService;
@@ -141,12 +134,12 @@ public class MemberService {
                 .collect(Collectors.toList());
 
         // 관심 분야 DTO 변환
-        List<MemberInterestDTO> interestDtos = member.getInterests().stream()
+        List<MemberAreaDTO> interestDtos = member.getMemberAreas().stream()
                 .map(interest -> {
-                    MemberInterestDTO dto = new MemberInterestDTO();
+                    MemberAreaDTO dto = new MemberAreaDTO();
                     dto.setId(interest.getId());
-                    dto.setInterestId(interest.getInterestArea().getId());
-                    dto.setName(interest.getInterestArea().getAreaName());
+                    dto.setInterestId(interest.getArea().getId());
+                    dto.setName(interest.getArea().getAreaName());
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -233,59 +226,59 @@ public class MemberService {
         notificationSettingRepository.save(setting); // 또는 flush()를 사용할 수 있음
     }
 
-    public List<InterestAreaDTO> getInterestAreas() {
-        List<InterestArea> interestAreas = interestAreaRepository.findAll();
-        List<InterestAreaDTO> interestAreasDTO = new ArrayList<>();
+    public List<AreaDTO> getInterestAreas() {
+        List<Area> areas = areaRepository.findAll();
+        List<AreaDTO> interestAreasDTO = new ArrayList<>();
 
-        for (InterestArea interestArea : interestAreas) {
-            InterestAreaDTO interestAreaDTO = new InterestAreaDTO();
-            interestAreaDTO.setId(interestArea.getId());
-            interestAreaDTO.setAreaName(interestArea.getAreaName());
-            interestAreaDTO.setLevel(interestArea.getLevel());
+        for (Area area : areas) {
+            AreaDTO areaDTO = new AreaDTO();
+            areaDTO.setId(area.getId());
+            areaDTO.setAreaName(area.getAreaName());
+            areaDTO.setLevel(area.getLevel());
 
             // Check if parent is null and set parentId accordingly
-            if (interestArea.getParent() != null) {
-                interestAreaDTO.setParentId(interestArea.getParent().getId());
+            if (area.getParent() != null) {
+                areaDTO.setParentId(area.getParent().getId());
             } else {
-                interestAreaDTO.setParentId(0L); // Set to 0 if parent is null
+                areaDTO.setParentId(0L); // Set to 0 if parent is null
             }
 
-            interestAreasDTO.add(interestAreaDTO); // Add the DTO to the list
+            interestAreasDTO.add(areaDTO); // Add the DTO to the list
         }
 
         return interestAreasDTO;
     }
 
     @Transactional
-    public List<MemberInterestDTO> initInterest(String token, InterestRequest interestRequest) {
-        List<MemberInterestDTO> dtos = new ArrayList<>();
+    public List<MemberAreaDTO> initInterest(String token, AreaRequest areaRequest) {
+        List<MemberAreaDTO> dtos = new ArrayList<>();
 
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        List<Long> interestIds = interestRequest.getIds();
-        if (interestIds == null) {
-            interestIds = new ArrayList<>(); // null 체크 및 초기화
+        List<Long> areaRequestIds = areaRequest.getIds();
+        if (areaRequestIds == null) {
+            areaRequestIds = new ArrayList<>(); // null 체크 및 초기화
         }
 
         // 관심 항목 추가
-        for (Long interestId : interestIds) {
-            InterestArea interestArea = interestAreaRepository.findById(interestId)
+        for (Long areaId : areaRequestIds) {
+            Area area = areaRepository.findById(areaId)
                     .orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
 
-            MemberInterest newInterest = MemberInterest.CreateMemberInterest(interestArea);
-            member.addInterest(newInterest);
-            memberInterestRepository.save(newInterest);
+            MemberArea newInterest = MemberArea.CreateMemberArea(area);
+            member.addMemberArea(newInterest);
+            memberAreaRepository.save(newInterest);
         }
 
         // 업데이트된 관심 분야 DTO 생성
-        List<MemberInterest> updateInterests = memberInterestRepository.findByMemberId(member.getId());
-        for (MemberInterest interest : updateInterests) {
-            MemberInterestDTO dto = new MemberInterestDTO();
-            dto.setId(interest.getId());
-            dto.setInterestId(interest.getInterestArea().getId());
-            dto.setName(interest.getInterestArea().getAreaName());
+        List<MemberArea> updateAreas = memberAreaRepository.findByMemberId(member.getId());
+        for (MemberArea memberArea : updateAreas) {
+            MemberAreaDTO dto = new MemberAreaDTO();
+            dto.setId(memberArea.getId());
+            dto.setInterestId(memberArea.getArea().getId());
+            dto.setName(memberArea.getArea().getAreaName());
             dtos.add(dto);
         }
 
@@ -293,8 +286,8 @@ public class MemberService {
     }
 
     @Transactional
-    public List<MemberInterestDTO> updateInterest(String token, InterestRequest interestRequest) {
-        List<MemberInterestDTO> dtos = new ArrayList<>();
+    public List<MemberAreaDTO> updateInterest(String token, AreaRequest areaRequest) {
+        List<MemberAreaDTO> dtos = new ArrayList<>();
 
         // 토큰에서 이메일 추출
         String email = jwtService.extractEmail(token);
@@ -302,12 +295,12 @@ public class MemberService {
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         // 요청에서 관심사 ID 목록 가져오기 (null 방지)
-        List<Long> interestIds = Optional.ofNullable(interestRequest.getIds()).orElse(new ArrayList<>());
+        List<Long> interestIds = Optional.ofNullable(areaRequest.getIds()).orElse(new ArrayList<>());
 
         // 기존의 관심사를 조회하여 ID 목록으로 변환
-        List<MemberInterest> existingInterests = memberInterestRepository.findByMemberId(member.getId());
+        List<MemberArea> existingInterests = memberAreaRepository.findByMemberId(member.getId());
         Set<Long> existingInterestIds = existingInterests.stream()
-                .map(memberInterest -> memberInterest.getInterestArea().getId())
+                .map(memberArea -> memberArea.getArea().getId())
                 .collect(Collectors.toSet());
 
         // 추가할 관심사: 새로운 요청의 ID 중 기존에 없는 ID들
@@ -322,28 +315,28 @@ public class MemberService {
 
         // 관심사 추가
         for (Long interestId : interestsToAdd) {
-            InterestArea interestArea = interestAreaRepository.findById(interestId)
+            Area area = areaRepository.findById(interestId)
                     .orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
-            MemberInterest newInterest = MemberInterest.CreateMemberInterest(interestArea);
-            member.addInterest(newInterest);
-            memberInterestRepository.save(newInterest);
+            MemberArea newInterest = MemberArea.CreateMemberArea(area);
+            member.addMemberArea(newInterest);
+            memberAreaRepository.save(newInterest);
         }
 
         // 관심사 삭제
         for (Long interestId : interestsToRemove) {
-            MemberInterest existingInterest = memberInterestRepository.findByMemberIdAndInterestAreaId(member.getId(), interestId)
+            MemberArea existingInterest = memberAreaRepository.findByMemberIdAndAreaId(member.getId(), interestId)
                     .orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
             member.removeInterest(existingInterest);
-            memberInterestRepository.delete(existingInterest);
+            memberAreaRepository.delete(existingInterest);
         }
 
         // 업데이트된 관심사 목록 DTO 생성
-        List<MemberInterest> updatedInterests = memberInterestRepository.findByMemberId(member.getId());
-        for (MemberInterest interest : updatedInterests) {
-            MemberInterestDTO dto = new MemberInterestDTO();
+        List<MemberArea> updatedInterests = memberAreaRepository.findByMemberId(member.getId());
+        for (MemberArea interest : updatedInterests) {
+            MemberAreaDTO dto = new MemberAreaDTO();
             dto.setId(interest.getId());
-            dto.setInterestId(interest.getInterestArea().getId());
-            dto.setName(interest.getInterestArea().getAreaName());
+            dto.setInterestId(interest.getArea().getId());
+            dto.setName(interest.getArea().getAreaName());
             dtos.add(dto);
         }
 

@@ -2,7 +2,6 @@ package sw.study.community;
 
 import static org.assertj.core.api.Assertions.*;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,14 +13,12 @@ import sw.study.community.domain.Post;
 import sw.study.community.dto.PostDTO;
 import sw.study.community.repository.PostRepository;
 import sw.study.community.service.PostService;
-import sw.study.user.domain.InterestArea;
 import sw.study.user.domain.Member;
 import sw.study.user.domain.NotificationCategory;
-import sw.study.user.repository.InterestAreaRepository;
+import sw.study.user.repository.AreaRepository;
 import sw.study.user.repository.MemberRepository;
 import sw.study.user.repository.NotificationCategoryRepository;
 import sw.study.user.role.Role;
-import sw.study.user.service.MemberService;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -36,7 +33,8 @@ public class PostServiceTest {
     @Autowired PostRepository postRepository;
     @Autowired NotificationCategoryRepository notificationCategoryRepository;
     @Autowired MemberRepository memberRepository;
-    @Autowired InterestAreaRepository interestAreaRepository;
+    @Autowired
+    AreaRepository areaRepository;
 
 
     // 추가적으로 예외 상황 테스트도 추가해야한다.
@@ -174,9 +172,9 @@ public class PostServiceTest {
         postDTO.setCategory("FREE");
         postDTO.setMemberId(memberId);
 
-        List<String> interestAreas = new ArrayList<>();
-        interestAreas.add("Java");
-        postDTO.setInterests(interestAreas);
+        List<String> areas = new ArrayList<>();
+        areas.add("Java");
+        postDTO.setArea(areas);
 
         List<MultipartFile> files = new ArrayList<>();
         String filePath = "/home/kim/Desktop/sk2th/BE_SIDE/BE_SIDE/study/src/test/java/sw/study/file/nicedochi.jpg";

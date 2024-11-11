@@ -3,15 +3,14 @@ package sw.study.community.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import sw.study.user.domain.InterestArea;
-import sw.study.user.domain.Member;
+import sw.study.user.domain.Area;
 
 import static lombok.AccessLevel.PROTECTED;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = PROTECTED)
-public class PostInterest {
+public class PostArea {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,14 +23,14 @@ public class PostInterest {
 
     @ManyToOne
     @JoinColumn(name = "interest_area_id")
-    private InterestArea interestArea;
+    private Area area;
 
     //== 생성 메서드 ==//
-    public static PostInterest createPostInterest(InterestArea interestArea) {
-        PostInterest postInterest = new PostInterest();
-        postInterest.interestArea = interestArea;
+    public static PostArea createPostArea(Area area) {
+        PostArea postArea = new PostArea();
+        postArea.area = area;
 
-        return postInterest;
+        return postArea;
     }
 
     public void addPost(Post post) {

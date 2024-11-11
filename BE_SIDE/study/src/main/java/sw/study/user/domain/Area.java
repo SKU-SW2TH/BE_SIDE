@@ -12,39 +12,39 @@ import static lombok.AccessLevel.*;
 @Entity
 @Getter
 @NoArgsConstructor(access = PROTECTED)
-public class InterestArea {
+public class Area {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "interest_area_id")
+    @Column(name = "area_id")
     private Long id;
 
     private int level;
     private String areaName;
 
     @OneToMany(mappedBy = "parent")
-    private List<InterestArea> child = new ArrayList<>();
+    private List<Area> child = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "parent_id")
-    private InterestArea parent;
+    private Area parent;
 
 
     //== 생성 메서드 ==//
-    public static InterestArea createInterest(int level, String FieldName) {
-        InterestArea interest = new InterestArea();
-        interest.level = level;
-        interest.areaName = FieldName;
+    public static Area createInterest(int level, String FieldName) {
+        Area area = new Area();
+        area.level = level;
+        area.areaName = FieldName;
 
-        return interest;
+        return area;
     }
 
-    public void addChildInterest(InterestArea child) {
+    public void addChildInterest(Area child) {
         this.child.add(child);
         child.addParentInterest(this);
     }
 
-    public void addParentInterest(InterestArea parent) {
+    public void addParentInterest(Area parent) {
         this.parent = parent;
     }
 }

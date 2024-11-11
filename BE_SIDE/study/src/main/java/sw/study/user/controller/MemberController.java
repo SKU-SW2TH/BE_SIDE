@@ -134,8 +134,8 @@ public class MemberController implements MemberApiDocumentation {
     @GetMapping("/interestList")
     public ResponseEntity<?> getInterestList() {
         try {
-            List<InterestAreaDTO> interestAreaDTOList = memberService.getInterestAreas();
-            return ResponseEntity.ok(interestAreaDTOList);
+            List<AreaDTO> areaDTOList = memberService.getInterestAreas();
+            return ResponseEntity.ok(areaDTOList);
         } catch (Exception e) {
             // 예외 로그 기록 (선택적)
             e.printStackTrace(); // 콘솔에 예외 출력
@@ -147,14 +147,14 @@ public class MemberController implements MemberApiDocumentation {
     @Override
     @PostMapping("/init/interest")
     public ResponseEntity<?> initInterest(@RequestHeader("Authorization") String accessToken,
-                                            @RequestBody InterestRequest interestRequest){
+                                            @RequestBody AreaRequest areaRequest){
         try {
             if (accessToken == null || !accessToken.startsWith("Bearer ")) {
                 throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
             }
             String token = accessToken.substring(7);
 
-            List<MemberInterestDTO> dtos = memberService.initInterest(token, interestRequest);
+            List<MemberAreaDTO> dtos = memberService.initInterest(token, areaRequest);
             return ResponseEntity.status(HttpStatus.OK).body(dtos);
         } catch (UserNotFoundException | InterestNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -168,13 +168,13 @@ public class MemberController implements MemberApiDocumentation {
     @Override
     @PutMapping("/update/interest")
     public ResponseEntity<?> updateInterest(@RequestHeader("Authorization") String accessToken,
-                                            @RequestBody InterestRequest interestRequest){
+                                            @RequestBody AreaRequest areaRequest){
         try {
             if (accessToken == null || !accessToken.startsWith("Bearer ")) {
                 throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
             }
             String token = accessToken.substring(7);
-            List<MemberInterestDTO> dtos = memberService.updateInterest(token, interestRequest);
+            List<MemberAreaDTO> dtos = memberService.updateInterest(token, areaRequest);
             return ResponseEntity.status(HttpStatus.OK).body(dtos);
         } catch (UserNotFoundException | InterestNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
