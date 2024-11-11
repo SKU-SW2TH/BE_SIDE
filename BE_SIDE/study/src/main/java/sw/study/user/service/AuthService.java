@@ -133,8 +133,8 @@ public class AuthService {
 
     @Transactional
     public void deleteMember(String refreshToken) {
-        Claims claims = tokenProvider.parseClaims(refreshToken);
-        String email = claims.getSubject();
+        String token = jwtService.extractToken(refreshToken);
+        String email = jwtService.extractEmail(token);
 
         // 회원 삭제 처리
         Member member = memberRepository.findByEmail(email)
@@ -148,7 +148,8 @@ public class AuthService {
     }
 
     @Transactional
-    public void restoreMember(String token) {
+    public void restoreMember(String accessToken) {
+        String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
 
         Member member = memberRepository.findByEmail(email)
@@ -169,6 +170,7 @@ public class AuthService {
 
     // 비밀번호 변경 토큰의 유효성 검사를 하는 메서드
     public void validPasswordResetToken(String token) {
+        token = jwtService.extractToken(token);
         String email = jwtService.extractEmail(token);
         if(!redisUtil.getData("PT:" + email).equals(token)) {
             throw new InvalidTokenException("유효성 검사를 통과하지 못했습니다.");
@@ -178,6 +180,7 @@ public class AuthService {
     // 비밀번호 변경시키는 메서드
     @Transactional
     public void changePassword(String token, String newPassword) {
+        token = jwtService.extractToken(token);
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
