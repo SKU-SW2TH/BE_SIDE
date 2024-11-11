@@ -3,7 +3,7 @@ package sw.study.community.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import sw.study.user.domain.InterestArea;
+import sw.study.user.domain.Area;
 import sw.study.user.domain.Member;
 
 import java.time.LocalDateTime;
@@ -39,7 +39,7 @@ public class Post {
     private List<PostLike> likes = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostInterest> interests = new ArrayList<>();
+    private List<PostArea> interests = new ArrayList<>();
 
     private String title;
     private String content;
@@ -62,7 +62,7 @@ public class Post {
 
     //== 생성 메서드 ==//
     public static Post createPost(String title, String content, Category category,
-                                  Member member, List<InterestArea> interestAreas,
+                                  Member member, List<Area> areas,
                                   List<String> urls) {
         Post post = new Post();
         post.title = title;
@@ -71,9 +71,9 @@ public class Post {
         post.member = member;
         post.category = category;
 
-        for (InterestArea interestArea : interestAreas) {
-            PostInterest postInterest = PostInterest.createPostInterest(interestArea);
-            post.addInterest(postInterest);
+        for (Area area : areas) {
+            PostArea postArea = PostArea.createPostArea(area);
+            post.addInterest(postArea);
         }
 
         for (String url : urls) {
@@ -95,7 +95,7 @@ public class Post {
         file.addPost(this);
     }
 
-    public void addInterest(PostInterest interest) {
+    public void addInterest(PostArea interest) {
         this.interests.add(interest);
         interest.addPost(this);
     }

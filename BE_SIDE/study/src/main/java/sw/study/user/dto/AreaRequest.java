@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class InterestRequest {
+public class AreaRequest {
     @Schema(description = "관심분야 id")
     List<Long> ids = new ArrayList<>();
 }
