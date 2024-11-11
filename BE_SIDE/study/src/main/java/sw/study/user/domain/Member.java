@@ -61,7 +61,7 @@ public class Member {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Punishment> punishments = new ArrayList<>();
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MemberInterest> interests = new ArrayList<>();
+    private List<MemberArea> memberAreas = new ArrayList<>();
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Notification> notifications = new ArrayList<>();
 
@@ -101,9 +101,9 @@ public class Member {
         setting.addMember(this);
     }
 
-    public void addInterest(MemberInterest interest) {
-        interests.add(interest);
-        interest.addMember(this);
+    public void addMemberArea(MemberArea memberArea) {
+        memberAreas.add(memberArea);
+        memberArea.addMember(this);
     }
 
     public void addNotification(Notification notification) {
@@ -111,8 +111,8 @@ public class Member {
         notification.addMember(this);
     }
 
-    public void removeInterest(MemberInterest interest) {
-        interests.remove(interest);
+    public void removeInterest(MemberArea interest) {
+        memberAreas.remove(interest);
     }
 
     // 개별 프로필 필드를 선택적으로 업데이트하는 메소드

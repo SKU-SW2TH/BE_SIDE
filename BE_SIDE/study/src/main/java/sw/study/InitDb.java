@@ -8,6 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.community.domain.Category;
+import sw.study.user.domain.Area;
 import sw.study.user.domain.Member;
 import sw.study.user.domain.Notification;
 import sw.study.user.domain.NotificationCategory;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import sw.study.user.domain.InterestArea;
+import sw.study.user.repository.MemberRepository;
 import sw.study.user.repository.NotificationCategoryRepository;
 import sw.study.user.role.Role;
 import sw.study.user.service.NotificationService;
@@ -41,18 +42,19 @@ public class InitDb {
 
         private final NotificationCategoryRepository notificationCategoryRepository;
         private final EntityManager em;
+        private final MemberRepository memberRepository;
         private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         private List<NotificationCategory> categories = new ArrayList<>();
 
         public void initInterestArea() {
 
-            InterestArea interest1 = InterestArea.createInterest(1, "개발/프로그래밍");
-            InterestArea interest2 = InterestArea.createInterest(2, "백엔드");
-            InterestArea interest3 = InterestArea.createInterest(2, "프론트");
-            InterestArea interest4 = InterestArea.createInterest(2, "프로그래밍 언어");
-            InterestArea interest5 = InterestArea.createInterest(3, "Spring-Boot");
-            InterestArea interest6 = InterestArea.createInterest(3, "React");
-            InterestArea interest7 = InterestArea.createInterest(3, "Java");
+            Area interest1 = Area.createInterest(1, "개발/프로그래밍");
+            Area interest2 = Area.createInterest(2, "백엔드");
+            Area interest3 = Area.createInterest(2, "프론트");
+            Area interest4 = Area.createInterest(2, "프로그래밍 언어");
+            Area interest5 = Area.createInterest(3, "Spring-Boot");
+            Area interest6 = Area.createInterest(3, "React");
+            Area interest7 = Area.createInterest(3, "Java");
 
             // 영속성 컨텍스트에 추가하므로써 이후 자식부모 설정부분을 제대로 관리할 수 있게함
             em.persist(interest1);
@@ -101,7 +103,8 @@ public class InitDb {
                     encoder.encode("jong631012@"), // 비밀번호 암호화
                     "park", Role.USER, notificationCategories
             );
-            em.persist(member1);
+            memberRepository.save(member1);
+//            em.persist(member1);
         }
     }
 }
