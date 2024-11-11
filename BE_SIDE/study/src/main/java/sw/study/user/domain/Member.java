@@ -108,6 +108,7 @@ public class Member {
 
     public void addNotification(Notification notification) {
         notifications.add(notification);
+        notification.addMember(this);
     }
 
     public void removeInterest(MemberInterest interest) {

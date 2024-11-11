@@ -105,6 +105,8 @@ public class MemberService {
 
     public MemberDto getMemberByToken(String token) {
         // 토큰 유효성 검사
+        token = jwtService.extractToken(token);
+
         if (!tokenProvider.validateToken(token)) {
             throw new InvalidTokenException("유효하지 않은 토큰입니다.");
         }
@@ -121,6 +123,7 @@ public class MemberService {
         memberDto.setProfile(member.getProfile());
         memberDto.setIntroduce(member.getIntroduce());
         memberDto.setRole(member.getRole().toString());
+        memberDto.setDeleted(memberDto.isDeleted());
 
         if (member.getDeletedAt() != null) {
             memberDto.setDeletedAt(LocalDate.from(member.getDeletedAt()));
@@ -151,23 +154,9 @@ public class MemberService {
                 })
                 .collect(Collectors.toList());
 
-        List<NotificationDTO> notificationDTOS = member.getNotifications().stream()
-                .sorted(Comparator.comparing(Notification::getCreatedAt).reversed()) // createdAt 기준 내림차순 정렬
-                .map(notification -> {
-                    NotificationDTO dto = new NotificationDTO();
-                    dto.setId(notification.getId());
-                    dto.setTitle(notification.getTitle());
-                    dto.setContent(notification.getContent());
-                    dto.setRead(notification.isRead());
-                    dto.setName(notification.getCategory().getCategoryName());
-                    dto.setCreatedAt(notification.getCreatedAt());
-                    return dto;
-                }).collect(Collectors.toList());
-
         // DTO 설정
         memberDto.setSettings(dtos);
         memberDto.setInterests(interestDtos);
-        memberDto.setNotifications(notificationDTOS);
 
         // 이메일로 사용자 조회
         return memberDto;
@@ -175,7 +164,8 @@ public class MemberService {
 
     @Transactional
     public UpdateProfileResponse updateMemberProfile(String accessToken, UpdateProfileRequest updateProfileRequest, MultipartFile profilePicture) throws IOException{
-        String email = jwtService.extractEmail(accessToken);
+        String token = jwtService.extractToken(accessToken);
+        String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         if (updateProfileRequest.getNickname() != null && !updateProfileRequest.getNickname().isEmpty() && !member.getNickname().equals(updateProfileRequest.getNickname())) {
@@ -201,7 +191,8 @@ public class MemberService {
 
     @Transactional
     public void changePassword(String accessToken, String oldPassword, String newPassword) {
-        String email = jwtService.extractEmail(accessToken);
+        String token = jwtService.extractToken(accessToken);
+        String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
@@ -257,9 +248,10 @@ public class MemberService {
     }
 
     @Transactional
-    public List<MemberInterestDTO> initInterest(String token, InterestRequest interestRequest) {
+    public List<MemberInterestDTO> initInterest(String accessToken, InterestRequest interestRequest) {
         List<MemberInterestDTO> dtos = new ArrayList<>();
 
+        String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
@@ -293,10 +285,11 @@ public class MemberService {
     }
 
     @Transactional
-    public List<MemberInterestDTO> updateInterest(String token, InterestRequest interestRequest) {
+    public List<MemberInterestDTO> updateInterest(String accessToken, InterestRequest interestRequest) {
         List<MemberInterestDTO> dtos = new ArrayList<>();
 
         // 토큰에서 이메일 추출
+        String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
@@ -351,7 +344,8 @@ public class MemberService {
     }
 
     @Transactional
-    public void updateNotificationRead(String token) {
+    public void updateNotificationRead(String accessToken) {
+        String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token); // 토큰에서 이메일 추출
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
@@ -368,29 +362,30 @@ public class MemberService {
         notificationRepository.saveAll(notifications);
     }
 
-    public List<NotificationDTO> getNotifications(String token) {
+    public List<NotificationDTO> getNotifications(String accessToken) {
+        String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        List<Notification> notifications = notificationRepository.findByMember(member);
-        List<NotificationDTO> dtos = new ArrayList<>();
+        List<NotificationDTO> notificationDTOS = member.getNotifications().stream()
+                .sorted(Comparator.comparing(Notification::getCreatedAt).reversed()) // createdAt 기준 내림차순 정렬
+                .map(notification -> {
+                    NotificationDTO dto = new NotificationDTO();
+                    dto.setId(notification.getId());
+                    dto.setTitle(notification.getTitle());
+                    dto.setContent(notification.getContent());
+                    dto.setRead(notification.isRead());
+                    dto.setName(notification.getCategory().getCategoryName());
+                    dto.setCreatedAt(notification.getCreatedAt());
+                    return dto;
+                }).collect(Collectors.toList());
 
-        for (Notification notification : notifications) {
-            NotificationDTO dto = new NotificationDTO();
-            dto.setId(notification.getId());
-            dto.setTitle(notification.getTitle());
-            dto.setContent(notification.getContent());
-            dto.setName(notification.getCategory().getCategoryName());
-            dto.setRead(notification.isRead());
-            dto.setCreatedAt(notification.getCreatedAt());
-            dtos.add(dto);
-        }
-
-        return dtos;
+        return notificationDTOS;
     }
 
-    public List<NotificationDTO> unReadNotification(String token) {
+    public List<NotificationDTO> unReadNotification(String accessToken) {
+        String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
