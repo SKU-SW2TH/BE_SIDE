@@ -121,7 +121,7 @@ public class MemberService {
         memberDto.setProfile(member.getProfile());
         memberDto.setIntroduce(member.getIntroduce());
         memberDto.setRole(member.getRole().toString());
-        memberDto.set_deleted(memberDto.is_deleted());
+        memberDto.setDeleted(memberDto.isDeleted());
 
         if (member.getDeletedAt() != null) {
             memberDto.setDeletedAt(LocalDate.from(member.getDeletedAt()));
