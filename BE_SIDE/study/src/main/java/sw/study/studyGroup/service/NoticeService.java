@@ -85,7 +85,7 @@ public class NoticeService {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<Notice> noticePage = noticeRepository.findAllByStudyGroup_Id(groupId);
+        Page<Notice> noticePage = noticeRepository.findAllByStudyGroup_Id(groupId, pageable);
 
         if(noticePage.isEmpty())
             throw new NoticeNotFoundException("조회된 공지사항이 존재하지 않습니다.");
@@ -101,7 +101,7 @@ public class NoticeService {
 
         checkGroupParticipant(groupId, member);
 
-        Notice notice = noticeRepository.findByIdAndGroup_Id(noticeId, groupId)
+        Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
                 .orElseThrow(()-> new NoticeNotFoundException("해당하는 공지사항이 존재하지 않습니다."));
 
         return NoticeResponseDto.fromDetail(notice);
@@ -115,7 +115,7 @@ public class NoticeService {
 
         Participant participant = checkGroupParticipant(groupId, member);
 
-        Notice notice = noticeRepository.findByIdAndGroup_Id(noticeId, groupId)
+        Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
                 .orElseThrow(()-> new NoticeNotFoundException("해당하는 공지사항이 존재하지 않습니다."));
 
         if(participant.getRole()== Participant.Role.MEMBER){
@@ -133,7 +133,7 @@ public class NoticeService {
 
         Participant participant = checkGroupParticipant(groupId, member);
 
-        Notice notice = noticeRepository.findByIdAndGroup_Id(noticeId, groupId)
+        Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
                 .orElseThrow(()-> new NoticeNotFoundException("해당하는 공지사항이 존재하지 않습니다."));
 
 
