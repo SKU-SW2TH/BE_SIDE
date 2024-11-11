@@ -28,4 +28,9 @@ public class JWTService {
         }
     }
 
+    public String extractToken(String token) {
+        if (token == null || !token.startsWith("Bearer ")) throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다.");
+        return token.substring(7);
+    }
+
 }

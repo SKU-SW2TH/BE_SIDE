@@ -27,22 +27,20 @@ public class MemberController implements MemberApiDocumentation {
     @GetMapping("/info")
     public ResponseEntity<?> getMemberInfo(@RequestHeader("Authorization") String accessToken) {
         try {
-            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
-            }
-            String token = accessToken.substring(7);
-
-            // 토큰 검증 및 사용자 정보 조회 로직
-            MemberDto memberDTO = memberService.getMemberByToken(token);
-
+            MemberDto memberDTO = memberService.getMemberByToken(accessToken);
             return ResponseEntity.ok(memberDTO);
+
+
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
         }  catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("예상지 못한 오류 발생");
+
         }
     }
 
@@ -54,36 +52,47 @@ public class MemberController implements MemberApiDocumentation {
             @RequestParam(value = "introduction", required = false) String introduction,
             @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture) {
         try {
-            // 서비스에서 프로필 업데이트 로직 실행
-            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
-            }
-            String token = accessToken.substring(7);
 
             UpdateProfileRequest updateProfileRequest = new UpdateProfileRequest(nickname, introduction);
-            UpdateProfileResponse response = memberService.updateMemberProfile(token, updateProfileRequest, profilePicture);
+            UpdateProfileResponse response = memberService.updateMemberProfile(accessToken, updateProfileRequest, profilePicture);
 
             // 성공적으로 업데이트되면 200 OK 응답
             return ResponseEntity.status(HttpStatus.OK).body(response);
+
+
         } catch (DuplicateNicknameException e) {
             // 닉네임 중복 시 409 Conflict 반환
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+
+
         }  catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
+
         } catch (UserNotFoundException e) {
             // 사용자를 찾지 못한 경우 404 Not Found 응답
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+
         } catch (InvalidTokenException e) {
             // 잘못된 토큰이면 401 Unauthorized 응답
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않는 토큰입니다.");
+
+
         } catch (FileUploadException e) {
             // 파일 업로드 실패 시 500 Internal Server Error 응답
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("파일 업로드 실패");
+
+
         }catch (S3UploadException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("S3 업로드 실패: " + e.getMessage());
+
+
         } catch (Exception e) {
             // 그 외의 예기치 않은 예외 처리
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+
+
         }
     }
 
@@ -92,25 +101,29 @@ public class MemberController implements MemberApiDocumentation {
     public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody PasswordChangeRequest request){
         try {
-            // 현재 비밀번호 확인 및 비밀번호 변경 처리
-            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
-            }
-            String token = accessToken.substring(7);
-
-            memberService.changePassword(token, request.getOldPassword(), request.getNewPassword());
+            memberService.changePassword(accessToken, request.getOldPassword(), request.getNewPassword());
             return ResponseEntity.status(HttpStatus.OK).body("비밀번호가 변경되었습니다.");
+
+
         } catch (UserNotFoundException e) {
             // 사용자를 찾을 수 없을 때 예외 처리
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+
         } catch (InvalidPasswordException e) {
             // 비밀번호 유효성 검사 실패 예외 처리
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
+
         }  catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
+
         } catch (Exception e) {
             // 그 외 기타 예외 처리
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+
+
         }
     }
 
@@ -121,12 +134,18 @@ public class MemberController implements MemberApiDocumentation {
         try {
             memberService.updateNotification(dto);
             return ResponseEntity.status(HttpStatus.OK).body(dto);
+
+
         } catch (EntityNotFoundException e) {
             // 사용자를 찾을 수 없을 때 예외 처리
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+
         } catch (Exception e) {
             // 그 외 기타 예외 처리
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+
+
         }
     }
 
@@ -149,19 +168,22 @@ public class MemberController implements MemberApiDocumentation {
     public ResponseEntity<?> initInterest(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody InterestRequest interestRequest){
         try {
-            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
-            }
-            String token = accessToken.substring(7);
-
-            List<MemberInterestDTO> dtos = memberService.initInterest(token, interestRequest);
+            List<MemberInterestDTO> dtos = memberService.initInterest(accessToken, interestRequest);
             return ResponseEntity.status(HttpStatus.OK).body(dtos);
+
+
         } catch (UserNotFoundException | InterestNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
+
+
         }
     }
 
@@ -170,18 +192,21 @@ public class MemberController implements MemberApiDocumentation {
     public ResponseEntity<?> updateInterest(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody InterestRequest interestRequest){
         try {
-            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
-            }
-            String token = accessToken.substring(7);
-            List<MemberInterestDTO> dtos = memberService.updateInterest(token, interestRequest);
+            List<MemberInterestDTO> dtos = memberService.updateInterest(accessToken, interestRequest);
             return ResponseEntity.status(HttpStatus.OK).body(dtos);
+
         } catch (UserNotFoundException | InterestNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
+
+
         }
     }
 
@@ -189,11 +214,7 @@ public class MemberController implements MemberApiDocumentation {
     @PatchMapping("/update/notification/read")
     public ResponseEntity<?> updateRead(@RequestHeader("Authorization") String accessToken) {
         try {
-            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
-            }
-            String token = accessToken.substring(7);
-            memberService.updateNotificationRead(token); // 철자 수정
+            memberService.updateNotificationRead(accessToken); // 철자 수정
             return ResponseEntity.noContent().build(); // 204 No Content
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -208,18 +229,22 @@ public class MemberController implements MemberApiDocumentation {
     @GetMapping("/notificationList")
     public ResponseEntity<?> getNotificationList(@RequestHeader("Authorization") String accessToken) {
         try {
-            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
-            }
-            String token = accessToken.substring(7);
-            List<NotificationDTO> dtos = memberService.getNotifications(token);
+            List<NotificationDTO> dtos = memberService.getNotifications(accessToken);
             return ResponseEntity.ok(dtos);
+
+
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
+
+
         }
     }
 
@@ -227,19 +252,22 @@ public class MemberController implements MemberApiDocumentation {
     @GetMapping("/notification/unread")
     public ResponseEntity<?> unReadNotification(@RequestHeader("Authorization") String accessToken) {
         try {
-            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다..");
-            }
-
-            String token = accessToken.substring(7);
-            List<NotificationDTO> dtos = memberService.unReadNotification(token);
+            List<NotificationDTO> dtos = memberService.unReadNotification(accessToken);
             return ResponseEntity.ok(dtos);
+
+
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
+
+
         }
     }
 
