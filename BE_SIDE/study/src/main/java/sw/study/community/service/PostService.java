@@ -122,7 +122,7 @@ public class PostService {
      * 게시글 신고
      */
     @Transactional
-    public void report(ReportRequestDTO reportRequestDTO, Long postId) {
+    public Long report(ReportRequestDTO reportRequestDTO, Long postId) {
         Post findPost = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
         Member findTargetMember = memberRepository.findById(findPost.getMember().getId())
@@ -130,13 +130,16 @@ public class PostService {
         Member findReporter = memberRepository.findById(reportRequestDTO.getReporterId())
                 .orElseThrow(() -> new UserNotFoundException("해당하는 신고자를 찾을 수 없습니다."));
 
-        // 추가해야함
+        // 신고 생성
         Report report = Report.createReport(findReporter, findTargetMember, postId,
                 reportRequestDTO.getDescription(),
                 reportRequestDTO.getReportTargetType(),
                 reportRequestDTO.getReportReason(),
                 ReportStatus.PENDING);
 
-        reportService.save(report);
+        // 게시글 신고 수 증가
+        findPost.incrementReportCount();
+
+        return reportService.save(report);
     }
 }

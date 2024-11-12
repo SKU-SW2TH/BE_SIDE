@@ -12,6 +12,11 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import sw.study.admin.domain.Report;
+import sw.study.admin.dto.ReportRequestDTO;
+import sw.study.admin.repository.ReportRepository;
+import sw.study.admin.role.ReportReason;
+import sw.study.admin.role.ReportTargetType;
 import sw.study.community.domain.Post;
 import sw.study.community.dto.PostDTO;
 import sw.study.community.repository.PostLikeRepository;
@@ -43,8 +48,8 @@ public class PostServiceTest {
     @Autowired MemberRepository memberRepository;
     @Autowired InterestAreaRepository interestAreaRepository;
     @Autowired EntityManager em;
-    @Autowired
-    private PostLikeRepository postLikeRepository;
+    @Autowired PostLikeRepository postLikeRepository;
+    @Autowired ReportRepository reportRepository;
 
 
     // 추가적으로 예외 상황 테스트도 추가해야한다.
@@ -121,6 +126,33 @@ public class PostServiceTest {
         assertThat(postLikeRepository.findByPostAndMember(post, member2)).isEqualTo(Optional.empty());
     }
 
+    @Test
+    void 게시글_신고() throws Exception {
+        //given
+        Member member = getMember();
+        PostDTO postDTO = getPostDTO(member.getId());
+        Member member2 = getMember2();
+        Long postId = postService.save(postDTO);
+        Post post = postRepository.findById(postId).orElseThrow();
+
+        ReportRequestDTO reportRequestDTO = new ReportRequestDTO();
+        reportRequestDTO.setReporterId(member2.getId());
+        reportRequestDTO.setDescription("보고싶지않은게시글!!ㅡㅡ");
+        reportRequestDTO.setReportReason(ReportReason.INAPPROPRIATE_EXPRESSION);
+        reportRequestDTO.setReportTargetType(ReportTargetType.POST);
+
+        //when
+        Long reportId = postService.report(reportRequestDTO, postId);
+
+        //then
+        Report report = reportRepository.findById(reportId).get();
+
+
+        assertThat(post.getReportCount()).isEqualTo(1);
+        assertThat(member2.getReports().size()).isEqualTo(1);
+        assertThat(report.getReportTargetType()).isEqualTo(ReportTargetType.POST);
+        assertThat(report.getReportReason()).isEqualTo(ReportReason.INAPPROPRIATE_EXPRESSION);
+    }
 
 //    @Test
 //    void 게시글_수정() throws Exception {
@@ -148,15 +180,6 @@ public class PostServiceTest {
 //    }
 //
 //
-//    @Test
-//    void 게시글_신고() throws Exception {
-//        //given
-//
-//        //when
-//
-//        //then
-//
-//    }
 //
 //    @Test
 //    void 게시글_페이징() throws Exception {
@@ -202,7 +225,7 @@ public class PostServiceTest {
 
     private Member getMember() {
         List<NotificationCategory> categories = notificationCategoryRepository.findAll();
-        Member member = Member.createMember("ksh990409@naver.com", "ksks12", "감자탕",
+        Member member = Member.createMember("ksh990408@naver.com", "ksks12", "감자탕",
                 Role.USER, categories);
         memberRepository.save(member);
         return member;

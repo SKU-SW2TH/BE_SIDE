@@ -16,7 +16,7 @@ public class ReportService {
      * 신고 생성
      */
     @Transactional
-    public void save(Report report) {
-        reportRepository.save(report);
+    public Long save(Report report) {
+        return reportRepository.save(report).getId();
     }
 }

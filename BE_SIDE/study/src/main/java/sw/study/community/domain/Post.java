@@ -114,4 +114,8 @@ public class Post {
         this.likes.remove(postLike);
         postLike.addPost(null); // Post를 null로 설정하여 양방향 관계를 유지
     }
+
+    public void incrementReportCount() {
+        this.reportCount++;
+    }
 }
