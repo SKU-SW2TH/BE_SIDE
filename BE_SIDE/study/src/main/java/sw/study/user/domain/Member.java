@@ -86,18 +86,7 @@ public class Member {
         return member;
     }
 
-    public void onDeleted() {
-        this.isDeleted = true;
-    }
-
-    public void requestDeactivation() {
-        this.deletedAt = LocalDateTime.now();
-    }
-
-    public void restore() {
-        this.deletedAt = null;
-    }
-
+    //== 연관관계 편의 메서드 ==//
     public void addSetting(NotificationSetting setting) {
         settings.add(setting);
         setting.addMember(this);
@@ -106,6 +95,24 @@ public class Member {
     public void addInterest(MemberInterest interest) {
         interests.add(interest);
         interest.addMember(this);
+    }
+
+    public void addReport(Report report) {
+        reports.add(report);
+        report.addReporter(this);
+    }
+
+    //== ==//
+    public void requestDeactivation() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void restore() {
+        this.deletedAt = null;
+    }
+
+    public void onDeleted() {
+        this.isDeleted = true;
     }
 
     public void addNotification(Notification notification) {

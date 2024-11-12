@@ -14,7 +14,6 @@ import static jakarta.persistence.FetchType.LAZY;
 import static lombok.AccessLevel.PROTECTED;
 
 @Entity
-@Table(name = "report")
 @Getter
 @NoArgsConstructor(access = PROTECTED)
 public class Report {
@@ -31,7 +30,7 @@ public class Report {
     @JoinColumn(name = "target_mem_id")
     private Member targetMember;
 
-    private Long targetId;
+    private Long targetId; // 게시글 or 댓글의 id가 들어간다.
     private String description;
 
     @Enumerated(EnumType.STRING)
@@ -62,7 +61,7 @@ public class Report {
                                       ReportStatus reportStatus) {
 
         Report report = new Report();
-        report.reporter = reporter;
+        reporter.addReport(report); // 연관관계 설정
         report.targetMember = targetMember;
         report.targetId = targetId;
         report.reportTargetType = reportTargetType;
@@ -72,4 +71,7 @@ public class Report {
         return report;
     }
 
+    public void addReporter(Member reporter) {
+        this.reporter = reporter;
+    }
 }
