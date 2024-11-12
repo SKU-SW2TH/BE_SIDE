@@ -17,11 +17,11 @@ public class PostArea {
     @Column(name = "post_interest_id")
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "interest_area_id")
     private Area area;
 

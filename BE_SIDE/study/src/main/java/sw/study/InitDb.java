@@ -7,7 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import sw.study.community.domain.Category;
+import sw.study.community.domain.Post;
+import sw.study.community.dto.PostDTO;
+import sw.study.community.repository.PostRepository;
+import sw.study.community.service.PostService;
 import sw.study.user.domain.Area;
 import sw.study.user.domain.Member;
 import sw.study.user.domain.Notification;
@@ -26,6 +31,7 @@ import sw.study.user.service.NotificationService;
 @RequiredArgsConstructor
 public class InitDb {
     private final InitService initService;
+    private final PostRepository postRepository;
 
     @PostConstruct
     public void init() {
@@ -33,6 +39,7 @@ public class InitDb {
         initService.initCategory();
         initService.initNotificationCategory();
         initService.initMember();
+        initService.initPost();
     }
 
     @Component
@@ -40,6 +47,7 @@ public class InitDb {
     @RequiredArgsConstructor
     static class InitService {
 
+        private final PostService postService;
         private final NotificationCategoryRepository notificationCategoryRepository;
         private final EntityManager em;
         private final MemberRepository memberRepository;
@@ -105,6 +113,33 @@ public class InitDb {
             );
             memberRepository.save(member1);
 //            em.persist(member1);
+        }
+
+        public void initPost() {
+            List<NotificationCategory> notificationCategories = notificationCategoryRepository.findAll();
+
+            Member member = Member.createMember(
+                    "ksh990409@naver.com",
+                    encoder.encode("poket1357!"), // 비밀번호 암호화
+                    "testUser", Role.USER, notificationCategories
+            );
+            em.persist(member);
+
+            // postDTO
+            PostDTO postDTO = new PostDTO();
+            postDTO.setTitle("반갑습니다");
+            postDTO.setContent("안녕하세요 으아아아");
+            postDTO.setCategory("FREE");
+            postDTO.setMemberId(member.getId());
+
+            List<String> interestAreas = new ArrayList<>();
+            interestAreas.add("Java");
+            postDTO.setArea(interestAreas);
+
+            List<MultipartFile> files = new ArrayList<>();
+            postDTO.setFiles(files);
+
+            Long postId = postService.save(postDTO);
         }
     }
 }

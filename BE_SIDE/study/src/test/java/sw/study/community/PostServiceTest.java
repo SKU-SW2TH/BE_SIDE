@@ -1,7 +1,10 @@
 package sw.study.community;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -9,10 +12,17 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import sw.study.admin.domain.Report;
+import sw.study.admin.dto.ReportRequestDTO;
+import sw.study.admin.repository.ReportRepository;
+import sw.study.admin.role.ReportReason;
+import sw.study.admin.role.ReportTargetType;
 import sw.study.community.domain.Post;
 import sw.study.community.dto.PostDTO;
+import sw.study.community.repository.PostLikeRepository;
 import sw.study.community.repository.PostRepository;
 import sw.study.community.service.PostService;
+import sw.study.exception.community.LikeNotFoundException;
 import sw.study.user.domain.Member;
 import sw.study.user.domain.NotificationCategory;
 import sw.study.user.repository.AreaRepository;
@@ -25,6 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @SpringBootTest
 @Transactional
@@ -33,8 +44,10 @@ public class PostServiceTest {
     @Autowired PostRepository postRepository;
     @Autowired NotificationCategoryRepository notificationCategoryRepository;
     @Autowired MemberRepository memberRepository;
-    @Autowired
-    AreaRepository areaRepository;
+    @Autowired EntityManager em;
+    @Autowired PostLikeRepository postLikeRepository;
+    @Autowired ReportRepository reportRepository;
+    @Autowired AreaRepository areaRepository;
 
 
     // 추가적으로 예외 상황 테스트도 추가해야한다.
@@ -55,61 +68,100 @@ public class PostServiceTest {
         assertThat(post.getId()).isEqualTo(postId);
     }
 
+    @Test
+    void 게시글_삭제() throws Exception {
+        //given
+        Member member = getMember();
+        PostDTO postDTO = getPostDTO(member.getId());
+        Long postId = postService.save(postDTO);
+        em.flush();
+
+        //when
+        postService.delete(postId);
+        em.flush();
+
+        //then
+        assertThat(postRepository.findById(postId).get().isDeleted()).isTrue();
+    }
+
+    @Test
+    void 게시글_좋아요() throws Exception {
+        //given
+        Member member = getMember();
+        PostDTO postDTO = getPostDTO(member.getId());
+        Long postId = postService.save(postDTO);
+
+        Member member2 = getMember2();
+        em.flush();
+
+        //when
+        postService.addLike(postId, member2.getId());
+
+        //then
+        int likeCnt = postRepository.findById(postId).get().getLikes().size();
+        assertThat(likeCnt).isEqualTo(1);
+    }
+
+    @Test
+    void 게시글_좋아요_취소() throws Exception {
+        //given
+        Member member = getMember();
+        Member member2 = getMember2();
+        PostDTO postDTO = getPostDTO(member.getId());
+        Long postId = postService.save(postDTO);
+        Post post = postRepository.findById(postId).orElseThrow();
+
+        postService.addLike(postId, member2.getId());
+        em.flush();
+
+        //when
+        postService.cancelLike(postId, member2.getId());
+        em.flush();
+
+        //then
+        int likeCnt = postRepository.findById(postId).get().getLikes().size();
+        assertThat(likeCnt).isEqualTo(0);
+        assertThat(postLikeRepository.findByPostAndMember(post, member2)).isEqualTo(Optional.empty());
+    }
+
+    @Test
+    void 게시글_신고() throws Exception {
+        //given
+        Member member = getMember();
+        PostDTO postDTO = getPostDTO(member.getId());
+        Member member2 = getMember2();
+        Long postId = postService.save(postDTO);
+        Post post = postRepository.findById(postId).orElseThrow();
+
+        ReportRequestDTO reportRequestDTO = new ReportRequestDTO();
+        reportRequestDTO.setReporterId(member2.getId());
+        reportRequestDTO.setDescription("보고싶지않은게시글!!ㅡㅡ");
+        reportRequestDTO.setReportReason(ReportReason.INAPPROPRIATE_EXPRESSION);
+        reportRequestDTO.setReportTargetType(ReportTargetType.POST);
+
+        //when
+        Long reportId = postService.report(reportRequestDTO, postId);
+
+        //then
+        Report report = reportRepository.findById(reportId).get();
+
+
+        assertThat(post.getReportCount()).isEqualTo(1);
+        assertThat(member2.getReports().size()).isEqualTo(1);
+        assertThat(report.getReportTargetType()).isEqualTo(ReportTargetType.POST);
+        assertThat(report.getReportReason()).isEqualTo(ReportReason.INAPPROPRIATE_EXPRESSION);
+    }
+
 //    @Test
 //    void 게시글_수정() throws Exception {
 //        //given
+//        Member member = getMember();
+//        PostDTO postDTO = getPostDTO(member.getId());
+//        Long postId = postService.save(postDTO);
 //
 //        //when
+//        Post post = postRepository.findById(postId).orElseThrow();
 //
-//        //then
-//
-//    }
-//
-//    @Test
-//    void 게시글_삭제() throws Exception {
-//        //given
-//
-//        //when
-//
-//        //then
-//
-//    }
-//
-//    @Test
-//    void 게시글_좋아요() throws Exception {
-//        //given
-//
-//        //when
-//
-//        //then
-//
-//    }
-//
-//    @Test
-//    void 게시글_좋아요_취소() throws Exception {
-//        //given
-//
-//        //when
-//
-//        //then
-//
-//    }
-//
-//    @Test
-//    void 게시글_신고() throws Exception {
-//        //given
-//
-//        //when
-//
-//        //then
-//
-//    }
-//
-//    @Test
-//    void 게시글_페이징() throws Exception {
-//        //given
-//
-//        //when
 //
 //        //then
 //
@@ -124,6 +176,19 @@ public class PostServiceTest {
 //        //then
 //
 //    }
+//
+//
+//
+//    @Test
+//    void 게시글_페이징() throws Exception {
+//        //given
+//
+//        //when
+//
+//        //then
+//
+//    }
+//
 //
 //    @Test
 //    void 게시글_제목_검색() throws Exception {
@@ -158,7 +223,15 @@ public class PostServiceTest {
 
     private Member getMember() {
         List<NotificationCategory> categories = notificationCategoryRepository.findAll();
-        Member member = Member.createMember("ksh990409@naver.com", "ksks12", "감자탕",
+        Member member = Member.createMember("ksh990408@naver.com", "ksks12", "감자탕",
+                Role.USER, categories);
+        memberRepository.save(member);
+        return member;
+    }
+
+    private Member getMember2() {
+        List<NotificationCategory> categories = notificationCategoryRepository.findAll();
+        Member member = Member.createMember("pok@naver.com", "pokpok", "989898",
                 Role.USER, categories);
         memberRepository.save(member);
         return member;

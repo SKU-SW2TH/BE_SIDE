@@ -1,6 +1,6 @@
 package sw.study.admin.role;
 
-public enum TargetType {
+public enum ReportTargetType {
     POST,
     COMMENT;
 }
