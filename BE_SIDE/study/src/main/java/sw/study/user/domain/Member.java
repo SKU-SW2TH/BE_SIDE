@@ -8,6 +8,7 @@ import sw.study.admin.domain.Report;
 import sw.study.user.role.Role;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static lombok.AccessLevel.*;
@@ -65,6 +66,7 @@ public class Member {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Notification> notifications = new ArrayList<>();
 
+
     //== 생성 메서드 ==//
     public static Member createMember(String email, String password, String nickname, Role role, List<NotificationCategory> categories) {
 
@@ -84,18 +86,7 @@ public class Member {
         return member;
     }
 
-    public void onDeleted() {
-        this.isDeleted = true;
-    }
-
-    public void requestDeactivation() {
-        this.deletedAt = LocalDateTime.now();
-    }
-
-    public void restore() {
-        this.deletedAt = null;
-    }
-
+    //== 연관관계 편의 메서드 ==//
     public void addSetting(NotificationSetting setting) {
         settings.add(setting);
         setting.addMember(this);
@@ -104,6 +95,24 @@ public class Member {
     public void addMemberArea(MemberArea memberArea) {
         memberAreas.add(memberArea);
         memberArea.addMember(this);
+    }
+
+    public void addReport(Report report) {
+        reports.add(report);
+        report.addReporter(this);
+    }
+
+    //== ==//
+    public void requestDeactivation() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void restore() {
+        this.deletedAt = null;
+    }
+
+    public void onDeleted() {
+        this.isDeleted = true;
     }
 
     public void addNotification(Notification notification) {
@@ -131,6 +140,5 @@ public class Member {
     public void changePassword(String password) {
         this.password = password;
     }
-
 }
 
