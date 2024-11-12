@@ -235,8 +235,7 @@ public class AuthController implements AuthApiDocumentation {
             // 이메일 발송
             String url = Constant.URL + "/reset-password";
             String subject = "비밀번호 변경";
-            String text = "비밀번호 변경을 위해 접속해주세요: " + url;
-            mailService.sendEmail(email, subject, text);
+            mailService.sendEmailWithLink(email, subject, url);
             String token = authService.generatePasswordResetToken(email);
             return ResponseEntity.ok(token);
 
