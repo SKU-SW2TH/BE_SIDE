@@ -134,7 +134,7 @@ public class InitDb {
 
             List<String> interestAreas = new ArrayList<>();
             interestAreas.add("Java");
-            postDTO.setInterests(interestAreas);
+            postDTO.setArea(interestAreas);
 
             List<MultipartFile> files = new ArrayList<>();
             postDTO.setFiles(files);
