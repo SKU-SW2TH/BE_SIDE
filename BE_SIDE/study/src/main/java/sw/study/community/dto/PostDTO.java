@@ -11,6 +11,6 @@ public class PostDTO {
     private String title;
     private String content;
     private String category;
-    private List<String> interests;
+    private List<String> area;
     private List<MultipartFile> files;
 }

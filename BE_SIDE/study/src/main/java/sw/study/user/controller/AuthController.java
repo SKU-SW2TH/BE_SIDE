@@ -187,13 +187,18 @@ public class AuthController implements AuthApiDocumentation {
     @DeleteMapping("/delete-account")
     public ResponseEntity<String> deleteAccount(@RequestHeader("Authorization") String refreshToken) {
         try {
-            String token = refreshToken.startsWith("Bearer ") ? refreshToken.substring(7) : refreshToken;
-            authService.deleteMember(token);
+            authService.deleteMember(refreshToken);
             return ResponseEntity.ok("회원 탈퇴가 완료되었습니다.");
+
+
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
+
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("탈퇴 처리 중 오류가 발생했습니다.");
+
+
         }
     }
 
@@ -201,15 +206,8 @@ public class AuthController implements AuthApiDocumentation {
     @PatchMapping("/restore")
     public ResponseEntity<String> restoreMember(@RequestHeader("Authorization") String accessToken) {
         try {
-            // 토큰 유효성 검사
-            if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("[ERROR] 유효하지 않은 토큰 형식입니다.");
-            }
-
-            String token = accessToken.substring(7);
-
             // 회원 복구 처리
-            authService.restoreMember(token);
+            authService.restoreMember(accessToken);
             return ResponseEntity.ok("회원이 성공적으로 복구되었습니다.");
         } catch (IllegalArgumentException e) {
             // 토큰 형식 오류 또는 유효하지 않은 요청
@@ -260,9 +258,6 @@ public class AuthController implements AuthApiDocumentation {
     public ResponseEntity<String> validResetToken(@RequestHeader("Authorization") String token) {
         try{
             // 토큰 유효성 검사
-            if (token == null || !token.startsWith("Bearer ")) throw new IllegalArgumentException("[ERROR] 유효하지 않은 토큰 형식입니다.");
-            token = token.substring(7);
-
             authService.validPasswordResetToken(token);
             return ResponseEntity.ok("토큰 인증을 성공하였습니다.");
         } catch (IllegalArgumentException e){
@@ -283,8 +278,6 @@ public class AuthController implements AuthApiDocumentation {
 
         try {
             // 토큰 유효성 검사
-            if (token == null || !token.startsWith("Bearer ")) throw new IllegalArgumentException("[ERROR] 유효하지 않은 토큰 형식입니다.");
-            token = token.substring(7);
 
             authService.changePassword(token, newPassword);
             return ResponseEntity.ok("비밀번호가 변경되었습니다.");
@@ -292,14 +285,22 @@ public class AuthController implements AuthApiDocumentation {
 
         } catch (IllegalArgumentException e){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 401
+
+
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
+
+
         } catch (SamePasswordException e) {
             // 변경하려는 비밀번호가 기존 비밀번호와 같습니다.
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400
+
+
         } catch (Exception e) {
             // 기타 예외 발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+
+
         }
     }
 

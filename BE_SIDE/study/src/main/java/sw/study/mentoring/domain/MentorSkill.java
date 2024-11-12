@@ -3,7 +3,7 @@ package sw.study.mentoring.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import sw.study.user.domain.InterestArea;
+import sw.study.user.domain.Area;
 
 import java.time.LocalDateTime;
 
@@ -26,7 +26,7 @@ public class MentorSkill {
 
     @ManyToOne
     @JoinColumn(name = "interest_area_id", nullable = false)
-    private InterestArea interestArea;
+    private Area area;
 
     private LocalDateTime createdAt;
 
@@ -35,10 +35,10 @@ public class MentorSkill {
         this.createdAt = LocalDateTime.now();
     }
 
-    public static MentorSkill createMentorSkill(Mentor mentor, InterestArea interestArea) {
+    public static MentorSkill createMentorSkill(Mentor mentor, Area area) {
         MentorSkill mentorSkill = new MentorSkill();
         mentorSkill.mentor = mentor;
-        mentorSkill.interestArea = interestArea;
+        mentorSkill.area = area;
         return mentorSkill;
     }
 

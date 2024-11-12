@@ -45,16 +45,18 @@ public class Notification {
         this.createdAt = LocalDateTime.now();
     }
 
-    public static Notification createNotification(Member member, NotificationCategory category, String title, String content, Long targetId) {
+    public static Notification createNotification(NotificationCategory category, String title, String content, Long targetId) {
         Notification notification = new Notification();
-        notification.member = member;
         notification.category = category;
         notification.title = title;
         notification.content = content;
         notification.targetId = targetId;
 
-        member.addNotification(notification);
         return notification;
+    }
+
+    public void addMember(Member member) {
+        this.member = member;
     }
 
     public void markAsRead() {

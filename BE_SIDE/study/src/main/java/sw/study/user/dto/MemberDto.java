@@ -13,7 +13,8 @@ public class MemberDto {
     private String introduce;
     private String role;
     private LocalDate deletedAt;
+    private boolean isDeleted;
     private List<NotificationSettingDTO> settings = new ArrayList<>();
-    private List<MemberInterestDTO> interests = new ArrayList<>();
+    private List<MemberAreaDTO> interests = new ArrayList<>();
     private List<NotificationDTO> notifications = new ArrayList<>();
 }
