@@ -8,6 +8,7 @@ import sw.study.admin.domain.Report;
 import sw.study.user.role.Role;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static lombok.AccessLevel.*;
@@ -64,6 +65,7 @@ public class Member {
     private List<MemberInterest> interests = new ArrayList<>();
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Notification> notifications = new ArrayList<>();
+
 
     //== 생성 메서드 ==//
     public static Member createMember(String email, String password, String nickname, Role role, List<NotificationCategory> categories) {
@@ -130,6 +132,5 @@ public class Member {
     public void changePassword(String password) {
         this.password = password;
     }
-
 }
 

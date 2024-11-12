@@ -2,75 +2,73 @@ package sw.study.admin.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import org.antlr.v4.runtime.misc.NotNull;
-import sw.study.admin.role.Reason;
-import sw.study.admin.role.Status;
-import sw.study.admin.role.TargetType;
+import lombok.NoArgsConstructor;
+import sw.study.admin.role.ReportTargetType;
 import sw.study.user.domain.Member;
+import sw.study.admin.role.ReportReason;
+import sw.study.admin.role.ReportStatus;
+
 import java.time.LocalDateTime;
 
+import static jakarta.persistence.FetchType.LAZY;
 import static lombok.AccessLevel.PROTECTED;
 
 @Entity
 @Table(name = "report")
 @Getter
-@RequiredArgsConstructor(access = PROTECTED)
+@NoArgsConstructor(access = PROTECTED)
 public class Report {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue
     @Column(name = "report_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY) // 다대일 관계 설정
-    @JoinColumn(name = "member_id") // 외래키 이름 설정
-    private Member member;
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "reporter_id")
+    private Member reporter;
 
-    @ManyToOne(fetch = FetchType.LAZY) // 다대일 관계 설정
-    @JoinColumn(name = "target_mem_id") // 외래키 이름 설정
+    @ManyToOne
+    @JoinColumn(name = "target_mem_id")
     private Member targetMember;
 
-    private long targetId;
-
-    @NotNull
-    @Enumerated(EnumType.STRING) // Enum 타입을 문자열로 저장
-    private TargetType targetType;
-
-    @Lob
-    @Column(name = "description", columnDefinition = "TEXT")
+    private Long targetId;
     private String description;
 
-    @Enumerated(EnumType.STRING) // Enum 타입을 문자열로 저장
-    private Reason reason;
-
-    @Enumerated(EnumType.STRING) // Enum 타입을 문자열로 저장
-    private Status status;
+    @Enumerated(EnumType.STRING)
+    private ReportTargetType reportTargetType;
+    @Enumerated(EnumType.STRING)
+    private ReportReason reportReason;
+    @Enumerated(EnumType.STRING)
+    private ReportStatus reportStatus;
 
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    private LocalDateTime reportedAt;
+
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.reportedAt = LocalDateTime.now(); // 생성 시 reportedAt 초기화
+        this.updatedAt = LocalDateTime.now(); // 생성 시 updatedAt 초기화
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.reportedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public static Report createReport(Member member, Member targetMember, long targetId, String description, TargetType targetType, Reason reason, Status status) {
+    public static Report createReport(Member reporter, Member targetMember, Long targetId, String description,
+                                      ReportTargetType reportTargetType, ReportReason reportReason,
+                                      ReportStatus reportStatus) {
+
         Report report = new Report();
-        report.member = member;
+        report.reporter = reporter;
         report.targetMember = targetMember;
         report.targetId = targetId;
-        report.targetType = targetType;
+        report.reportTargetType = reportTargetType;
         report.description = description;
-        report.reason = reason;
-        report.status = status;
+        report.reportReason = reportReason;
+        report.reportStatus = reportStatus;
         return report;
     }
 
