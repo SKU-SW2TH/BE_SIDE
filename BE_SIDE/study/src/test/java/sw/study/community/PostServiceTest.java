@@ -23,7 +23,6 @@ import sw.study.community.repository.PostLikeRepository;
 import sw.study.community.repository.PostRepository;
 import sw.study.community.service.PostService;
 import sw.study.exception.community.LikeNotFoundException;
-import sw.study.user.domain.InterestArea;
 import sw.study.user.domain.Member;
 import sw.study.user.domain.NotificationCategory;
 import sw.study.user.repository.AreaRepository;

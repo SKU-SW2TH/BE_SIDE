@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sw.study.admin.dto.ReportRequestDTO;
 import sw.study.community.dto.PostDTO;
 import sw.study.community.service.PostService;
 import sw.study.exception.UserNotFoundException;
@@ -82,6 +83,22 @@ public class PostController {
         } catch (Exception e) {
             // 기타 예외 발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        }
+    }
+
+    @PostMapping("/{postId}/report")
+    public ResponseEntity<?> reportPost(@PathVariable Long postId, @RequestBody ReportRequestDTO reportRequestDTO) {
+        log.info("게시글 신고 요청: targetId = {}, reporterId = {}", postId, reportRequestDTO.getReporterId());
+        try {
+            postService.report(reportRequestDTO, postId);
+            return ResponseEntity.ok("신고가 성공적으로 접수되었습니다.");
+
+
+        } catch (PostNotFoundException | UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 }

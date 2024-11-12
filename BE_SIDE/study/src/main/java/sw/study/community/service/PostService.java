@@ -18,7 +18,6 @@ import sw.study.community.repository.PostLikeRepository;
 import sw.study.community.repository.PostRepository;
 import sw.study.exception.UserNotFoundException;
 import sw.study.exception.community.*;
-import sw.study.user.domain.InterestArea;
 import sw.study.exception.community.AreaNotFoundException;
 import sw.study.exception.community.CategoryNotFoundException;
 import sw.study.user.domain.Area;
@@ -29,6 +28,7 @@ import sw.study.user.repository.MemberRepository;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostService {
@@ -140,7 +140,8 @@ public class PostService {
 
         // 게시글 신고 수 증가
         findPost.incrementReportCount();
-
-        return reportService.save(report);
+        Long reportId = reportService.save(report);
+        log.info("게시글 신고 요청 완료: targetId = {}, reporterId = {}, targetMemberId = {}", postId, reportId, findTargetMember.getId());
+        return reportId;
     }
 }
