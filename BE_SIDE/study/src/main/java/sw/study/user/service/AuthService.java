@@ -135,6 +135,7 @@ public class AuthService {
     public void deleteMember(String refreshToken) {
         String token = jwtService.extractToken(refreshToken);
         String email = jwtService.extractEmail(token);
+        String refreshTokenKey = "RT:" + email;
 
         // 회원 삭제 처리
         Member member = memberRepository.findByEmail(email)
@@ -144,7 +145,7 @@ public class AuthService {
 
         memberRepository.save(member);
         // 강제 로그아웃 처리
-        logout(refreshToken);
+        forceLogout(refreshTokenKey);
     }
 
     @Transactional
