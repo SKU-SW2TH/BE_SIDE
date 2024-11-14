@@ -3,29 +3,24 @@ package sw.study;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.community.domain.Category;
-import sw.study.community.domain.Post;
-import sw.study.community.dto.PostDTO;
+import sw.study.community.dto.PostRequestDTO;
 import sw.study.community.repository.PostRepository;
 import sw.study.community.service.PostService;
 import sw.study.user.domain.Area;
 import sw.study.user.domain.Member;
-import sw.study.user.domain.Notification;
 import sw.study.user.domain.NotificationCategory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import sw.study.user.repository.MemberRepository;
 import sw.study.user.repository.NotificationCategoryRepository;
 import sw.study.user.role.Role;
-import sw.study.user.service.NotificationService;
 
 @Component
 @RequiredArgsConstructor
@@ -126,20 +121,20 @@ public class InitDb {
             em.persist(member);
 
             // postDTO
-            PostDTO postDTO = new PostDTO();
-            postDTO.setTitle("반갑습니다");
-            postDTO.setContent("안녕하세요 으아아아");
-            postDTO.setCategory("FREE");
-            postDTO.setMemberId(member.getId());
+            PostRequestDTO postRequestDTO = new PostRequestDTO();
+            postRequestDTO.setTitle("반갑습니다");
+            postRequestDTO.setContent("안녕하세요 으아아아");
+            postRequestDTO.setCategory("FREE");
+            postRequestDTO.setMemberId(member.getId());
 
             List<String> interestAreas = new ArrayList<>();
             interestAreas.add("Java");
-            postDTO.setArea(interestAreas);
+            postRequestDTO.setArea(interestAreas);
 
             List<MultipartFile> files = new ArrayList<>();
-            postDTO.setFiles(files);
+            postRequestDTO.setFiles(files);
 
-            Long postId = postService.save(postDTO);
+            Long postId = postService.save(postRequestDTO);
         }
     }
 }

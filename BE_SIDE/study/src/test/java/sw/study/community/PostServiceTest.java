@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import jakarta.persistence.EntityManager;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,12 +16,15 @@ import sw.study.admin.dto.ReportRequestDTO;
 import sw.study.admin.repository.ReportRepository;
 import sw.study.admin.role.ReportReason;
 import sw.study.admin.role.ReportTargetType;
+import sw.study.community.domain.Comment;
 import sw.study.community.domain.Post;
-import sw.study.community.dto.PostDTO;
+import sw.study.community.dto.CommentRequestDTO;
+import sw.study.community.dto.PostRequestDTO;
+import sw.study.community.repository.CommentRepository;
 import sw.study.community.repository.PostLikeRepository;
 import sw.study.community.repository.PostRepository;
+import sw.study.community.service.CommentService;
 import sw.study.community.service.PostService;
-import sw.study.exception.community.LikeNotFoundException;
 import sw.study.user.domain.Member;
 import sw.study.user.domain.NotificationCategory;
 import sw.study.user.repository.AreaRepository;
@@ -48,20 +50,23 @@ public class PostServiceTest {
     @Autowired PostLikeRepository postLikeRepository;
     @Autowired ReportRepository reportRepository;
     @Autowired AreaRepository areaRepository;
+    @Autowired
+    private CommentService commentService;
+    @Autowired
+    private CommentRepository commentRepository;
 
 
     // 추가적으로 예외 상황 테스트도 추가해야한다.
 
 
     @Test
-    @Rollback(false)
     void 게시글_저장() throws Exception {
         //given
         Member member = getMember();
-        PostDTO postDTO = getPostDTO(member.getId());
+        PostRequestDTO postRequestDTO = getPostDTO(member.getId());
 
         //when
-        Long postId = postService.save(postDTO);
+        Long postId = postService.save(postRequestDTO);
 
         //then
         Post post = postRepository.findById(postId).orElseThrow();
@@ -72,8 +77,8 @@ public class PostServiceTest {
     void 게시글_삭제() throws Exception {
         //given
         Member member = getMember();
-        PostDTO postDTO = getPostDTO(member.getId());
-        Long postId = postService.save(postDTO);
+        PostRequestDTO postRequestDTO = getPostDTO(member.getId());
+        Long postId = postService.save(postRequestDTO);
         em.flush();
 
         //when
@@ -88,8 +93,8 @@ public class PostServiceTest {
     void 게시글_좋아요() throws Exception {
         //given
         Member member = getMember();
-        PostDTO postDTO = getPostDTO(member.getId());
-        Long postId = postService.save(postDTO);
+        PostRequestDTO postRequestDTO = getPostDTO(member.getId());
+        Long postId = postService.save(postRequestDTO);
 
         Member member2 = getMember2();
         em.flush();
@@ -107,8 +112,8 @@ public class PostServiceTest {
         //given
         Member member = getMember();
         Member member2 = getMember2();
-        PostDTO postDTO = getPostDTO(member.getId());
-        Long postId = postService.save(postDTO);
+        PostRequestDTO postRequestDTO = getPostDTO(member.getId());
+        Long postId = postService.save(postRequestDTO);
         Post post = postRepository.findById(postId).orElseThrow();
 
         postService.addLike(postId, member2.getId());
@@ -128,9 +133,9 @@ public class PostServiceTest {
     void 게시글_신고() throws Exception {
         //given
         Member member = getMember();
-        PostDTO postDTO = getPostDTO(member.getId());
+        PostRequestDTO postRequestDTO = getPostDTO(member.getId());
         Member member2 = getMember2();
-        Long postId = postService.save(postDTO);
+        Long postId = postService.save(postRequestDTO);
         Post post = postRepository.findById(postId).orElseThrow();
 
         ReportRequestDTO reportRequestDTO = new ReportRequestDTO();
@@ -150,6 +155,26 @@ public class PostServiceTest {
         assertThat(member2.getReports().size()).isEqualTo(1);
         assertThat(report.getReportTargetType()).isEqualTo(ReportTargetType.POST);
         assertThat(report.getReportReason()).isEqualTo(ReportReason.INAPPROPRIATE_EXPRESSION);
+    }
+
+    @Test
+    void 댓글_생성() throws Exception {
+        //given
+        Member member = getMember();
+        PostRequestDTO postRequestDTO = getPostDTO(member.getId());
+        Member member2 = getMember2();
+        Long postId = postService.save(postRequestDTO);
+
+        CommentRequestDTO commentRequestDTO = getCommentRequestDTO(member2.getId());
+
+        //when
+        Long commentId = commentService.save(commentRequestDTO, postId);
+
+        //then
+        Optional<Comment> findComment = commentRepository.findById(commentId);
+        Post findPost = postRepository.findById(postId).orElseThrow();
+        assertThat(findComment.isPresent()).isTrue();
+        assertThat(findPost.getComments().size()).isEqualTo(1);
     }
 
 //    @Test
@@ -237,17 +262,17 @@ public class PostServiceTest {
         return member;
     }
 
-    private PostDTO getPostDTO(Long memberId) {
+    private PostRequestDTO getPostDTO(Long memberId) {
 
-        PostDTO postDTO = new PostDTO();
-        postDTO.setTitle("반갑습니다");
-        postDTO.setContent("안녕하세요 으아아아");
-        postDTO.setCategory("FREE");
-        postDTO.setMemberId(memberId);
+        PostRequestDTO postRequestDTO = new PostRequestDTO();
+        postRequestDTO.setTitle("반갑습니다");
+        postRequestDTO.setContent("안녕하세요 으아아아");
+        postRequestDTO.setCategory("FREE");
+        postRequestDTO.setMemberId(memberId);
 
         List<String> areas = new ArrayList<>();
         areas.add("Java");
-        postDTO.setArea(areas);
+        postRequestDTO.setArea(areas);
 
         List<MultipartFile> files = new ArrayList<>();
         String filePath = "/home/kim/Desktop/sk2th/BE_SIDE/BE_SIDE/study/src/test/java/sw/study/file/nicedochi.jpg";
@@ -262,8 +287,16 @@ public class PostServiceTest {
             throw new RuntimeException(e);
         }
 
-        postDTO.setFiles(files);
+        postRequestDTO.setFiles(files);
 
-        return postDTO;
+        return postRequestDTO;
+    }
+
+    public CommentRequestDTO getCommentRequestDTO(Long memberId) {
+        CommentRequestDTO commentRequestDTO = new CommentRequestDTO();
+        commentRequestDTO.setLevel(1);
+        commentRequestDTO.setMemberId(memberId);
+        commentRequestDTO.setContent("좋은 글 감사합니다");
+        return commentRequestDTO;
     }
 }
