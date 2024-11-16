@@ -198,11 +198,6 @@ public class MemberService {
             throw new InvalidPasswordException("현재 비밀번호와 일치하지 않습니다.");
         }
 
-        // 새 비밀번호 유효성 검사
-        if (!isValidPassword(trimmedNewPassword)) {
-            throw new InvalidPasswordException("비밀번호 유효성 검사에 실패했습니다.");
-        }
-
         String encodedNewPassword = encoder.encode(trimmedNewPassword);
         member.changePassword(encodedNewPassword);
         memberRepository.save(member);
@@ -405,12 +400,6 @@ public class MemberService {
         if (exists) {
             throw new DuplicateNicknameException("이미 존재하는 닉네임: " + nickname);
         }
-    }
-
-    private boolean isValidPassword(String password) {
-        return password.length() >= 8 && // 최소 길이
-                password.matches(".*\\d.*") && // 숫자 포함 여부
-                password.matches(".*[!@#$%^&*()].*"); // 특수문자 포함 여부
     }
 
 }
