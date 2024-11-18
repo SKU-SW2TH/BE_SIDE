@@ -12,7 +12,7 @@ import sw.study.admin.service.ReportService;
 import sw.study.community.domain.Category;
 import sw.study.community.domain.Post;
 import sw.study.community.domain.PostLike;
-import sw.study.community.dto.PostDTO;
+import sw.study.community.dto.PostRequestDTO;
 import sw.study.community.repository.CategoryRepository;
 import sw.study.community.repository.PostLikeRepository;
 import sw.study.community.repository.PostRepository;
@@ -44,25 +44,25 @@ public class PostService {
      * 게시글 생성
      */
     @Transactional
-    public Long save(PostDTO postDto) {
-        Category category = categoryRepository.findByName(postDto.getCategory())
+    public Long save(PostRequestDTO postRequestDto) {
+        Category category = categoryRepository.findByName(postRequestDto.getCategory())
                 .orElseThrow(() -> new CategoryNotFoundException("해당하는 카테고리가 존재하지 않습니다."));
-        Member member = memberRepository.findById(postDto.getMemberId())
+        Member member = memberRepository.findById(postRequestDto.getMemberId())
                 .orElseThrow(() -> new UserNotFoundException("해당하는 사용자가 존재하지 않습니다."));
 
         List<Area> areas = new ArrayList<>();
-        for (String areaName : postDto.getArea()) {
+        for (String areaName : postRequestDto.getArea()) {
             areas.add(areaRepository.findByAreaName(areaName)
                     .orElseThrow(() -> new AreaNotFoundException("해당하는 분야가 존재하지 않습니다.")));
         }
 
         List<String> urls = new ArrayList<>();
-        for (MultipartFile file : postDto.getFiles()) {
+        for (MultipartFile file : postRequestDto.getFiles()) {
             String url = s3Service.upload(file, "post/");
             urls.add(url);
         }
 
-        Post post = Post.createPost(postDto.getTitle(), postDto.getContent(), category, member, areas, urls);
+        Post post = Post.createPost(postRequestDto.getTitle(), postRequestDto.getContent(), category, member, areas, urls);
         log.info("게시글 생성 완료: postId = {}", post.getId());
         return postRepository.save(post).getId();
     }
