@@ -57,7 +57,7 @@ public class Comment {
     //== 생성 메서드 ==//
     public static Comment createComment(Post post, Member member, String content, int level) {
         Comment comment = new Comment();
-        comment.post = post;
+        post.addComment(comment);
         comment.member = member;
         comment.content = content;
         comment.level = level;
