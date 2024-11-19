@@ -51,7 +51,3 @@ jobs:
         with:
           gradle-version: '8.10.2'  # 원하는 Gradle 버전 지정
 
-    # 의존성 그래프 생성 및 제출
-      - name: Generate and submit dependency graph
-        run: ./BE_SIDE/study/gradlew --quiet dependencies --write-locks  # gradlew 실행 경로 수정
-
