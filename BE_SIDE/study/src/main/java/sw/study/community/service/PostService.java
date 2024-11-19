@@ -12,7 +12,7 @@ import sw.study.admin.service.ReportService;
 import sw.study.community.domain.Category;
 import sw.study.community.domain.Post;
 import sw.study.community.domain.PostLike;
-import sw.study.community.dto.PostRequestDTO;
+import sw.study.community.dto.PostRequest;
 import sw.study.community.repository.CategoryRepository;
 import sw.study.community.repository.PostLikeRepository;
 import sw.study.community.repository.PostRepository;
@@ -44,25 +44,28 @@ public class PostService {
      * 게시글 생성
      */
     @Transactional
-    public Long save(PostRequestDTO postRequestDto) {
-        Category category = categoryRepository.findByName(postRequestDto.getCategory())
+    public Long save(PostRequest postRequest) {
+        Category category = categoryRepository.findByName(postRequest.getCategory())
                 .orElseThrow(() -> new CategoryNotFoundException("해당하는 카테고리가 존재하지 않습니다."));
-        Member member = memberRepository.findById(postRequestDto.getMemberId())
+        Member member = memberRepository.findById(postRequest.getMemberId())
                 .orElseThrow(() -> new UserNotFoundException("해당하는 사용자가 존재하지 않습니다."));
 
         List<Area> areas = new ArrayList<>();
-        for (String areaName : postRequestDto.getArea()) {
+        for (String areaName : postRequest.getArea()) {
             areas.add(areaRepository.findByAreaName(areaName)
                     .orElseThrow(() -> new AreaNotFoundException("해당하는 분야가 존재하지 않습니다.")));
         }
 
         List<String> urls = new ArrayList<>();
-        for (MultipartFile file : postRequestDto.getFiles()) {
-            String url = s3Service.upload(file, "post/");
-            urls.add(url);
+        if (!postRequest.getFiles().isEmpty()) {
+            for (MultipartFile file : postRequest.getFiles()) {
+                String url = s3Service.upload(file, "post/");
+                urls.add(url);
+            }
         }
 
-        Post post = Post.createPost(postRequestDto.getTitle(), postRequestDto.getContent(), category, member, areas, urls);
+
+        Post post = Post.createPost(postRequest.getTitle(), postRequest.getContent(), category, member, areas, urls);
         log.info("게시글 생성 완료: postId = {}", post.getId());
         return postRepository.save(post).getId();
     }
@@ -98,23 +101,22 @@ public class PostService {
         postLikeRepository.save(postLike);
         log.info("게시글 좋아요 요청 완료: postId = {}, memberId = {}", postId, memberId);
     }
+
     /**
      * 게시글 좋아요 취소
      */
     @Transactional
     public void cancelLike(Long postId, Long memberId) {
-        Post findPost = postRepository.findById(postId)
+        Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
-        Member findMember = memberRepository.findById(memberId)
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new UserNotFoundException("해당하는 사용자를 찾을 수 없습니다."));
 
-        PostLike postLike = postLikeRepository.findByPostAndMember(findPost, findMember)
+        PostLike postLike = postLikeRepository.findByPostAndMember(post, member)
                 .orElseThrow(() -> new LikeNotFoundException("좋아요가 존재하지 않습니다."));
 
-        // Post의 likes 리스트에서 제거 (list에서 삭제하는 것은 수동으로 해야함)
-        findPost.removeLike(postLike);
-
         // 좋아요 취소
+        post.deleteLike(postLike); // Post의 likes 리스트에서 제거 (list에서 삭제하는 것은 수동으로 해야함)
         postLikeRepository.deleteById(postLike.getId());
         log.info("게시글 좋아요 취소 요청 완료: postId = {}, memberId = {}", postId, memberId);
     }

@@ -90,6 +90,12 @@ public class Post {
         comment.addPost(this);
     }
 
+    // 물리적 삭제
+    public void deleteComment(Comment comment) {
+        this.comments.remove(comment);
+        comment.addPost(null); // 양방향 관계 정리
+    }
+
     public void addFile(PostFile file) {
         this.files.add(file);
         file.addPost(this);
@@ -105,14 +111,14 @@ public class Post {
         like.addPost(this);
     }
 
+    public void deleteLike(PostLike postLike) {
+        this.likes.remove(postLike);
+        postLike.addPost(null); // Post를 null로 설정하여 양방향 관계를 유지
+    }
+
     //== 비지니스 로직 ==//
     public void deletePost() {
         this.isDeleted = true;
-    }
-
-    public void removeLike(PostLike postLike) {
-        this.likes.remove(postLike);
-        postLike.addPost(null); // Post를 null로 설정하여 양방향 관계를 유지
     }
 
     public void incrementReportCount() {

@@ -6,7 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @Data
-public class PostRequestDTO {
+public class PostRequest {
     private Long memberId;
     private String title;
     private String content;

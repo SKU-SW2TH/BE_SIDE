@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.community.domain.Category;
-import sw.study.community.dto.PostRequestDTO;
+import sw.study.community.dto.PostRequest;
 import sw.study.community.repository.PostRepository;
 import sw.study.community.service.PostService;
 import sw.study.user.domain.Area;
@@ -110,6 +110,8 @@ public class InitDb {
 //            em.persist(member1);
         }
 
+
+
         public void initPost() {
             List<NotificationCategory> notificationCategories = notificationCategoryRepository.findAll();
 
@@ -121,20 +123,20 @@ public class InitDb {
             em.persist(member);
 
             // postDTO
-            PostRequestDTO postRequestDTO = new PostRequestDTO();
-            postRequestDTO.setTitle("반갑습니다");
-            postRequestDTO.setContent("안녕하세요 으아아아");
-            postRequestDTO.setCategory("FREE");
-            postRequestDTO.setMemberId(member.getId());
+            PostRequest postRequest = new PostRequest();
+            postRequest.setTitle("반갑습니다");
+            postRequest.setContent("안녕하세요 으아아아");
+            postRequest.setCategory("FREE");
+            postRequest.setMemberId(member.getId());
 
             List<String> interestAreas = new ArrayList<>();
             interestAreas.add("Java");
-            postRequestDTO.setArea(interestAreas);
+            postRequest.setArea(interestAreas);
 
             List<MultipartFile> files = new ArrayList<>();
-            postRequestDTO.setFiles(files);
+            postRequest.setFiles(files);
 
-            Long postId = postService.save(postRequestDTO);
+            Long postId = postService.save(postRequest);
         }
     }
 }
