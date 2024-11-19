@@ -49,9 +49,7 @@ public class MemberController implements MemberApiDocumentation {
             @RequestParam(value = "introduction", required = false) String introduction,
             @RequestParam(value = "profilePicture", required = false) MultipartFile profilePicture) {
         try {
-
-            UpdateProfileRequest updateProfileRequest = new UpdateProfileRequest(nickname, introduction);
-            UpdateProfileResponse response = memberService.updateMemberProfile(accessToken, updateProfileRequest, profilePicture);
+            UpdateProfileResponse response = memberService.updateMemberProfile(accessToken, nickname, introduction, profilePicture);
 
             // 성공적으로 업데이트되면 200 OK 응답
             return ResponseEntity.status(HttpStatus.OK).body(response);

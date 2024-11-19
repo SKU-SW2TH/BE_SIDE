@@ -156,14 +156,18 @@ public class MemberService {
     }
 
     @Transactional
-    public UpdateProfileResponse updateMemberProfile(String accessToken, UpdateProfileRequest updateProfileRequest, MultipartFile profilePicture) throws IOException{
+    public UpdateProfileResponse updateMemberProfile(String accessToken, String nickName, String introduction, MultipartFile profilePicture) throws IOException{
         String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        if (updateProfileRequest.getNickname() != null && !updateProfileRequest.getNickname().isEmpty() && !member.getNickname().equals(updateProfileRequest.getNickname())) {
-            checkNicknameDuplication(updateProfileRequest.getNickname());
-            member.updateNickname(updateProfileRequest.getNickname());
+        if (introduction == null) {
+            introduction = "";
+        }
+
+        if (nickName.isEmpty() && !member.getNickname().equals(nickName)) {
+            checkNicknameDuplication(nickName);
+            member.updateNickname(nickName);
         }
 
         // 프로필 사진 업데이트
@@ -173,13 +177,13 @@ public class MemberService {
         }
 
         // 자기소개 업데이트
-        if (updateProfileRequest.getIntroduction() != null && !updateProfileRequest.getIntroduction().isEmpty() && !member.getIntroduce().equals(updateProfileRequest.getIntroduction())) {
-            member.updateIntroduction(updateProfileRequest.getIntroduction());
+        if (!member.getIntroduce().equals(introduction)) {
+            member.updateIntroduction(introduction);
         }
 
         memberRepository.save(member);
 
-        return  new UpdateProfileResponse(member.getNickname(), member.getIntroduce(), member.getProfile());
+        return new UpdateProfileResponse(member.getNickname(), member.getIntroduce(), member.getProfile());
     }
 
     @Transactional
