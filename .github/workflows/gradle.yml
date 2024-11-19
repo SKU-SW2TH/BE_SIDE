@@ -53,6 +53,7 @@ jobs:
 
     # 의존성 그래프 생성 및 제출
       - name: Generate and submit dependency graph
-        run: ./BE_SIDE/BE_SIDE/study/gradlew --quiet dependencies --write-locks  # gradlew의 경로를 정확히 지정
+        run: ./study/gradlew --quiet dependencies --write-locks
+
 
 
