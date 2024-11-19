@@ -58,7 +58,7 @@ public class PostServiceTest {
 
     // 추가적으로 예외 상황 테스트도 추가해야한다.
 
-    /*
+
 
     @Test
     void 게시글_저장() throws Exception {
@@ -179,7 +179,7 @@ public class PostServiceTest {
     }
 
 
-     */
+
 
 //    @Test
 //    void 게시글_수정() throws Exception {
