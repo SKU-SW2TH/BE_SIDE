@@ -247,6 +247,7 @@ public class PostServiceTest {
 //
 //    }
 
+    /*
 
     private Member getMember() {
         List<NotificationCategory> categories = notificationCategoryRepository.findAll();
@@ -301,4 +302,6 @@ public class PostServiceTest {
         commentRequestDTO.setContent("좋은 글 감사합니다");
         return commentRequestDTO;
     }
+
+    */
 }
