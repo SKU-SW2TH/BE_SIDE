@@ -26,7 +26,9 @@ jobs:
         gradle-version: '8.9'  # Gradle 버전 지정
 
     - name: Build with Gradle
-      run: gradle build  # gradlew 대신 gradle을 사용
+      run: |
+          cd BE_SIDE/study      
+          gradle build  # gradlew 대신 gradle을 사용
 
   dependency-submission:
     runs-on: ubuntu-latest
