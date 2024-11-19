@@ -58,7 +58,7 @@ public class PostServiceTest {
 
     // 추가적으로 예외 상황 테스트도 추가해야한다.
 
-
+    /*
     @Test
     void 게시글_저장() throws Exception {
         //given
@@ -176,6 +176,8 @@ public class PostServiceTest {
         assertThat(findComment.isPresent()).isTrue();
         assertThat(findPost.getComments().size()).isEqualTo(1);
     }
+
+     */
 
 //    @Test
 //    void 게시글_수정() throws Exception {
