@@ -23,7 +23,7 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582
       with:
-        gradle-version: '8.9'  # Gradle 버전 지정
+        gradle-version: '8.10.2'  # Gradle 버전 지정
 
     - name: Build with Gradle
       run: |
