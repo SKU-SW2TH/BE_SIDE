@@ -174,6 +174,8 @@ public class MemberController implements MemberApiDocumentation {
         try {
             memberService.updateNotificationRead(accessToken); // 철자 수정
             return ResponseEntity.noContent().build(); // 204 No Content
+
+
         } catch (UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (IllegalArgumentException e) {
@@ -204,8 +206,8 @@ public class MemberController implements MemberApiDocumentation {
     @GetMapping("/notification/unread")
     public ResponseEntity<?> unReadNotification(@RequestHeader("Authorization") String accessToken) {
         try {
-            List<NotificationDTO> dtos = memberService.unReadNotification(accessToken);
-            return ResponseEntity.ok(dtos);
+            long cnt = memberService.unReadNotification(accessToken);
+            return ResponseEntity.ok(cnt);
 
 
         } catch (UserNotFoundException e) {
