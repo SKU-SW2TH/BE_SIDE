@@ -23,8 +23,9 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582
       with:
-        # gradle-version 옵션 제거
-        gradle-wrapper: true  # Gradle Wrapper 사용
+        gradle-version: '8.10.2'  # 원하는 Gradle 버전 지정
+        gradle-wrapper-path: 'study/gradlew'  # Gradle Wrapper 경로 지정
+
 
     - name: Build with Gradle
       run: |
