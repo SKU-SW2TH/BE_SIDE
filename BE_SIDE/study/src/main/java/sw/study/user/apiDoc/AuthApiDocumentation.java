@@ -20,6 +20,7 @@ public interface AuthApiDocumentation {
     @Operation(summary = "이메일 인증 코드 발송", description = "이메일 인증 코드를 발송하는 API")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "인증 코드가 전송되었습니다."),
+            @ApiResponse(responseCode = "409", description = "이미 사용 중인 이메일입니다."),
             @ApiResponse(responseCode = "500", description = "인증 코드 생성 중 오류가 발생했습니다."),
             @ApiResponse(responseCode = "503", description = "인증 코드를 저장하는 중 오류가 발생했습니다."),
             @ApiResponse(responseCode = "500", description = "이메일 전송 중 오류가 발생했습니다."),
