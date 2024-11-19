@@ -65,9 +65,15 @@ public class Comment {
         return comment;
     }
 
+    //== 연관 관계 편의 메서드 ==//
     public void addChildComment(Comment child) {
         this.child.add(child);
         child.addParentComment(this);
+    }
+
+    public void addCommentLike(CommentLike commentLike) {
+        this.commentLikes.add(commentLike);
+        commentLike.addComment(this);
     }
 
     public void addParentComment(Comment parent) {
@@ -75,4 +81,13 @@ public class Comment {
     }
 
     public void addPost(Post post) { this.post = post; }
+
+    public void deleteComment() {
+        this.isDeleted = true;
+    }
+
+    public void deletedCommentLike(CommentLike commentLike) {
+        this.commentLikes.remove(commentLike);
+        commentLike.addComment(null);
+    }
 }
