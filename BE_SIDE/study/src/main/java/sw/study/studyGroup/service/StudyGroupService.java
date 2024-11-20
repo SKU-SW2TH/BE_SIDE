@@ -39,7 +39,6 @@ public class StudyGroupService {
     private final StudyGroupRepository studyGroupRepository;
     private final ParticipantRepository participantRepository;
     private final WaitingPeopleRepository waitingPeopleRepository;
-    private final DailyLogRepository dailyLogRepository;
 
     private final JWTService jwtService;
 
@@ -289,12 +288,12 @@ public class StudyGroupService {
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)"));
 
         Role role = participant.getRole();
 
         if (role == Role.MEMBER) {
-            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+            throw new PermissionDeniedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)");
         }
 
         List<WaitingPeople> waitingList = waitingPeopleRepository.findByStudyGroup_Id(groupId);
@@ -314,12 +313,12 @@ public class StudyGroupService {
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)"));
 
         Role role = participant.getRole();
 
         if (role == Role.MEMBER) {
-            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+            throw new PermissionDeniedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)");
         }
 
         Optional<Member> target = memberRepository.findByNickname(nickname);
@@ -344,12 +343,12 @@ public class StudyGroupService {
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)"));
 
         Role role = participant.getRole();
 
         if (role == Role.MEMBER) {
-            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+            throw new PermissionDeniedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)");
         }
 
         Participant target = participantRepository.findParticipantByNickname(nickname);
@@ -387,10 +386,10 @@ public class StudyGroupService {
                 .orElseThrow(() -> new StudyGroupNotFoundException("해당 그룹이 존재하지 않습니다."));
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가중이지 않거나, 권한이 없습니다."));
 
         if (participant.getRole() == Role.MEMBER) {
-            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+            throw new PermissionDeniedException("해당 그룹에 참가중이지 않거나, 권한이 없습니다.");
         }
 
         List<Member> members = memberRepository.findByNicknameIn(selectedNicknames);
