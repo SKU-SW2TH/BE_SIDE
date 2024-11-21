@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import sw.study.exception.studyGroup.DailyLogNotFoundException;
 import sw.study.exception.studyGroup.StudyGroupNotFoundException;
 import sw.study.exception.studyGroup.UnauthorizedException;
+import sw.study.studyGroup.apiDoc.DailyLogApiDocumentation;
 import sw.study.studyGroup.dto.DailyLogRequestDto;
 import sw.study.studyGroup.dto.DailyLogResponseDto;
 import sw.study.studyGroup.service.DailyLogService;
@@ -18,13 +19,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/studyGroup/{groupId}/dailyLog")
 @RequiredArgsConstructor
-@Tag(name = "DailyLog", description = "그룹 내 데일리 로그 관련 API")
-public class DailyLogController {
+@Tag(name = "StudyGroup_DailyLog", description = "그룹 내 데일리 로그")
+public class DailyLogController implements DailyLogApiDocumentation {
 
     private final StudyGroupService studyGroupService;
     private final DailyLogService dailyLogService;
 
     // 데일리 로그 작성
+    @Override
     @PostMapping("/create")
     public ResponseEntity<?> createDailyLog(
             @RequestHeader("Authorization") String accessToken,
@@ -43,6 +45,7 @@ public class DailyLogController {
     }
 
     // 데일리 로그 조회
+    @Override
     @GetMapping("/list")
     public ResponseEntity<?> listOfDailyLog(
             @RequestHeader("Authorization") String accessToken,
@@ -58,7 +61,8 @@ public class DailyLogController {
     }
 
     // 데일리 로그 수정
-    @PutMapping("/{logId}/update")
+    @Override
+    @PutMapping("/update/{logId}")
     public ResponseEntity<?> updateDailyLog(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
@@ -77,7 +81,8 @@ public class DailyLogController {
     }
 
     // 데일리 로그 삭제
-    @DeleteMapping("/{logId}/delete")
+    @Override
+    @DeleteMapping("/delete/{logId}")
     public ResponseEntity<?> deleteDailyLog(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,

@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.exception.studyGroup.NoticeNotFoundException;
 import sw.study.exception.studyGroup.UnauthorizedException;
+import sw.study.studyGroup.apiDoc.NoticeApiDocumentation;
 import sw.study.studyGroup.dto.NoticeRequestDto;
 import sw.study.studyGroup.dto.NoticeResponseDto;
 import sw.study.studyGroup.service.NoticeService;
@@ -18,12 +19,13 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/studyGroup/{groupId}/notice")
 @RequiredArgsConstructor
-@Tag(name = "Notice", description = "그룹 내 공지사항 관련 ( 모두 로그인 이후 Token 핸들링 필요 )")
-public class NoticeController {
+@Tag(name = "StudyGroup_Notice", description = "그룹 내 공지사항 관련")
+public class NoticeController implements NoticeApiDocumentation {
 
     private final NoticeService noticeService;
 
     // 공지사항 작성
+    @Override
     @PostMapping("/create")
     public ResponseEntity<?> createNotice(
             @RequestHeader("Authorization") String accessToken,
@@ -34,20 +36,19 @@ public class NoticeController {
             return ResponseEntity.status(HttpStatus.CREATED).body("공지사항이 성공적으로 작성되었습니다.");
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (NoticeNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
         }
     }
 
     // 공지사항 목록 조회
+    @Override
     @GetMapping("/list")
     public ResponseEntity<?> listOfNotices(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
-            @RequestParam int page,
-            @RequestParam int size) {
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size) {
         try {
             List<NoticeResponseDto> notices = noticeService.listOfNotice(accessToken, groupId, page, size);
 
@@ -65,7 +66,8 @@ public class NoticeController {
         }
     }
 
-    // 특정 공지사항 상세 조회
+    // 특정 게시글 상세 조회
+    @Override
     @GetMapping("/{noticeId}")
     public ResponseEntity<?> noticeDetail(
             @RequestHeader("Authorization") String accessToken,
@@ -88,14 +90,15 @@ public class NoticeController {
     }
 
     // 공지사항 수정
-    @PutMapping("/{noticeId}/update")
-    public ResponseEntity<?> updateDailyLog(
+    @Override
+    @PutMapping("/update/{noticeId}")
+    public ResponseEntity<?> updateNotice(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
-            @PathVariable long logId,
+            @PathVariable long noticeId,
             @RequestBody NoticeRequestDto noticeRequestDto) {
         try {
-            noticeService.updateNotice(accessToken,groupId, logId, noticeRequestDto.getTitle(),noticeRequestDto.getContent());
+            noticeService.updateNotice(accessToken,groupId, noticeId, noticeRequestDto.getTitle(),noticeRequestDto.getContent());
             return ResponseEntity.status(HttpStatus.OK).body("공지사항이 성공적으로 수정되었습니다.");
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
@@ -107,8 +110,9 @@ public class NoticeController {
     }
 
     // 공지사항 삭제
-    @DeleteMapping("/{noticeId}/delete")
-    public ResponseEntity<?> deleteDailyLog(
+    @Override
+    @DeleteMapping("/delete/{noticeId}")
+    public ResponseEntity<?> deleteNotice(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
             @PathVariable long noticeId) {

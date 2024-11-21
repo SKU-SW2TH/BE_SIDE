@@ -5,19 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.config.jwt.JWTService;
 import sw.study.exception.*;
 import sw.study.exception.studyGroup.*;
-import sw.study.studyGroup.domain.DailyLog;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.Participant.Role;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.domain.WaitingPeople;
-import sw.study.studyGroup.dto.DailyLogResponseDto;
 import sw.study.studyGroup.dto.GroupParticipants;
 import sw.study.studyGroup.dto.InvitedResponse;
 import sw.study.studyGroup.dto.JoinedResponse;
@@ -39,7 +37,6 @@ public class StudyGroupService {
     private final StudyGroupRepository studyGroupRepository;
     private final ParticipantRepository participantRepository;
     private final WaitingPeopleRepository waitingPeopleRepository;
-    private final DailyLogRepository dailyLogRepository;
 
     private final JWTService jwtService;
 
@@ -104,7 +101,7 @@ public class StudyGroupService {
         Member leader = currentLogginedInfo(accessToken);
 
         // 방장은 바로 Participant에 추가해준다.
-        Participant leaderParticipant = Participant.createParticipant(leaderNickname, leader, Role.LEADER);
+        Participant leaderParticipant = Participant.createParticipant(leaderNickname, leader, Role.LEADER, studyGroup);
         participantRepository.save(leaderParticipant);
 
         // 초대 대상자들을 한 번에 조회
@@ -176,39 +173,45 @@ public class StudyGroupService {
 
     //초대 수락
     @Transactional
-    public void acceptInvitation(String accessToken, long groupId, String Nickname) {
+    public void acceptInvitation(String accessToken, Long groupId, String nickname) {
+        Logger logger = LoggerFactory.getLogger(getClass());
+        try {
+            Member member = currentLogginedInfo(accessToken);
+            waitingPeopleRepository.deleteByMemberId(member.getId());
 
-        Member member = currentLogginedInfo(accessToken);
-        waitingPeopleRepository.deleteByMemberId(member.getId());
+            // 닉네임 중복확인
+            Optional<Participant> participant = participantRepository.findByNickname(nickname);
+            if (participant.isPresent()) {  // 닉네임이 존재하는 경우
+                throw new DuplicateNicknameException("해당 닉네임은 이미 사용중입니다.");
+            }
 
-        // 닉네임 중복확인
-        if (participantRepository.findByNickname(Nickname)) {
-            throw new DuplicateNicknameException("해당 닉네임은 이미 사용중입니다.");
-        }
+            // Optional을 사용하여 StudyGroup을 가져오고, 그룹이 없으면 예외 처리
+            StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                    .orElseThrow(() -> new StudyGroupNotFoundException("스터디 그룹을 찾을 수 없습니다."));
 
-        Optional<StudyGroup> studyGroup = studyGroupRepository.findById(groupId);
-
-        // 스터디 그룹의 인원이 꽉 찼을 때
-        studyGroup.ifPresent(group -> {
-            if (group.getMemberCount() == 50) {
+            // 스터디 그룹의 인원이 꽉 찼을 때
+            if (studyGroup.getMemberCount() == 50) {
                 throw new StudyGroupFullException("해당 스터디 그룹은 이미 가득 찬 상태입니다.");
             }
-        });
 
-        // 사용자가 이미 허용된 수 만큼의 그룹에 참가중이라면
-        if (participantRepository.countByMemberId(member.getId()) == 20)
-            throw new MaxStudyGroupException("더 이상 스터디그룹에 참가할 수 없습니다.");
+            // 사용자가 이미 허용된 수 만큼의 그룹에 참가중이라면
+            if (participantRepository.countByMemberId(member.getId()) == 20) {
+                throw new MaxStudyGroupException("더 이상 스터디그룹에 참가할 수 없습니다.");
+            }
 
-        Participant newParticipant = Participant.createParticipant(Nickname, member, Role.MEMBER);
-        studyGroup.ifPresent(group -> {
-            group.whoEverAccepted(newParticipant);
-            studyGroupRepository.save(group);
-        });
+            Participant newParticipant = Participant.createParticipant(nickname, member, Role.MEMBER, studyGroup);
+            studyGroup.whoEverAccepted(newParticipant);
+            studyGroupRepository.save(studyGroup);
+        } catch (Exception e) {
+            // 예외 발생 시 로깅
+            logger.error("초대 수락 중 오류 발생: ", e);
+            throw e;  // 예외를 다시 던져서 위의 Controller에서 처리하도록 합니다.
+        }
     }
 
     //초대 거절
     @Transactional
-    public void rejectInvitation(String accessToken, long groupId) {
+    public void rejectInvitation(String accessToken, Long groupId) {
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -228,7 +231,7 @@ public class StudyGroupService {
     }
 
     //참가자 전체 리스트 확인
-    public List<GroupParticipants> listOfEveryone(String accessToken, long groupId) {
+    public List<GroupParticipants> listOfEveryone(String accessToken, Long groupId) {
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -248,7 +251,7 @@ public class StudyGroupService {
     }
 
     // 운영진 리스트 확인 (방장 포함)
-    public List<GroupParticipants> listOfManagers(String accessToken, long groupId) {
+    public List<GroupParticipants> listOfManagers(String accessToken, Long groupId) {
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -266,7 +269,7 @@ public class StudyGroupService {
     }
 
     // 팀원 리스트 확인
-    public List<GroupParticipants> listOfMembers(String accessToken, long groupId) {
+    public List<GroupParticipants> listOfMembers(String accessToken, Long groupId) {
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -284,17 +287,17 @@ public class StudyGroupService {
     }
 
     // 그룹 내에서 초대된 리스트 확인
-    public List<String> listOfWaiting(String accessToken, long groupId) {
+    public List<String> listOfWaiting(String accessToken, Long groupId) {
 
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)"));
 
         Role role = participant.getRole();
 
         if (role == Role.MEMBER) {
-            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+            throw new PermissionDeniedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)");
         }
 
         List<WaitingPeople> waitingList = waitingPeopleRepository.findByStudyGroup_Id(groupId);
@@ -309,17 +312,17 @@ public class StudyGroupService {
 
     // 특정 사용자 초대 취소
     @Transactional
-    public boolean cancelInvitation(String accessToken, long groupId, String nickname) {
+    public boolean cancelInvitation(String accessToken, Long groupId, String nickname) {
 
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)"));
 
         Role role = participant.getRole();
 
         if (role == Role.MEMBER) {
-            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+            throw new PermissionDeniedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)");
         }
 
         Optional<Member> target = memberRepository.findByNickname(nickname);
@@ -339,17 +342,17 @@ public class StudyGroupService {
 
     // 그룹 내 권한 변경
     @Transactional
-    public void changeRole(String accessToken, long groupId, String nickname) {
+    public void changeRole(String accessToken, Long groupId, String nickname) {
 
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new UnauthorizedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)"));
 
         Role role = participant.getRole();
 
         if (role == Role.MEMBER) {
-            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+            throw new PermissionDeniedException("비정상적인 접근입니다 (그룹에 참여중이지 않음 혹은 권한 없음.)");
         }
 
         Participant target = participantRepository.findParticipantByNickname(nickname);
@@ -363,7 +366,7 @@ public class StudyGroupService {
 
     // 그룹 내 닉네임 변경
     @Transactional
-    public void changeParticipantNickname(String accessToken, long groupId, String nickname) {
+    public void changeParticipantNickname(String accessToken, Long groupId, String nickname) {
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -379,7 +382,7 @@ public class StudyGroupService {
 
     // 그룹 내 신규 초대
     @Transactional
-    public void inviteNewMember(String accessToken, long groupId, List<String> selectedNicknames) {
+    public void inviteNewMember(String accessToken, Long groupId, List<String> selectedNicknames) {
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -387,10 +390,10 @@ public class StudyGroupService {
                 .orElseThrow(() -> new StudyGroupNotFoundException("해당 그룹이 존재하지 않습니다."));
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가중이지 않거나, 권한이 없습니다."));
 
         if (participant.getRole() == Role.MEMBER) {
-            throw new PermissionDeniedException("이 기능을 사용할 권한이 없습니다.");
+            throw new PermissionDeniedException("해당 그룹에 참가중이지 않거나, 권한이 없습니다.");
         }
 
         List<Member> members = memberRepository.findByNicknameIn(selectedNicknames);
@@ -409,7 +412,7 @@ public class StudyGroupService {
 
     // 그룹 탈퇴
     @Transactional
-    public void quitGroup(String accessToken, long groupId) {
+    public void quitGroup(String accessToken, Long groupId) {
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -431,7 +434,7 @@ public class StudyGroupService {
 
     // 그룹 내 특정 사용자 추방
     @Transactional
-    public void userKick(String accessToken, long groupId, String nickname) {
+    public void userKick(String accessToken, Long groupId, String nickname) {
 
         Member member = currentLogginedInfo(accessToken);
 
