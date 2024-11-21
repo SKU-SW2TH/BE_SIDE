@@ -165,7 +165,7 @@ public class MemberService {
             introduction = "";
         }
 
-        if (nickName.isEmpty() && !member.getNickname().equals(nickName)) {
+        if (!nickName.isEmpty() && !member.getNickname().equals(nickName)) {
             checkNicknameDuplication(nickName);
             member.updateNickname(nickName);
         }
@@ -174,6 +174,11 @@ public class MemberService {
         if (profilePicture != null && !profilePicture.isEmpty()) {
             String profilePictureUrl = s3Service.upload(profilePicture, "profile/");
             member.updateProfilePicture(profilePictureUrl);
+        }
+
+        if (profilePicture != null && profilePicture.isEmpty()) {
+            // 빈 파일일 경우 (파일은 존재하지만 내용이 없는 경우)
+            member.updateProfilePicture("");  // 빈 문자열로 기본 사진 처리
         }
 
         // 자기소개 업데이트
