@@ -165,7 +165,7 @@ public class MemberService {
             introduction = "";
         }
 
-        if (nickName.isEmpty() && !member.getNickname().equals(nickName)) {
+        if (!nickName.isEmpty() && !member.getNickname().equals(nickName)) {
             checkNicknameDuplication(nickName);
             member.updateNickname(nickName);
         }
@@ -174,6 +174,11 @@ public class MemberService {
         if (profilePicture != null && !profilePicture.isEmpty()) {
             String profilePictureUrl = s3Service.upload(profilePicture, "profile/");
             member.updateProfilePicture(profilePictureUrl);
+        }
+
+        if (profilePicture != null && profilePicture.isEmpty()) {
+            // 빈 파일일 경우 (파일은 존재하지만 내용이 없는 경우)
+            member.updateProfilePicture("");  // 빈 문자열로 기본 사진 처리
         }
 
         // 자기소개 업데이트
@@ -376,27 +381,15 @@ public class MemberService {
         return notificationDTOS;
     }
 
-    public List<NotificationDTO> unReadNotification(String accessToken) {
+    public long unReadNotification(String accessToken) {
         String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         List<Notification> notifications = notificationRepository.findByMemberAndIsReadFalse(member);
-        List<NotificationDTO> dtos = new ArrayList<>();
 
-        for (Notification notification : notifications) {
-            NotificationDTO dto = new NotificationDTO();
-            dto.setId(notification.getId());
-            dto.setTitle(notification.getTitle());
-            dto.setContent(notification.getContent());
-            dto.setName(notification.getCategory().getCategoryName());
-            dto.setRead(notification.isRead());
-            dto.setCreatedAt(notification.getCreatedAt());
-            dtos.add(dto);
-        }
-
-        return dtos;
+        return notifications.size();
     }
 
     private void checkNicknameDuplication(String nickname) {
