@@ -96,7 +96,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<?> acceptInvitation(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable Long groupId,
             @RequestBody nicknameDto searchByNickname);
 
     // 초대 거절
@@ -111,7 +111,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<?> rejectInvitation(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId);
+            @PathVariable Long groupId);
 
     // 그룹 내 모든 참가자 확인
     @Operation(summary = "스터디 그룹 내 참가자 확인", description = "그룹 내 모든 참가자 내역 반환")
@@ -126,7 +126,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<?> listOfAll(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId);
+            @PathVariable Long groupId);
 
     // 그룹 내 운영진 확인
     @Operation(summary = "스터디 그룹 내 운영진 확인", description = "그룹 내 모든 운영진 확인 ( 방장 제외 )")
@@ -141,7 +141,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<?> listOfManagers(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId);
+            @PathVariable Long groupId);
 
     // 그룹 내 참가자 확인
     @Operation(summary = "스터디 그룹 내 일반 멤버 확인", description = "일반 멤버 리스트 반환")
@@ -155,8 +155,8 @@ public interface StudyGroupApiDocumentation {
             @Parameter(name = "groupId", description = "그룹 Id", example = "1")
     })
     ResponseEntity<?> listOfMembers(
-            @PathVariable long groupId,
-            @RequestHeader("Authorization") String accessToken);
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable Long groupId);
 
     // 그룹 내 특정 참가자 신분 변경
     @Operation(summary = "스터디 그룹 내 신분 변경 ( 승격 / 강등 ) ", description = "단일 API 로 구성 : 운영진 <-> 멤버 간")
@@ -172,7 +172,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<?> changeRole(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable Long groupId,
             @PathVariable String nickname);
 
     // 스터디 그룹 내 초대 명단 확인
@@ -188,7 +188,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<?> checkWaiting(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId);
+            @PathVariable Long groupId);
 
     // 기존에 발송된 초대 취소
     @Operation(summary = "기존에 발송된 초대 취소", description = "수락/거절 대기중인 특정 사용자의 초대를 강제로 취소한다. ( 방장, 운영진만 가능 )")
@@ -205,7 +205,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<?> rejectInvitation(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable Long groupId,
             @PathVariable String nickname);
 
     // 그룹 내 닉네임 변경
@@ -223,7 +223,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<?> changeNickname(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable Long groupId,
             @RequestBody nicknameDto nicknameDto);
 
     // 그룹 내 신규 초대
@@ -243,7 +243,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<?> inviteNewMember(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable Long groupId,
             @RequestBody InviteNewMember listOfMembers);
 
 
@@ -262,7 +262,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<?> kickParticipant(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable Long groupId,
             @PathVariable String nickname);
 
     // 그룹 탈퇴
@@ -278,7 +278,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<?> quitStudyGroup(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId);
+            @PathVariable Long groupId);
 
 }
 

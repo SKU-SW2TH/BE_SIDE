@@ -95,7 +95,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @PostMapping("/{groupId}/accept")
     public ResponseEntity<?> acceptInvitation(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestBody nicknameDto searchByNickname) {
 
         String nickname = searchByNickname.getNickname();
@@ -118,7 +118,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @PostMapping("/{groupId}/reject")
     public ResponseEntity<?> rejectInvitation(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId){
+            @PathVariable("groupId") Long groupId){
         studyGroupService.rejectInvitation(accessToken,groupId);
         return ResponseEntity.ok("초대를 거절하였습니다.");
     }
@@ -128,7 +128,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @GetMapping("/{groupId}/list/all")
     public ResponseEntity<?> listOfAll(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId) {
+            @PathVariable("groupId") Long groupId) {
         try {
             List<GroupParticipants> participants = studyGroupService.listOfEveryone(accessToken,groupId);
             return ResponseEntity.ok(participants);
@@ -143,7 +143,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @GetMapping("/{groupId}/list/managers")
     public ResponseEntity<?> listOfManagers(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId) {
+            @PathVariable("groupId") Long groupId) {
         try {
             List<GroupParticipants> managers = studyGroupService.listOfManagers(accessToken,groupId);
             return ResponseEntity.ok(managers);
@@ -157,8 +157,8 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @Override
     @GetMapping("/{groupId}/list/members")
     public ResponseEntity<?> listOfMembers(
-            @PathVariable long groupId,
-            @RequestHeader("Authorization") String accessToken) {
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId) {
         try {
             List<GroupParticipants> members = studyGroupService.listOfMembers(accessToken,groupId);
             return ResponseEntity.ok(members);
@@ -173,8 +173,8 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @PatchMapping("/{groupId}/participants/changeRole/{nickname}")
     public ResponseEntity<?> changeRole(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable String nickname) {
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("nickname") String nickname) {
         try {
             studyGroupService.changeRole(accessToken,groupId, nickname);
             return ResponseEntity.ok("성공적으로 권한이 수정되었습니다.");
@@ -189,7 +189,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @GetMapping("/{groupId}/list/waiting")
     public ResponseEntity<?> checkWaiting(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId){
+            @PathVariable("groupId") Long groupId){
         try{
             List<String> nicknames = studyGroupService.listOfWaiting(accessToken,groupId);
             return ResponseEntity.ok(nicknames);
@@ -206,8 +206,8 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @DeleteMapping("/{groupId}/waiting/cancel/{nickname}")
     public ResponseEntity<?> rejectInvitation(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable String nickname) {
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("nickname") String nickname) {
         try {
             boolean isCancelled = studyGroupService.cancelInvitation(accessToken,groupId, nickname);
             if (isCancelled) {
@@ -226,7 +226,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @PatchMapping("/{groupId}/participants/changeNickname")
     public ResponseEntity<?> changeNickname(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestBody nicknameDto nicknameDto){
         try{
             studyGroupService.changeParticipantNickname(accessToken,groupId, nicknameDto.getNickname());
@@ -244,7 +244,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @PostMapping("/{groupId}/participants/invite")
     public ResponseEntity<?> inviteNewMember(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestBody InviteNewMember listOfMembers){
         try {
             studyGroupService.inviteNewMember(accessToken,groupId, listOfMembers.getSelectedNicknames());
@@ -262,8 +262,8 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @DeleteMapping("/{groupId}/participants/kick/{nickname}")
     public ResponseEntity<?> kickParticipant(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable String nickname){
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("nickname") String nickname){
         try {
             studyGroupService.userKick(accessToken,groupId, nickname);
             return ResponseEntity.ok(String.format("%s 님을 추방하였습니다.", nickname));
@@ -278,7 +278,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @DeleteMapping("/{groupId}/quit")
     public ResponseEntity<?> quitStudyGroup(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId){
+            @PathVariable("groupId") Long groupId){
         try {
             studyGroupService.quitGroup(accessToken, groupId);
             return ResponseEntity.ok("해당 스터디그룹을 탈퇴하였습니다.");
