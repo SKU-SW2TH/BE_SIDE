@@ -20,11 +20,11 @@ public class Comment {
     @Column(name = "comment_id")
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
@@ -57,7 +57,7 @@ public class Comment {
     //== 생성 메서드 ==//
     public static Comment createComment(Post post, Member member, String content, int level) {
         Comment comment = new Comment();
-        comment.post = post;
+        post.addComment(comment);
         comment.member = member;
         comment.content = content;
         comment.level = level;
@@ -65,9 +65,15 @@ public class Comment {
         return comment;
     }
 
+    //== 연관 관계 편의 메서드 ==//
     public void addChildComment(Comment child) {
         this.child.add(child);
         child.addParentComment(this);
+    }
+
+    public void addCommentLike(CommentLike commentLike) {
+        this.commentLikes.add(commentLike);
+        commentLike.addComment(this);
     }
 
     public void addParentComment(Comment parent) {
@@ -75,4 +81,13 @@ public class Comment {
     }
 
     public void addPost(Post post) { this.post = post; }
+
+    public void deleteComment() {
+        this.isDeleted = true;
+    }
+
+    public void deletedCommentLike(CommentLike commentLike) {
+        this.commentLikes.remove(commentLike);
+        commentLike.addComment(null);
+    }
 }

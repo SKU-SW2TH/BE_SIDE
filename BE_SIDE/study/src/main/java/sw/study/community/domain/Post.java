@@ -3,7 +3,7 @@ package sw.study.community.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import sw.study.user.domain.InterestArea;
+import sw.study.user.domain.Area;
 import sw.study.user.domain.Member;
 
 import java.time.LocalDateTime;
@@ -27,7 +27,7 @@ public class Post {
 
     @ManyToOne
     @JoinColumn(name = "category_id")
-    private Category category;
+    private Category category;  // 1: 자유게시판, 2: 질문게시판
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     private List<PostFile> files = new ArrayList<>();
@@ -39,7 +39,7 @@ public class Post {
     private List<PostLike> likes = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostInterest> interests = new ArrayList<>();
+    private List<PostArea> interests = new ArrayList<>();
 
     private String title;
     private String content;
@@ -62,7 +62,7 @@ public class Post {
 
     //== 생성 메서드 ==//
     public static Post createPost(String title, String content, Category category,
-                                  Member member, List<InterestArea> interestAreas,
+                                  Member member, List<Area> areas,
                                   List<String> urls) {
         Post post = new Post();
         post.title = title;
@@ -71,9 +71,9 @@ public class Post {
         post.member = member;
         post.category = category;
 
-        for (InterestArea interestArea : interestAreas) {
-            PostInterest postInterest = PostInterest.createPostInterest(interestArea);
-            post.addInterest(postInterest);
+        for (Area area : areas) {
+            PostArea postArea = PostArea.createPostArea(area);
+            post.addInterest(postArea);
         }
 
         for (String url : urls) {
@@ -90,16 +90,38 @@ public class Post {
         comment.addPost(this);
     }
 
+    // 물리적 삭제
+    public void deleteComment(Comment comment) {
+        this.comments.remove(comment);
+        comment.addPost(null); // 양방향 관계 정리
+    }
+
     public void addFile(PostFile file) {
         this.files.add(file);
         file.addPost(this);
     }
 
-    public void addInterest(PostInterest interest) {
+    public void addInterest(PostArea interest) {
         this.interests.add(interest);
         interest.addPost(this);
     }
 
-    //== 비지니스 로직 ==//
+    public void addLike(PostLike like) {
+        this.likes.add(like);
+        like.addPost(this);
+    }
 
+    public void deleteLike(PostLike postLike) {
+        this.likes.remove(postLike);
+        postLike.addPost(null); // Post를 null로 설정하여 양방향 관계를 유지
+    }
+
+    //== 비지니스 로직 ==//
+    public void deletePost() {
+        this.isDeleted = true;
+    }
+
+    public void incrementReportCount() {
+        this.reportCount++;
+    }
 }

@@ -8,6 +8,7 @@ import sw.study.admin.domain.Report;
 import sw.study.user.role.Role;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static lombok.AccessLevel.*;
@@ -61,9 +62,10 @@ public class Member {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Punishment> punishments = new ArrayList<>();
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MemberInterest> interests = new ArrayList<>();
+    private List<MemberArea> memberAreas = new ArrayList<>();
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Notification> notifications = new ArrayList<>();
+
 
     //== 생성 메서드 ==//
     public static Member createMember(String email, String password, String nickname, Role role, List<NotificationCategory> categories) {
@@ -84,10 +86,23 @@ public class Member {
         return member;
     }
 
-    public void onDeleted() {
-        this.isDeleted = true;
+    //== 연관관계 편의 메서드 ==//
+    public void addSetting(NotificationSetting setting) {
+        settings.add(setting);
+        setting.addMember(this);
     }
 
+    public void addMemberArea(MemberArea memberArea) {
+        memberAreas.add(memberArea);
+        memberArea.addMember(this);
+    }
+
+    public void addReport(Report report) {
+        reports.add(report);
+        report.addReporter(this);
+    }
+
+    //== ==//
     public void requestDeactivation() {
         this.deletedAt = LocalDateTime.now();
     }
@@ -96,14 +111,8 @@ public class Member {
         this.deletedAt = null;
     }
 
-    public void addSetting(NotificationSetting setting) {
-        settings.add(setting);
-        setting.addMember(this);
-    }
-
-    public void addInterest(MemberInterest interest) {
-        interests.add(interest);
-        interest.addMember(this);
+    public void onDeleted() {
+        this.isDeleted = true;
     }
 
     public void addNotification(Notification notification) {
@@ -111,8 +120,8 @@ public class Member {
         notification.addMember(this);
     }
 
-    public void removeInterest(MemberInterest interest) {
-        interests.remove(interest);
+    public void removeInterest(MemberArea interest) {
+        memberAreas.remove(interest);
     }
 
     // 개별 프로필 필드를 선택적으로 업데이트하는 메소드
@@ -131,6 +140,5 @@ public class Member {
     public void changePassword(String password) {
         this.password = password;
     }
-
 }
 

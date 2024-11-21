@@ -2,15 +2,12 @@ package sw.study.user.apiDoc;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,7 +21,7 @@ public interface MemberApiDocumentation {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
-            @ApiResponse(responseCode = "404", description = "유저 없음"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다."),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생")
     })
     ResponseEntity<?> getMemberInfo(
@@ -35,7 +32,7 @@ public interface MemberApiDocumentation {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공적으로 업데이트됨", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UpdateProfileResponse.class))),
             @ApiResponse(responseCode = "409", description = "닉네임 중복으로 인한 업데이트 실패"),
-            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다."),
             @ApiResponse(responseCode = "401", description = "잘못된 엑세스 토큰"),
             @ApiResponse(responseCode = "500", description = "파일 업로드 실패 또는 기타 서버 에러")
     })
@@ -71,7 +68,7 @@ public interface MemberApiDocumentation {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
-            @ApiResponse(responseCode = "404", description = "사용자를 찾지 못함"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다."),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생")
     })
     ResponseEntity<?> updateNotification(
@@ -90,7 +87,7 @@ public interface MemberApiDocumentation {
     @Operation(summary = "관심사 초기화", description = "회원의 관심사를 초기화합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = MemberInterestDTO.class)))),
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = MemberAreaDTO.class)))),
             @ApiResponse(responseCode = "404", description = "사용자 또는 관심사를 찾을 수 없음"),
             @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
             @ApiResponse(responseCode = "500", description = "서버 에러 발생")
@@ -99,12 +96,12 @@ public interface MemberApiDocumentation {
             @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token")
             @RequestHeader("Authorization") String accessToken,
             @Parameter(description = "초기화할 관심사 요청 데이터", required = true)
-            @RequestBody InterestRequest interestRequest);
+            @RequestBody AreaRequest areaRequest);
 
     @Operation(summary = "관심사 업데이트", description = "회원의 관심사를 업데이트합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = MemberInterestDTO.class)))),
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = MemberAreaDTO.class)))),
             @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
             @ApiResponse(responseCode = "404", description = "사용자 또는 관심사를 찾을 수 없음"),
             @ApiResponse(responseCode = "500", description = "서버 에러 발생")
@@ -113,13 +110,13 @@ public interface MemberApiDocumentation {
             @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
             @RequestHeader("Authorization") String accessToken,
             @Parameter(description = "업데이트할 관심사 요청 데이터", required = true)
-            @RequestBody InterestRequest interestRequest);
+            @RequestBody AreaRequest areaRequest);
 
     @Operation(summary = "읽기 업데이트", description = "알림 읽음을 업데이트 합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
-            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다."),
             @ApiResponse(responseCode = "500", description = "서버 에러 발생")
     })
     ResponseEntity<?> updateRead(
@@ -131,18 +128,18 @@ public interface MemberApiDocumentation {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
-            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다."),
             @ApiResponse(responseCode = "500", description = "서버 에러 발생")
     })
     ResponseEntity<?> getNotificationList(
             @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
             @RequestHeader("Authorization") String accessToken);
 
-    @Operation(summary = "읽지 않는 알림 리스트", description = "읽지 않은 알림 리스트를 보낸다.")
+    @Operation(summary = "읽지 않는 알림 리스트", description = "읽지 않은 알림 갯수를 보낸다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
-            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다."),
             @ApiResponse(responseCode = "500", description = "서버 에러 발생")
     })
     ResponseEntity<?> unReadNotification(

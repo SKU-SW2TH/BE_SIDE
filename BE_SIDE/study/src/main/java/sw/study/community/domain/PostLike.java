@@ -37,12 +37,14 @@ public class PostLike {
     //== 생성 메서드 ==//
     public static PostLike createPostLike(Post post, Member member) {
         PostLike postLike = new PostLike();
-        postLike.post = post;
+        post.addLike(postLike);
         postLike.member = member;
         return postLike;
     }
 
-    // 좋아요 눌렀을때 추가되는 로직을 여기서 하는게 좋을까 서비스 계층에서 만드는게 좋을까?
+    public void addPost(Post post) {
+        this.post = post;
+    }
 }
 
 

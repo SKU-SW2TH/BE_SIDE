@@ -19,11 +19,11 @@ public class CommentLike {
     @Column(name = "comment_like_id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "post_id")
-    private Post post;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "comment_id")
+    private Comment comment;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
@@ -35,10 +35,14 @@ public class CommentLike {
     }
 
     //== 생성 메서드 ==//
-    public static CommentLike createCommentLike(Post post, Member member) {
+    public static CommentLike createCommentLike(Comment comment, Member member) {
         CommentLike commentLike = new CommentLike();
-        commentLike.post = post;
+        comment.addCommentLike(commentLike);
         commentLike.member = member;
         return commentLike;
+    }
+
+    public void addComment(Comment comment) {
+        this.comment = comment;
     }
 }
