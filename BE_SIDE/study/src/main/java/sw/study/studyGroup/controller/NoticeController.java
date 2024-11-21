@@ -47,8 +47,8 @@ public class NoticeController implements NoticeApiDocumentation {
     public ResponseEntity<?> listOfNotices(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
-            @RequestParam int page,
-            @RequestParam int size) {
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size) {
         try {
             List<NoticeResponseDto> notices = noticeService.listOfNotice(accessToken, groupId, page, size);
 
@@ -91,7 +91,7 @@ public class NoticeController implements NoticeApiDocumentation {
 
     // 공지사항 수정
     @Override
-    @PutMapping("/{noticeId}/update")
+    @PutMapping("/update/{noticeId}")
     public ResponseEntity<?> updateNotice(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
@@ -111,7 +111,7 @@ public class NoticeController implements NoticeApiDocumentation {
 
     // 공지사항 삭제
     @Override
-    @DeleteMapping("/{noticeId}/delete")
+    @DeleteMapping("/delete/{noticeId}")
     public ResponseEntity<?> deleteNotice(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,

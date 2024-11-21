@@ -29,7 +29,7 @@ public interface StudyGroupApiDocumentation {
             @Parameter(name = "size", description = "페이지 당 보여질 항목의 수", example = "5"),
             @Parameter(
                     name = "groupId",
-                    description = "그룹 ID ( 필수 파라미터 아님, 같은 API 인데 그룹 ID를 전달하면 스터디 그룹 내에서 검색함",
+                    description = "그룹 ID ( 필수 파라미터 아님, 같은 API 인데 그룹 ID를 전달하면 스터디 그룹에 참여중인 유저들을 제외함",
                     example = "1"
             )
     })
@@ -237,7 +237,7 @@ public interface StudyGroupApiDocumentation {
     })
     @Parameters(value = {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
-            @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "123"),
+            @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1"),
             @Parameter(name = "selectedNicknames", description = "초대할 사용자들의 닉네임 리스트",
                     example = "[\"스폰지밥\", \"뚱이\", \"집게사장\"]")
     })
@@ -274,7 +274,7 @@ public interface StudyGroupApiDocumentation {
     })
     @Parameters(value = {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", required = true, example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
-            @Parameter(name = "groupId", description = "스터디 그룹의 ID", required = true, example = "123")
+            @Parameter(name = "groupId", description = "스터디 그룹의 ID", required = true, example = "1")
     })
     ResponseEntity<?> quitStudyGroup(
             @RequestHeader("Authorization") String accessToken,

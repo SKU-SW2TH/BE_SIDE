@@ -62,7 +62,7 @@ public class DailyLogController implements DailyLogApiDocumentation {
 
     // 데일리 로그 수정
     @Override
-    @PutMapping("/{logId}/update")
+    @PutMapping("/update/{logId}")
     public ResponseEntity<?> updateDailyLog(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
@@ -82,7 +82,7 @@ public class DailyLogController implements DailyLogApiDocumentation {
 
     // 데일리 로그 삭제
     @Override
-    @DeleteMapping("/{logId}/delete")
+    @DeleteMapping("/delete/{logId}")
     public ResponseEntity<?> deleteDailyLog(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,

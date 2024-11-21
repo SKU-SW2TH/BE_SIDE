@@ -33,11 +33,10 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @GetMapping("/searchMembers")
     public ResponseEntity<?> searchMembers(
             @RequestHeader("Authorization") String accessToken,
-            @RequestParam String nickname,
-            @RequestParam int page,
-            @RequestParam int size,
-            @RequestParam(required = false) Long groupId) {
-
+            @RequestParam(name = "nickname") String nickname,
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size,
+            @RequestParam(name = "groupId", required = false) Long groupId) {
         List<String> results = studyGroupService.searchByNickname(accessToken,nickname,page,size,groupId);
 
         if(results.isEmpty()) {
@@ -171,7 +170,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     }
 
     @Override
-    @PatchMapping("/{groupId}/participant/{nickname}/changeRole")
+    @PatchMapping("/{groupId}/participants/changeRole/{nickname}")
     public ResponseEntity<?> changeRole(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
@@ -204,7 +203,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     }
 
     @Override
-    @DeleteMapping("/{groupId}/waitingList/cancellation/{nickname}")
+    @DeleteMapping("/{groupId}/waiting/cancel/{nickname}")
     public ResponseEntity<?> rejectInvitation(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
@@ -224,7 +223,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     }
 
     @Override
-    @PatchMapping("/{groupId}/participants/nickname")
+    @PatchMapping("/{groupId}/participants/changeNickname")
     public ResponseEntity<?> changeNickname(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable long groupId,
