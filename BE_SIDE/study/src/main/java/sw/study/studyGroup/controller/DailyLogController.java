@@ -12,7 +12,6 @@ import sw.study.studyGroup.apiDoc.DailyLogApiDocumentation;
 import sw.study.studyGroup.dto.DailyLogRequestDto;
 import sw.study.studyGroup.dto.DailyLogResponseDto;
 import sw.study.studyGroup.service.DailyLogService;
-import sw.study.studyGroup.service.StudyGroupService;
 
 import java.util.List;
 
@@ -22,7 +21,6 @@ import java.util.List;
 @Tag(name = "StudyGroup_DailyLog", description = "그룹 내 데일리 로그")
 public class DailyLogController implements DailyLogApiDocumentation {
 
-    private final StudyGroupService studyGroupService;
     private final DailyLogService dailyLogService;
 
     // 데일리 로그 작성
@@ -30,7 +28,7 @@ public class DailyLogController implements DailyLogApiDocumentation {
     @PostMapping("/create")
     public ResponseEntity<?> createDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestBody DailyLogRequestDto requestDto) {
         try {
             dailyLogService.createDailyLog(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
@@ -49,7 +47,7 @@ public class DailyLogController implements DailyLogApiDocumentation {
     @GetMapping("/list")
     public ResponseEntity<?> listOfDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId) {
+            @PathVariable("groupId") Long groupId) {
         try {
             List<DailyLogResponseDto> logs = dailyLogService.listOfDailyLog(accessToken, groupId);
             return ResponseEntity.ok().body(logs); // 리스트 반환
@@ -65,8 +63,8 @@ public class DailyLogController implements DailyLogApiDocumentation {
     @PutMapping("/update/{logId}")
     public ResponseEntity<?> updateDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long logId,
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("logId") Long logId,
             @RequestBody DailyLogRequestDto requestDto) {
         try {
             dailyLogService.updateDailyLog(accessToken, groupId, logId, requestDto.getTitle(), requestDto.getContent());
@@ -85,8 +83,8 @@ public class DailyLogController implements DailyLogApiDocumentation {
     @DeleteMapping("/delete/{logId}")
     public ResponseEntity<?> deleteDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long logId) {
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("logId") Long logId) {
         try {
             dailyLogService.deleteDailyLog(accessToken,groupId, logId);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("데일리 로그가 성공적으로 삭제되었습니다.");

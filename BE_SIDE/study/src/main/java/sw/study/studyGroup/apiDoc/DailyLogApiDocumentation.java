@@ -29,7 +29,7 @@ public interface DailyLogApiDocumentation {
     })
     ResponseEntity<?> createDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestBody DailyLogRequestDto requestDto);
     
     // 데일리 로그 조회
@@ -46,7 +46,7 @@ public interface DailyLogApiDocumentation {
     })
     ResponseEntity<?> listOfDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId);
+            @PathVariable("groupId") Long groupId);
 
 
     // 데일리 로그 수정
@@ -67,13 +67,13 @@ public interface DailyLogApiDocumentation {
     })
     ResponseEntity<?> updateDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long logId,
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("logId") Long logId,
             @RequestBody DailyLogRequestDto requestDto);
 
 
     // 데일리 로그 삭제
-    @Operation(summary = "공지사항 작성",
+    @Operation(summary = "데일리 로그 삭제",
             description = "리더 혹은 운영진만 가능함")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "로그가 성공적으로 삭제되었습니다."),
@@ -88,6 +88,6 @@ public interface DailyLogApiDocumentation {
     })
     ResponseEntity<?> deleteDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long logId);
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("logId") Long logId);
 }
