@@ -67,20 +67,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3. SSH 에이전트 설정
+      # 3. Gradle 빌드
+      - name: Build project
+        run: ./gradlew build
+
+      # 4. SSH 에이전트 설정
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
 
-      # 4. JAR 파일을 EC2로 복사
+      # 5. JAR 파일을 EC2로 복사
       - name: Copy files to EC2
         env:
           EC2_IP: ${{ secrets.EC2_IP }}  # GitHub Secrets에서 EC2 IP를 가져옵니다.
         run: |
           scp -o StrictHostKeyChecking=no ./BE_SIDE/study/build/libs/study-0.0.1-SNAPSHOT.jar ubuntu@${{ env.EC2_IP }}:/home/ubuntu/study-0.0.1-SNAPSHOT.jar
 
-      # 5. EC2에서 애플리케이션 실행
+      # 6. EC2에서 애플리케이션 실행
       - name: SSH into EC2 and run the application
         env:
           EC2_IP: ${{ secrets.EC2_IP }}
