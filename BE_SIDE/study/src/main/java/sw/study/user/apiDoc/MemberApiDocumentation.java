@@ -98,6 +98,7 @@ public interface MemberApiDocumentation {
             @Parameter(description = "초기화할 관심사 요청 데이터", required = true)
             @RequestBody AreaRequest areaRequest);
 
+
     @Operation(summary = "관심사 업데이트", description = "회원의 관심사를 업데이트합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공",
@@ -111,6 +112,8 @@ public interface MemberApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @Parameter(description = "업데이트할 관심사 요청 데이터", required = true)
             @RequestBody AreaRequest areaRequest);
+
+
 
     @Operation(summary = "읽기 업데이트", description = "알림 읽음을 업데이트 합니다.")
     @ApiResponses(value = {
@@ -131,9 +134,17 @@ public interface MemberApiDocumentation {
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다."),
             @ApiResponse(responseCode = "500", description = "서버 에러 발생")
     })
-    ResponseEntity<?> getNotificationList(
+    public ResponseEntity<?> getNotificationList(
             @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
-            @RequestHeader("Authorization") String accessToken);
+            @RequestHeader("Authorization") String accessToken,
+
+            @Parameter(name = "page", description = "요청 페이지 번호", example = "0", required = false)
+            @RequestParam(defaultValue = "0") int page,  // 페이지 번호
+
+            @Parameter(name = "size", description = "페이지 당 항목 수", example = "10", required = false)
+            @RequestParam(defaultValue = "10") int size // 페이지 크기
+    );
+
 
     @Operation(summary = "읽지 않는 알림 리스트", description = "읽지 않은 알림 갯수를 보낸다.")
     @ApiResponses(value = {

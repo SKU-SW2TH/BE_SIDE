@@ -13,6 +13,7 @@ import sw.study.community.repository.PostRepository;
 import sw.study.community.service.PostService;
 import sw.study.user.domain.Area;
 import sw.study.user.domain.Member;
+import sw.study.user.domain.Notification;
 import sw.study.user.domain.NotificationCategory;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import java.util.List;
 
 import sw.study.user.repository.MemberRepository;
 import sw.study.user.repository.NotificationCategoryRepository;
+import sw.study.user.repository.NotificationRepository;
 import sw.study.user.role.Role;
 
 @Component
@@ -34,6 +36,7 @@ public class InitDb {
         initService.initCategory();
         initService.initNotificationCategory();
         initService.initMember();
+        initService.initNotification();
         initService.initPost();
     }
 
@@ -46,6 +49,7 @@ public class InitDb {
         private final NotificationCategoryRepository notificationCategoryRepository;
         private final EntityManager em;
         private final MemberRepository memberRepository;
+        private final NotificationRepository notificationRepository;
         private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         private List<NotificationCategory> categories = new ArrayList<>();
 
@@ -110,7 +114,26 @@ public class InitDb {
 //            em.persist(member1);
         }
 
+        public void initNotification(){
+            List<NotificationCategory> notificationCategories = notificationCategoryRepository.findAll();
 
+            Member member = Member.createMember(
+                    "limjh0703@naver.com",
+                    encoder.encode("1q2w3e4r!"), // 비밀번호 암호화
+                    "user", Role.USER, notificationCategories
+            );
+            memberRepository.save(member);
+
+            for(int i = 1; i < 21; i++){
+                String title = "테스트" + i;
+                String content = "내용" + i;
+                Long id = Long.valueOf(i);
+                Notification notification = Notification.createNotification(notificationCategories.get(0), title, content, id);
+                notification.addMember(member);
+                notificationRepository.save(notification);
+            }
+
+        }
 
         public void initPost() {
             List<NotificationCategory> notificationCategories = notificationCategoryRepository.findAll();
