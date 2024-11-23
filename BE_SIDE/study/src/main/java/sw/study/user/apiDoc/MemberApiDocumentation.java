@@ -84,7 +84,7 @@ public interface MemberApiDocumentation {
     ResponseEntity<?> getInterestList();
 
 
-    @Operation(summary = "관심사 초기화", description = "회원의 관심사를 초기화합니다.")
+    @Operation(summary = "관심사 초기설정", description = "회원의 관심사를 초기화합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공",
                     content = @Content(array = @ArraySchema(schema = @Schema(implementation = MemberAreaDTO.class)))),
@@ -113,6 +113,21 @@ public interface MemberApiDocumentation {
             @Parameter(description = "업데이트할 관심사 요청 데이터", required = true)
             @RequestBody AreaRequest areaRequest);
 
+
+
+    @Operation(summary = "관심사 삭제", description = "회원의 관심사를 삭제합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "성공",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = MemberAreaDTO.class)))),
+            @ApiResponse(responseCode = "400", description = "토큰 형식이 맞지 않음"),
+            @ApiResponse(responseCode = "404", description = "사용자 또는 관심사를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 에러 발생")
+    })
+    ResponseEntity<?> deleteInterest(
+            @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token", required = true)
+            @RequestHeader("Authorization") String accessToken,
+            @Parameter(description = "삭제할 관심사 요청 데이터", required = true)
+            @RequestBody AreaRequest areaRequest);
 
 
     @Operation(summary = "읽기 업데이트", description = "알림 읽음을 업데이트 합니다.")
