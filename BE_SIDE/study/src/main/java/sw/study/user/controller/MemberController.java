@@ -231,4 +231,21 @@ public class MemberController implements MemberApiDocumentation {
         }
     }
 
+    @DeleteMapping("/delete/interest")
+    public ResponseEntity<?> deleteInterest(@RequestHeader("Authorization") String accessToken,
+                                            @RequestBody AreaRequest areaRequest){
+        try {
+            memberService.deleteInterest(accessToken, areaRequest);
+            return ResponseEntity.status(HttpStatus.OK).body("삭제 성공");
+
+
+        } catch (UserNotFoundException | InterestNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
 }
