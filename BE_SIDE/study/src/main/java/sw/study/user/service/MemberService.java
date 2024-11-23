@@ -4,6 +4,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -359,24 +361,26 @@ public class MemberService {
         notificationRepository.saveAll(notifications);
     }
 
-    public List<NotificationDTO> getNotifications(String accessToken) {
+    public Page<NotificationDTO> getNotifications(String accessToken, Pageable pageable) {
         String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        List<NotificationDTO> notificationDTOS = member.getNotifications().stream()
-                .sorted(Comparator.comparing(Notification::getCreatedAt).reversed()) // createdAt 기준 내림차순 정렬
-                .map(notification -> {
-                    NotificationDTO dto = new NotificationDTO();
-                    dto.setId(notification.getId());
-                    dto.setTitle(notification.getTitle());
-                    dto.setContent(notification.getContent());
-                    dto.setRead(notification.isRead());
-                    dto.setName(notification.getCategory().getCategoryName());
-                    dto.setCreatedAt(notification.getCreatedAt());
-                    return dto;
-                }).collect(Collectors.toList());
+        // 페이지네이션을 고려하여 Notification 엔티티를 페이지 단위로 가져옴
+        Page<Notification> notificationsPage = notificationRepository.findByMember(member, pageable);
+
+        // 가져온 Notification 엔티티들을 NotificationDTO로 변환
+        Page<NotificationDTO> notificationDTOS = notificationsPage.map(notification -> {
+            NotificationDTO dto = new NotificationDTO();
+            dto.setId(notification.getId());
+            dto.setTitle(notification.getTitle());
+            dto.setContent(notification.getContent());
+            dto.setRead(notification.isRead());
+            dto.setType(notification.getCategory().getCategoryName());
+            dto.setCreatedAt(notification.getCreatedAt());
+            return dto;
+        });
 
         return notificationDTOS;
     }

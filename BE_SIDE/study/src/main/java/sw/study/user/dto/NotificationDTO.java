@@ -9,7 +9,7 @@ public class NotificationDTO {
     private long id;
     private String title;
     private String content;
-    private String name;
+    private String type;
     private boolean isRead;
     private LocalDateTime createdAt;
 }
