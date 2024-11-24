@@ -57,8 +57,13 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: 'ap-northeast-2'  # 서울 리전으로 설정
-    
+          aws-region: 'ap-northeast-2'
+
+      # S3에 JAR 파일 업로드
+      - name: Upload JAR to S3
+        run: |
+          aws s3 cp study-0.0.1-SNAPSHOT.jar s3://bucket-swgroup/
+
       # SSH 에이전트 설정
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
@@ -80,23 +85,15 @@ jobs:
             fi
           EOF
 
-      # JAR 파일을 압축하여 EC2로 복사
-      - name: Compress and Copy JAR to EC2
-        env:
-          EC2_IP: ${{ secrets.EC2_IP }}
-        run: |
-          tar -czf study-0.0.1-SNAPSHOT.tar.gz study-0.0.1-SNAPSHOT.jar
-          scp -o StrictHostKeyChecking=no study-0.0.1-SNAPSHOT.tar.gz ubuntu@${{ env.EC2_IP }}:/home/ubuntu/
-
-      # EC2에서 압축 해제 및 애플리케이션 실행
-      - name: SSH into EC2 to Extract and Run Application
+      # EC2에서 S3에서 JAR 다운로드 및 실행
+      - name: SSH into EC2 to Download and Run Application
         env:
           EC2_IP: ${{ secrets.EC2_IP }}
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ env.EC2_IP }} << 'EOF'
-            tar -xzf /home/ubuntu/study-0.0.1-SNAPSHOT.tar.gz -C /home/ubuntu/
-            rm /home/ubuntu/study-0.0.1-SNAPSHOT.tar.gz
+            aws s3 cp s3://bucket-swgroup/study-0.0.1-SNAPSHOT.jar /home/ubuntu/
             nohup java -jar /home/ubuntu/study-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
           EOF
+
 
 
