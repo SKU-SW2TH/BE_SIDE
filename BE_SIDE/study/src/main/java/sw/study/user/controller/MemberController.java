@@ -4,6 +4,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/member")
 @RequiredArgsConstructor
-@Tag(name = "Member", description = "Member API")
+@Tag(name = "Member", description = "맴버 관련 API")
 public class MemberController implements MemberApiDocumentation {
     private final MemberService memberService;
 
@@ -128,7 +132,7 @@ public class MemberController implements MemberApiDocumentation {
             // 예외 로그 기록 (선택적)
             e.printStackTrace(); // 콘솔에 예외 출력
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("예기치 못한 에러 발생");
+                    .body(e.getMessage());
         }
     }
 
@@ -146,7 +150,7 @@ public class MemberController implements MemberApiDocumentation {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -164,7 +168,7 @@ public class MemberController implements MemberApiDocumentation {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -181,16 +185,24 @@ public class MemberController implements MemberApiDocumentation {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
     @Override
     @GetMapping("/notificationList")
-    public ResponseEntity<?> getNotificationList(@RequestHeader("Authorization") String accessToken) {
+    public ResponseEntity<?> getNotificationList(
+            @RequestHeader("Authorization") String accessToken,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) { // 기본값 0, 10 설정
         try {
-            List<NotificationDTO> dtos = memberService.getNotifications(accessToken);
-            return ResponseEntity.ok(dtos);
+            Pageable pageable = PageRequest.of(
+                    page,
+                    size,
+                    Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")) // 다중 정렬 기준 추가
+            ); // createdAt 기준 내림차순 정렬
+            Page<NotificationDTO> dtos = memberService.getNotifications(accessToken, pageable);
+            return ResponseEntity.ok(dtos); // 페이지네이션 정보 포함하여 반환
 
 
         } catch (UserNotFoundException e) {
@@ -198,7 +210,7 @@ public class MemberController implements MemberApiDocumentation {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
@@ -215,7 +227,24 @@ public class MemberController implements MemberApiDocumentation {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("예기치 못한 에러 발생");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/delete/interest")
+    public ResponseEntity<?> deleteInterest(@RequestHeader("Authorization") String accessToken,
+                                            @RequestBody AreaRequest areaRequest){
+        try {
+            memberService.deleteInterest(accessToken, areaRequest);
+            return ResponseEntity.status(HttpStatus.OK).body("삭제 성공");
+
+
+        } catch (UserNotFoundException | InterestNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 

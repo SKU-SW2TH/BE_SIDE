@@ -12,7 +12,7 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
 
     List<Participant> findByMemberId(Long memberId); // 특정 사용자가 참가중인 모든 그룹
 
-    boolean findByNickname(String nickname); // 스터디그룹 닉네임 조회
+    Optional<Participant> findByNickname(String nickname); // 스터디그룹 닉네임 조회
 
     Participant findParticipantByNickname(String nickname);
 
