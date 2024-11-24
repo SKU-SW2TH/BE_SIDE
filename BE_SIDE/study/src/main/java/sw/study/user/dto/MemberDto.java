@@ -16,5 +16,4 @@ public class MemberDto {
     private boolean isDeleted;
     private List<NotificationSettingDTO> settings = new ArrayList<>();
     private List<MemberAreaDTO> interests = new ArrayList<>();
-    private List<NotificationDTO> notifications = new ArrayList<>();
 }
