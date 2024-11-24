@@ -308,9 +308,9 @@ public class MemberService {
                 .collect(Collectors.toSet());
 
         // 삭제할 관심사: 기존 관심사 중 새로운 요청에 없는 ID들
-        //Set<Long> interestsToRemove = existingInterestIds.stream()
-                //.filter(id -> !interestIds.contains(id))
-                //.collect(Collectors.toSet());
+        Set<Long> interestsToRemove = existingInterestIds.stream()
+                .filter(id -> !interestIds.contains(id))
+                .collect(Collectors.toSet());
 
         // 관심사 추가
         for (Long interestId : interestsToAdd) {
@@ -320,30 +320,30 @@ public class MemberService {
             member.addMemberArea(newInterest);
             memberAreaRepository.save(newInterest);
 
-            MemberAreaDTO dto = new MemberAreaDTO();
-            dto.setId(newInterest.getId());
-            dto.setInterestId(newInterest.getArea().getId());
-            dto.setName(newInterest.getArea().getAreaName());
-            dtos.add(dto);
+            //MemberAreaDTO dto = new MemberAreaDTO();
+            //dto.setId(newInterest.getId());
+            //dto.setInterestId(newInterest.getArea().getId());
+            //dto.setName(newInterest.getArea().getAreaName());
+            //dtos.add(dto);
         }
 
         // 관심사 삭제
-        //for (Long interestId : interestsToRemove) {
-            //MemberArea existingInterest = memberAreaRepository.findByMemberIdAndAreaId(member.getId(), interestId)
-                    //.orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
-            //member.removeInterest(existingInterest);
-            //memberAreaRepository.delete(existingInterest);
-       //}
+        for (Long interestId : interestsToRemove) {
+            MemberArea existingInterest = memberAreaRepository.findByMemberIdAndAreaId(member.getId(), interestId)
+                    .orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
+            member.removeInterest(existingInterest);
+            memberAreaRepository.delete(existingInterest);
+       }
 
         // 업데이트된 관심사 목록 DTO 생성
-        //List<MemberArea> updatedInterests = memberAreaRepository.findByMemberId(member.getId());
-        //for (MemberArea interest : updatedInterests) {
-            //MemberAreaDTO dto = new MemberAreaDTO();
-            //dto.setId(interest.getId());
-            //dto.setInterestId(interest.getArea().getId());
-            //dto.setName(interest.getArea().getAreaName());
-            //dtos.add(dto);
-        //}
+        List<MemberArea> updatedInterests = memberAreaRepository.findByMemberId(member.getId());
+        for (MemberArea interest : updatedInterests) {
+            MemberAreaDTO dto = new MemberAreaDTO();
+            dto.setId(interest.getId());
+            dto.setInterestId(interest.getArea().getId());
+            dto.setName(interest.getArea().getAreaName());
+            dtos.add(dto);
+        }
 
         return dtos;
     }
