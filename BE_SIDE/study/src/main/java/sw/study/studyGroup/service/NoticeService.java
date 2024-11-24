@@ -29,10 +29,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NoticeService {
 
-    private MemberRepository memberRepository;
-    private ParticipantRepository participantRepository;
-    private StudyGroupRepository studyGroupRepository;
-    private NoticeRepository noticeRepository;
+    private final MemberRepository memberRepository;
+    private final ParticipantRepository participantRepository;
+    private final StudyGroupRepository studyGroupRepository;
+    private final NoticeRepository noticeRepository;
 
     private final JWTService jwtService;
 
