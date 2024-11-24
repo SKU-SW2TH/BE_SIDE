@@ -58,7 +58,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: 'ap-northeast-2'  # 서울 리전으로 설정
-      
+    
       # SSH 에이전트 설정
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
@@ -71,10 +71,7 @@ jobs:
           EC2_IP: ${{ secrets.EC2_IP }}
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ env.EC2_IP }} << 'EOF'
-            # Java 프로세스 찾기
             PID=$(ps aux | grep 'study-0.0.1-SNAPSHOT.jar' | grep -v 'grep' | awk '{print $2}')
-            
-            # 프로세스 종료
             if [ -n "$PID" ]; then
               kill -9 $PID
               echo "Application stopped successfully."
@@ -82,20 +79,24 @@ jobs:
               echo "No running application found."
             fi
           EOF
-      
-      # JAR 파일을 EC2로 복사
-      - name: Copy JAR to EC2
+
+      # JAR 파일을 압축하여 EC2로 복사
+      - name: Compress and Copy JAR to EC2
         env:
           EC2_IP: ${{ secrets.EC2_IP }}
         run: |
-          scp -o StrictHostKeyChecking=no study-0.0.1-SNAPSHOT.jar ubuntu@${{ env.EC2_IP }}:/home/ubuntu/study-0.0.1-SNAPSHOT.jar
+          tar -czf study-0.0.1-SNAPSHOT.tar.gz study-0.0.1-SNAPSHOT.jar
+          scp -o StrictHostKeyChecking=no study-0.0.1-SNAPSHOT.tar.gz ubuntu@${{ env.EC2_IP }}:/home/ubuntu/
 
-      # EC2에서 애플리케이션 실행
-      - name: SSH into EC2 and Run Application
+      # EC2에서 압축 해제 및 애플리케이션 실행
+      - name: SSH into EC2 to Extract and Run Application
         env:
           EC2_IP: ${{ secrets.EC2_IP }}
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ env.EC2_IP }} << 'EOF'
+            tar -xzf /home/ubuntu/study-0.0.1-SNAPSHOT.tar.gz -C /home/ubuntu/
+            rm /home/ubuntu/study-0.0.1-SNAPSHOT.tar.gz
             nohup java -jar /home/ubuntu/study-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
           EOF
+
 
