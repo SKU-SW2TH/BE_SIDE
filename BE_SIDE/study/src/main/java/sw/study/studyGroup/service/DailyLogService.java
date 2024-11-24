@@ -2,6 +2,9 @@ package sw.study.studyGroup.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.config.jwt.JWTService;
@@ -19,19 +22,25 @@ import sw.study.studyGroup.repository.StudyGroupRepository;
 import sw.study.user.domain.Member;
 import sw.study.user.repository.MemberRepository;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class DailyLogService {
 
-    private MemberRepository memberRepository;
-    private ParticipantRepository participantRepository;
-    private StudyGroupRepository studyGroupRepository;
-    private DailyLogRepository dailyLogRepository;
+    private final MemberRepository memberRepository;
+    private final ParticipantRepository participantRepository;
+    private final StudyGroupRepository studyGroupRepository;
+    private final DailyLogRepository dailyLogRepository;
 
-    private JWTService jwtService;
+    private final JWTService jwtService;
 
     // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
     private Member currentLogginedInfo(String accessToken) {
@@ -50,6 +59,7 @@ public class DailyLogService {
     }
 
     // 데일리 로그 작성
+    @Transactional
     public void createDailyLog(String accessToken, long groupId, String title, String content){
 
         Member member = currentLogginedInfo(accessToken);
@@ -66,19 +76,27 @@ public class DailyLogService {
 
     // 데일리 로그 조회
     @Transactional(readOnly = true)
-    public List<DailyLogResponseDto> listOfDailyLog(String accessToken, long groupId){
+    public List<DailyLogResponseDto> listOfDailyLog(String accessToken, int page, int size, long groupId, String dateStr){
+
+        Pageable pageable = PageRequest.of(page, size);
 
         Member member = currentLogginedInfo(accessToken);
 
         participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
 
-        List<DailyLog> logs = dailyLogRepository.findAllByStudyGroupId(groupId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+        LocalDate date = LocalDate.parse(dateStr, formatter);
+        LocalDateTime startOfDay = date.atStartOfDay(); // 특정일의 자정
+        LocalDateTime endOfDay = startOfDay.plusDays(1).minusNanos(1);
+
+        Page<DailyLog> logs = dailyLogRepository.findAllByStudyGroup_IdAndCreatedAtBetween(groupId, startOfDay, endOfDay, pageable);
+
         return logs.stream().map(DailyLogResponseDto::new).toList();
-        // 스트림 형태로 변환, 각 요소를 Dto 형태로 바꿔서 리턴
     }
 
     // 데일리 로그 수정
+    @Transactional
     public void updateDailyLog(String accessToken, long groupId, long logId, String title,String content){
         Member member = currentLogginedInfo(accessToken);
 
@@ -95,6 +113,7 @@ public class DailyLogService {
     }
 
     // 데일리 로그 삭제
+    @Transactional
     public void deleteDailyLog(String accessToken, long groupId, long logId){
         Member member = currentLogginedInfo(accessToken);
 

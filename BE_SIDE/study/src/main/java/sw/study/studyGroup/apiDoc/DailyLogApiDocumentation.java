@@ -42,11 +42,17 @@ public interface DailyLogApiDocumentation {
     })
     @Parameters(value = {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
-            @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1")
+            @Parameter(name = "page", description = "현재 페이지 (주의! 첫 페이지는 1부터가 아닌 0부터 시작)", example = "0"),
+            @Parameter(name = "size", description = "페이지 당 보여질 항목의 수", example = "5"),
+            @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1"),
+            @Parameter(name = "date", description = "로그를 조회하려는 날짜 입력 (YYYYMMDD)", example = "20241122")
     })
     ResponseEntity<?> listOfDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable("groupId") Long groupId);
+            @RequestParam int page,
+            @RequestParam int size,
+            @PathVariable("groupId") Long groupId,
+            @RequestParam String date);
 
 
     // 데일리 로그 수정

@@ -47,9 +47,12 @@ public class DailyLogController implements DailyLogApiDocumentation {
     @GetMapping("/list")
     public ResponseEntity<?> listOfDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable("groupId") Long groupId) {
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size,
+            @PathVariable("groupId") Long groupId,
+            @RequestParam(name = "date") String date) {
         try {
-            List<DailyLogResponseDto> logs = dailyLogService.listOfDailyLog(accessToken, groupId);
+            List<DailyLogResponseDto> logs = dailyLogService.listOfDailyLog(accessToken, page, size, groupId, date);
             return ResponseEntity.ok().body(logs); // 리스트 반환
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
