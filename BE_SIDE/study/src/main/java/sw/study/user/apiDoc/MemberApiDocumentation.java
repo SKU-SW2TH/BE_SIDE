@@ -76,7 +76,7 @@ public interface MemberApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
                                          @RequestBody SettingRequest dto);
 
-    @Operation(summary = "관심 분야 리스트", description = "관심 분야 리스트를 받는다.")
+    @Operation(summary = "전체 관심 분야 목록", description = "관심 분야 리스트를 받는다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생")

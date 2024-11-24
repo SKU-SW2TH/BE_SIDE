@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/member")
 @RequiredArgsConstructor
-@Tag(name = "Member", description = "Member API")
+@Tag(name = "Member", description = "맴버 관련 API")
 public class MemberController implements MemberApiDocumentation {
     private final MemberService memberService;
 
@@ -132,7 +132,7 @@ public class MemberController implements MemberApiDocumentation {
             // 예외 로그 기록 (선택적)
             e.printStackTrace(); // 콘솔에 예외 출력
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("예기치 못한 에러 발생");
+                    .body(e.getMessage());
         }
     }
 
