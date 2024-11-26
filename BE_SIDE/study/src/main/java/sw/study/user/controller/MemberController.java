@@ -82,6 +82,29 @@ public class MemberController implements MemberApiDocumentation {
     }
 
     @Override
+    @PatchMapping(value = "/reset-profile")
+    public ResponseEntity<?> resetMemberProfile(
+            @RequestHeader("Authorization") String accessToken) {
+        try {
+            String url = memberService.resetMemberProfile(accessToken);
+            return ResponseEntity.status(HttpStatus.OK).body(url);
+
+
+        }  catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (UserNotFoundException e) {
+            // 사용자를 찾지 못한 경우 404 Not Found 응답
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (InvalidTokenException e) {
+            // 잘못된 토큰이면 401 Unauthorized 응답
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않는 토큰입니다.");
+        } catch (Exception e) {
+            // 그 외의 예기치 않은 예외 처리
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @Override
     @PatchMapping("/change/password")
     public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String accessToken,
                                             @RequestBody PasswordChangeRequest request){

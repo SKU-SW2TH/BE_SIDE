@@ -28,9 +28,9 @@ public class NoticeResponseDto {
     public static NoticeResponseDto fromList(Notice notice) {
         return new NoticeResponseDto(
                 notice.getId(),
+                notice.getAuthor().getNickname(),
                 notice.getTitle(),
-                null,
-                null,
+                null, // 목록 조회이기에 본문은 제외
                 notice.getCreatedAt(),
                 notice.getUpdatedAt()
         );
@@ -40,9 +40,9 @@ public class NoticeResponseDto {
     public static NoticeResponseDto fromDetail(Notice notice) {
         return new NoticeResponseDto(
                 notice.getId(),
+                notice.getAuthor().getNickname(),
                 notice.getTitle(),
                 notice.getContent(),
-                notice.getAuthor().getNickname(),
                 notice.getCreatedAt(),
                 notice.getUpdatedAt()
         );

@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sw.study.admin.dto.ReportRequestDTO;
+import sw.study.admin.dto.ReportRequest;
 import sw.study.community.dto.CommentRequest;
 import sw.study.community.dto.PostRequest;
 import sw.study.community.service.CommentService;
@@ -90,10 +90,10 @@ public class PostController {
     }
 
     @PostMapping("/{postId}/report")
-    public ResponseEntity<?> reportPost(@PathVariable Long postId, @RequestBody ReportRequestDTO reportRequestDTO) {
-        log.info("게시글 신고 요청: targetId = {}, reporterId = {}", postId, reportRequestDTO.getReporterId());
+    public ResponseEntity<?> reportPost(@PathVariable Long postId, @RequestBody ReportRequest reportRequest) {
+        log.info("게시글 신고 요청: targetId = {}, reporterId = {}", postId, reportRequest.getReporterId());
         try {
-            postService.report(reportRequestDTO, postId);
+            postService.report(reportRequest, postId);
             return ResponseEntity.ok("신고가 성공적으로 접수되었습니다.");
 
 
@@ -159,6 +159,42 @@ public class PostController {
         } catch (CommentNotBelongToPostException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{postId}/comment /{commentId}/report")
+    public ResponseEntity<?> reportComment(@PathVariable Long postId, @PathVariable Long commentId, @RequestBody ReportRequest reportRequest) {
+        log.info("댓글 신고 요청: targetId = {}, reporterId = {}", commentId, reportRequest.getReporterId());
+        try {
+            commentService.report(reportRequest, postId, commentId);
+            return ResponseEntity.ok("신고가 성공적으로 접수되었습니다.");
+
+
+        } catch (PostNotFoundException | UserNotFoundException | CommentNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
+        } catch (CommentNotBelongToPostException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{postId}/comment/{commentId}/reply")
+    public ResponseEntity<?> createReply(@PathVariable Long postId, @PathVariable Long commentId, @RequestBody CommentRequest commentRequest) {
+        log.info("대댓글 요청: postId = {}, commentId={}, replierId = {}", postId, commentId,commentRequest.getMemberId());
+        try {
+            commentService.reply(commentRequest, postId, commentId);
+            return ResponseEntity.status(HttpStatus.CREATED).body("정상적으로 대댓글이 생성되었습니다.");
+
+
+        } catch (PostNotFoundException | UserNotFoundException | CommentNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
+        } catch (CommentNotBelongToPostException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400
+        } catch (Exception e) {
+            // 기타 예외 발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }

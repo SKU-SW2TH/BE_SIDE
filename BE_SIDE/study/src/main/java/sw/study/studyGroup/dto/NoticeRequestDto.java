@@ -1,8 +1,10 @@
 package sw.study.studyGroup.dto;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class NoticeRequestDto {
     private String title;
     private String content;

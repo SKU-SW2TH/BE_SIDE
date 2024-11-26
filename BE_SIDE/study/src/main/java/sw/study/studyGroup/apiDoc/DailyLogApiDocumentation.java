@@ -29,7 +29,7 @@ public interface DailyLogApiDocumentation {
     })
     ResponseEntity<?> createDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestBody DailyLogRequestDto requestDto);
     
     // 데일리 로그 조회
@@ -42,11 +42,17 @@ public interface DailyLogApiDocumentation {
     })
     @Parameters(value = {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
-            @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1")
+            @Parameter(name = "page", description = "현재 페이지 (주의! 첫 페이지는 1부터가 아닌 0부터 시작)", example = "0"),
+            @Parameter(name = "size", description = "페이지 당 보여질 항목의 수", example = "5"),
+            @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1"),
+            @Parameter(name = "date", description = "로그를 조회하려는 날짜 입력 (YYYYMMDD)", example = "20241122")
     })
     ResponseEntity<?> listOfDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId);
+            @RequestParam int page,
+            @RequestParam int size,
+            @PathVariable("groupId") Long groupId,
+            @RequestParam String date);
 
 
     // 데일리 로그 수정
@@ -67,13 +73,13 @@ public interface DailyLogApiDocumentation {
     })
     ResponseEntity<?> updateDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long logId,
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("logId") Long logId,
             @RequestBody DailyLogRequestDto requestDto);
 
 
     // 데일리 로그 삭제
-    @Operation(summary = "공지사항 작성",
+    @Operation(summary = "데일리 로그 삭제",
             description = "리더 혹은 운영진만 가능함")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "로그가 성공적으로 삭제되었습니다."),
@@ -88,6 +94,6 @@ public interface DailyLogApiDocumentation {
     })
     ResponseEntity<?> deleteDailyLog(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long logId);
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("logId") Long logId);
 }
