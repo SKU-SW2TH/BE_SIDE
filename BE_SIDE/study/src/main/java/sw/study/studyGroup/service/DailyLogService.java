@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.config.jwt.JWTService;
+import sw.study.exception.BaseException;
+import sw.study.exception.ErrorCode;
 import sw.study.exception.UserNotFoundException;
 import sw.study.exception.studyGroup.DailyLogNotFoundException;
 import sw.study.exception.studyGroup.StudyGroupNotFoundException;
@@ -65,10 +67,10 @@ public class DailyLogService {
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new BaseException(ErrorCode.UNAUTHORIZED));
 
         StudyGroup studyGroup = studyGroupRepository.findById(groupId)
-                .orElseThrow(() -> new StudyGroupNotFoundException("스터디 그룹이 존재하지 않습니다."));
+                .orElseThrow(() -> new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
 
         DailyLog dailyLog = DailyLog.createDailyLog(studyGroup, participant, title, content);
         dailyLogRepository.save(dailyLog);
@@ -83,7 +85,7 @@ public class DailyLogService {
         Member member = currentLogginedInfo(accessToken);
 
         participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new BaseException(ErrorCode.UNAUTHORIZED));
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         LocalDate date = LocalDate.parse(dateStr, formatter);
@@ -101,13 +103,13 @@ public class DailyLogService {
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new BaseException(ErrorCode.UNAUTHORIZED));
 
         DailyLog dailyLog =dailyLogRepository.findById(logId)
-                .orElseThrow(()-> new DailyLogNotFoundException("해당하는 데일리 로그는 존재하지 않습니다."));
+                .orElseThrow(()-> new BaseException(ErrorCode.DAILYLOG_NOT_FOUND));
 
         if(!dailyLog.getAuthor().getId().equals(participant.getId()))
-            throw new UnauthorizedException("수정 권한이 없습니다.");
+            throw new BaseException(ErrorCode.PERMISSION_DENIED);
 
         dailyLog.updateLog(title, content);
     }
@@ -118,16 +120,16 @@ public class DailyLogService {
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new BaseException(ErrorCode.UNAUTHORIZED));
 
         DailyLog dailyLog =dailyLogRepository.findById(logId)
-                .orElseThrow(()-> new DailyLogNotFoundException("해당하는 데일리 로그는 존재하지 않습니다."));
+                .orElseThrow(()-> new BaseException(ErrorCode.DAILYLOG_NOT_FOUND));
 
         if (dailyLog.getAuthor().getId().equals(participant.getId()) || participant.getRole() == Participant.Role.LEADER) {
             // 작성자 본인이거나 혹은 방장일 경우에
             dailyLogRepository.deleteById(logId);
         } else {
-            throw new UnauthorizedException("삭제 권한이 없습니다.");
+            throw new BaseException(ErrorCode.PERMISSION_DENIED);
         }
     }
 }
