@@ -257,7 +257,7 @@ public class PostServiceTest {
         //given
         Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
         Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
-        Member replier = createMember("like@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
+        Member replier = createMember("like@naver.com", "asdasd!!!!", "대댓글쓰는사람", Role.USER);
         PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
         CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
 
@@ -273,6 +273,121 @@ public class PostServiceTest {
         Comment reply = parent.getChild().get(0);
         assertThat(parent.getChild().size()).isEqualTo(1);
         assertThat(reply.getParent()).isEqualTo(parent);
+    }
+
+    @Test
+    void 대댓글_삭제() throws Exception {
+        //given
+        Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
+        Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        Member replier = createMember("like@naver.com", "asdasd!!!!", "대댓글쓰는사람", Role.USER);
+        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+
+        Long postId = postService.save(postRequest);
+        Long commentId = commentService.save(commentRequest, postId);
+
+        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+        Long replyId = commentService.reply(replyRequest, postId, commentId);
+
+        //when
+        commentService.deleteReply(postId, commentId, replyId);
+
+        //then
+        Comment reply = commentRepository.findById(replyId).orElseThrow();
+        assertThat(reply.isDeleted()).isTrue();
+    }
+
+    @Test
+    void 대댓글_좋아요() throws Exception {
+        //given
+        Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
+        Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        Member replier = createMember("rerere@naver.com", "reasdasd!!!!", "대댓글쓰는사람", Role.USER);
+        Member liker = createMember("like@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
+
+        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+
+        Long postId = postService.save(postRequest);
+        Long commentId = commentService.save(commentRequest, postId);
+        Long replyId = commentService.reply(replyRequest, postId, commentId);
+
+        //when
+        commentService.addReplyLike(postId, commentId, replyId, liker.getId());
+
+        //then
+        Comment reply = commentRepository.findById(replyId).orElseThrow();
+        assertThat(reply.getCommentLikes().size()).isEqualTo(1);
+        assertThat(commentLikeRepository.findByCommentAndMember(reply, liker).isPresent()).isTrue();
+    }
+
+    @Test
+    void 대댓글_좋아요_취소() throws Exception {
+        //given
+        Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
+        Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        Member replier = createMember("rerere@naver.com", "reasdasd!!!!", "대댓글쓰는사람", Role.USER);
+        Member liker = createMember("like@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
+
+        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+
+        Long postId = postService.save(postRequest);
+        Long commentId = commentService.save(commentRequest, postId);
+        Long replyId = commentService.reply(replyRequest, postId, commentId);
+
+        commentService.addReplyLike(postId, commentId, replyId, liker.getId());
+
+        //when
+        commentService.cancelReplyLike(postId, commentId, replyId, liker.getId());
+
+        //then
+        Comment reply = commentRepository.findById(replyId).orElseThrow();
+        assertThat(reply.getCommentLikes().size()).isEqualTo(0);
+        assertThat(commentLikeRepository.findByCommentAndMember(reply, liker).isEmpty()).isTrue();
+    }
+
+    @Test
+    void 대댓글_신고() throws Exception {
+        //given
+        Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
+        Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        Member replier = createMember("rere@naver.com", "rereasdasd!!!!", "대댓글다는사람", Role.USER);
+        Member reporter = createMember("like@naver.com", "asdasd!!!!", "신고하는사람", Role.USER);
+        Member reporter2 = createMember("1231231@naver.com", "a123sdasd!!!!", "신고하는사람2", Role.USER);
+        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+
+        Long postId = postService.save(postRequest);
+        Long commentId = commentService.save(commentRequest, postId);
+        Long replyId = commentService.reply(replyRequest, postId, commentId);
+
+        //when
+        ReportRequest reportRequest =
+                createReportRequest(reporter.getId(), "보고싶지않은대댓글!!ㅡㅡ",
+                        ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.COMMENT);
+        Long reportId = commentService.reportReply(reportRequest, postId, commentId, replyId);
+
+        ReportRequest reportRequest2 =
+                createReportRequest(reporter2.getId(), "보고싶지않은대댓글!!ㅡㅡ",
+                        ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.COMMENT);
+        Long reportId2 = commentService.reportReply(reportRequest2, postId, commentId, replyId);
+
+        //then
+        Comment reply = commentRepository.findById(replyId).get();
+        Report report = reportRepository.findById(reportId).orElseThrow();
+
+        assertThat(report.getReportTargetType()).isEqualTo(ReportTargetType.COMMENT);
+        assertThat(report.getReportReason()).isEqualTo(ReportReason.INAPPROPRIATE_EXPRESSION);
+
+        assertThat(reply.getReportCount()).isEqualTo(2);
+        assertThat(reporter.getReports().size()).isEqualTo(1);
+        assertThat(reporter2.getReports().size()).isEqualTo(1);
+
     }
 
 //    @Test
