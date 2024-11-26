@@ -11,7 +11,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.admin.domain.Report;
-import sw.study.admin.dto.ReportRequestDTO;
+import sw.study.admin.dto.ReportRequest;
 import sw.study.admin.repository.ReportRepository;
 import sw.study.admin.role.ReportReason;
 import sw.study.admin.role.ReportTargetType;
@@ -26,7 +26,6 @@ import sw.study.community.repository.PostLikeRepository;
 import sw.study.community.repository.PostRepository;
 import sw.study.community.service.CommentService;
 import sw.study.community.service.PostService;
-import sw.study.exception.community.LikeNotFoundException;
 import sw.study.user.domain.Member;
 import sw.study.user.domain.NotificationCategory;
 import sw.study.user.repository.AreaRepository;
@@ -35,7 +34,6 @@ import sw.study.user.repository.NotificationCategoryRepository;
 import sw.study.user.role.Role;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
@@ -53,12 +51,9 @@ public class PostServiceTest {
     @Autowired PostLikeRepository postLikeRepository;
     @Autowired ReportRepository reportRepository;
     @Autowired AreaRepository areaRepository;
-    @Autowired
-    private CommentService commentService;
-    @Autowired
-    private CommentRepository commentRepository;
-    @Autowired
-    private CommentLikeRepository commentLikeRepository;
+    @Autowired private CommentService commentService;
+    @Autowired private CommentRepository commentRepository;
+    @Autowired private CommentLikeRepository commentLikeRepository;
 
 
     // 추가적으로 예외 상황 테스트도 추가해야한다.
@@ -139,10 +134,10 @@ public class PostServiceTest {
         PostRequest postRequest = createPostRequest(postOwner.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
         Long postId = postService.save(postRequest);
 
-        ReportRequestDTO reportRequestDTO = createReportRequest(reporter.getId(), "보고싶지않은게시글!!ㅡㅡ", ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.POST);
+        ReportRequest reportRequest = createReportRequest(reporter.getId(), "보고싶지않은게시글!!ㅡㅡ", ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.POST);
 
         // when
-        Long reportId = postService.report(reportRequestDTO, postId);
+        Long reportId = postService.report(reportRequest, postId);
 
         // then
         Report report = reportRepository.findById(reportId).orElseThrow();
@@ -227,6 +222,172 @@ public class PostServiceTest {
         commentService.cancelLike(postId, commentId, liker.getId());
         assertThat(comment.getCommentLikes().size()).isEqualTo(0);
         assertThat(commentLikeRepository.findByCommentAndMember(comment, liker).isEmpty()).isTrue();
+    }
+
+    @Test
+    void 댓글_신고() throws Exception {
+        //given
+        Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
+        Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        Member reporter = createMember("like@naver.com", "asdasd!!!!", "신고하는사람", Role.USER);
+        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+        
+        Long postId = postService.save(postRequest);
+        Long commentId = commentService.save(commentRequest, postId);
+        
+        //when
+        ReportRequest reportRequest = 
+                createReportRequest(reporter.getId(), "보고싶지않은댓글!!ㅡㅡ", 
+                        ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.COMMENT);
+        Long reportId = commentService.report(reportRequest, postId, commentId);
+
+        //then
+        Comment comment = commentRepository.findById(commentId).get();
+        Report report = reportRepository.findById(reportId).orElseThrow();
+        assertThat(report.getReportTargetType()).isEqualTo(ReportTargetType.COMMENT);
+        assertThat(report.getReportReason()).isEqualTo(ReportReason.INAPPROPRIATE_EXPRESSION);
+        assertThat(comment.getReportCount()).isEqualTo(1);
+        assertThat(reporter.getReports().size()).isEqualTo(1);
+        
+    }
+
+    @Test
+    void 대댓글_작성() throws Exception {
+        //given
+        Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
+        Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        Member replier = createMember("like@naver.com", "asdasd!!!!", "대댓글쓰는사람", Role.USER);
+        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+
+        Long postId = postService.save(postRequest);
+        Long commentId = commentService.save(commentRequest, postId);
+
+        //when
+        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+        commentService.reply(replyRequest, postId, commentId);
+
+        //then
+        Comment parent = commentRepository.findById(commentId).orElseThrow();
+        Comment reply = parent.getChild().get(0);
+        assertThat(parent.getChild().size()).isEqualTo(1);
+        assertThat(reply.getParent()).isEqualTo(parent);
+    }
+
+    @Test
+    void 대댓글_삭제() throws Exception {
+        //given
+        Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
+        Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        Member replier = createMember("like@naver.com", "asdasd!!!!", "대댓글쓰는사람", Role.USER);
+        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+
+        Long postId = postService.save(postRequest);
+        Long commentId = commentService.save(commentRequest, postId);
+
+        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+        Long replyId = commentService.reply(replyRequest, postId, commentId);
+
+        //when
+        commentService.deleteReply(postId, commentId, replyId);
+
+        //then
+        Comment reply = commentRepository.findById(replyId).orElseThrow();
+        assertThat(reply.isDeleted()).isTrue();
+    }
+
+    @Test
+    void 대댓글_좋아요() throws Exception {
+        //given
+        Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
+        Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        Member replier = createMember("rerere@naver.com", "reasdasd!!!!", "대댓글쓰는사람", Role.USER);
+        Member liker = createMember("like@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
+
+        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+
+        Long postId = postService.save(postRequest);
+        Long commentId = commentService.save(commentRequest, postId);
+        Long replyId = commentService.reply(replyRequest, postId, commentId);
+
+        //when
+        commentService.addReplyLike(postId, commentId, replyId, liker.getId());
+
+        //then
+        Comment reply = commentRepository.findById(replyId).orElseThrow();
+        assertThat(reply.getCommentLikes().size()).isEqualTo(1);
+        assertThat(commentLikeRepository.findByCommentAndMember(reply, liker).isPresent()).isTrue();
+    }
+
+    @Test
+    void 대댓글_좋아요_취소() throws Exception {
+        //given
+        Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
+        Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        Member replier = createMember("rerere@naver.com", "reasdasd!!!!", "대댓글쓰는사람", Role.USER);
+        Member liker = createMember("like@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
+
+        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+
+        Long postId = postService.save(postRequest);
+        Long commentId = commentService.save(commentRequest, postId);
+        Long replyId = commentService.reply(replyRequest, postId, commentId);
+
+        commentService.addReplyLike(postId, commentId, replyId, liker.getId());
+
+        //when
+        commentService.cancelReplyLike(postId, commentId, replyId, liker.getId());
+
+        //then
+        Comment reply = commentRepository.findById(replyId).orElseThrow();
+        assertThat(reply.getCommentLikes().size()).isEqualTo(0);
+        assertThat(commentLikeRepository.findByCommentAndMember(reply, liker).isEmpty()).isTrue();
+    }
+
+    @Test
+    void 대댓글_신고() throws Exception {
+        //given
+        Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
+        Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        Member replier = createMember("rere@naver.com", "rereasdasd!!!!", "대댓글다는사람", Role.USER);
+        Member reporter = createMember("like@naver.com", "asdasd!!!!", "신고하는사람", Role.USER);
+        Member reporter2 = createMember("1231231@naver.com", "a123sdasd!!!!", "신고하는사람2", Role.USER);
+        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+
+        Long postId = postService.save(postRequest);
+        Long commentId = commentService.save(commentRequest, postId);
+        Long replyId = commentService.reply(replyRequest, postId, commentId);
+
+        //when
+        ReportRequest reportRequest =
+                createReportRequest(reporter.getId(), "보고싶지않은대댓글!!ㅡㅡ",
+                        ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.COMMENT);
+        Long reportId = commentService.reportReply(reportRequest, postId, commentId, replyId);
+
+        ReportRequest reportRequest2 =
+                createReportRequest(reporter2.getId(), "보고싶지않은대댓글!!ㅡㅡ",
+                        ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.COMMENT);
+        Long reportId2 = commentService.reportReply(reportRequest2, postId, commentId, replyId);
+
+        //then
+        Comment reply = commentRepository.findById(replyId).get();
+        Report report = reportRepository.findById(reportId).orElseThrow();
+
+        assertThat(report.getReportTargetType()).isEqualTo(ReportTargetType.COMMENT);
+        assertThat(report.getReportReason()).isEqualTo(ReportReason.INAPPROPRIATE_EXPRESSION);
+
+        assertThat(reply.getReportCount()).isEqualTo(2);
+        assertThat(reporter.getReports().size()).isEqualTo(1);
+        assertThat(reporter2.getReports().size()).isEqualTo(1);
+
     }
 
 //    @Test
@@ -339,13 +500,13 @@ public class PostServiceTest {
         return commentRequest;
     }
 
-    private ReportRequestDTO createReportRequest(Long reporterId, String description, ReportReason reason, ReportTargetType targetType) {
-        ReportRequestDTO reportRequestDTO = new ReportRequestDTO();
-        reportRequestDTO.setReporterId(reporterId);
-        reportRequestDTO.setDescription(description);
-        reportRequestDTO.setReportReason(reason);
-        reportRequestDTO.setReportTargetType(targetType);
-        return reportRequestDTO;
+    private ReportRequest createReportRequest(Long reporterId, String description, ReportReason reason, ReportTargetType targetType) {
+        ReportRequest reportRequest = new ReportRequest();
+        reportRequest.setReporterId(reporterId);
+        reportRequest.setDescription(description);
+        reportRequest.setReportReason(reason);
+        reportRequest.setReportTargetType(targetType);
+        return reportRequest;
     }
 
 }
