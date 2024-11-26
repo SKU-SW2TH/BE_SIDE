@@ -229,7 +229,7 @@ public class PostServiceTest {
         //given
         Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
         Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
-        Member reporter = createMember("like@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
+        Member reporter = createMember("like@naver.com", "asdasd!!!!", "신고하는사람", Role.USER);
         PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
         CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
         
@@ -250,6 +250,29 @@ public class PostServiceTest {
         assertThat(comment.getReportCount()).isEqualTo(1);
         assertThat(reporter.getReports().size()).isEqualTo(1);
         
+    }
+
+    @Test
+    void 대댓글_작성() throws Exception {
+        //given
+        Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
+        Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        Member replier = createMember("like@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
+        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+
+        Long postId = postService.save(postRequest);
+        Long commentId = commentService.save(commentRequest, postId);
+
+        //when
+        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+        commentService.reply(replyRequest, postId, commentId);
+
+        //then
+        Comment parent = commentRepository.findById(commentId).orElseThrow();
+        Comment reply = parent.getChild().get(0);
+        assertThat(parent.getChild().size()).isEqualTo(1);
+        assertThat(reply.getParent()).isEqualTo(parent);
     }
 
 //    @Test
