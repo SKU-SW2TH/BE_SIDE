@@ -90,4 +90,8 @@ public class Comment {
         this.commentLikes.remove(commentLike);
         commentLike.addComment(null);
     }
+
+    public void incrementReportCount() {
+        this.reportCount++;
+    }
 }

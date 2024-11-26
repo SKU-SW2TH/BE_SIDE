@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.admin.domain.Report;
-import sw.study.admin.dto.ReportRequestDTO;
+import sw.study.admin.dto.ReportRequest;
 import sw.study.admin.role.ReportStatus;
 import sw.study.admin.service.ReportService;
 import sw.study.community.domain.Category;
@@ -125,19 +125,19 @@ public class PostService {
      * 게시글 신고
      */
     @Transactional
-    public Long report(ReportRequestDTO reportRequestDTO, Long postId) {
+    public Long report(ReportRequest reportRequest, Long postId) {
         Post findPost = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
         Member findTargetMember = memberRepository.findById(findPost.getMember().getId())
                 .orElseThrow(() -> new UserNotFoundException("해당하는 피신고자를 찾을 수 없습니다."));
-        Member findReporter = memberRepository.findById(reportRequestDTO.getReporterId())
+        Member findReporter = memberRepository.findById(reportRequest.getReporterId())
                 .orElseThrow(() -> new UserNotFoundException("해당하는 신고자를 찾을 수 없습니다."));
 
         // 신고 생성
         Report report = Report.createReport(findReporter, findTargetMember, postId,
-                reportRequestDTO.getDescription(),
-                reportRequestDTO.getReportTargetType(),
-                reportRequestDTO.getReportReason(),
+                reportRequest.getDescription(),
+                reportRequest.getReportTargetType(),
+                reportRequest.getReportReason(),
                 ReportStatus.PENDING);
 
         // 게시글 신고 수 증가

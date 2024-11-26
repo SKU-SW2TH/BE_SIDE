@@ -3,6 +3,10 @@ package sw.study.community.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import sw.study.admin.domain.Report;
+import sw.study.admin.dto.ReportRequest;
+import sw.study.admin.role.ReportStatus;
+import sw.study.admin.service.ReportService;
 import sw.study.community.domain.Comment;
 import sw.study.community.domain.CommentLike;
 import sw.study.community.domain.Post;
@@ -26,6 +30,7 @@ public class CommentService {
     private final PostRepository postRepository;
     private final MemberRepository memberRepository;
     private final CommentLikeRepository commentLikeRepository;
+    private final ReportService reportService;
 
     /**
      * 댓글 생성
@@ -114,4 +119,32 @@ public class CommentService {
     /**
      * 댓글 신고
      */
+    public Long report(ReportRequest reportRequest, Long postId, Long commentId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new PostNotFoundException("해당하는 댓글을 찾을 수 없습니다."));
+        Member targetMember = memberRepository.findById(comment.getMember().getId())
+                .orElseThrow(() -> new UserNotFoundException("해당하는 피신고자를 찾을 수 없습니다."));
+        Member reporter = memberRepository.findById(reportRequest.getReporterId())
+                .orElseThrow(() -> new UserNotFoundException("해당하는 신고자를 찾을 수 없습니다."));
+
+        // 댓글이 해당 게시글에 속하는지 검증
+        if (!post.getComments().contains(comment)) {
+            throw new CommentNotBelongToPostException("댓글이 해당 게시글에 속하지 않습니다.");
+        }
+
+        // 신고 생성
+        Report report = Report.createReport(reporter, targetMember, commentId,
+                reportRequest.getDescription(),
+                reportRequest.getReportTargetType(),
+                reportRequest.getReportReason(),
+                ReportStatus.PENDING);
+
+        // 댓글 신고 수 증가
+        comment.incrementReportCount();
+        Long reportId = reportService.save(report);
+        log.info("댓글 신고 요청 완료: commentId = {}, reporterId = {}, targetMemberId = {}", commentId, reportId, targetMember.getId());
+        return reportId;
+    }
 }
