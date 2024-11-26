@@ -51,6 +51,19 @@ public interface MemberApiDocumentation {
     ) throws IOException;
 
 
+    @Operation(summary = "프로필 기본 이미지 변경", description = "프로필을 기본 이미지로 변경한다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "성공적으로 업데이트됨", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UpdateProfileResponse.class))),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다."),
+            @ApiResponse(responseCode = "401", description = "잘못된 엑세스 토큰"),
+            @ApiResponse(responseCode = "500", description = "파일 업로드 실패 또는 기타 서버 에러")
+    })
+    ResponseEntity<?> resetMemberProfile(
+            @Parameter(name = "Authorization", description = "엑세스 토큰", example = "Bearer your_access_token")
+            @RequestHeader("Authorization") String accessToken
+    ) throws IOException;
+
+
     @Operation(summary = "비밀번호 변경", description = "비밀번호를 변경한다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공"),
