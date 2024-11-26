@@ -65,6 +65,16 @@ public class Comment {
         return comment;
     }
 
+    public static Comment createReply(Comment parent, Member member, String content, int level) {
+        Comment comment = new Comment();
+        parent.addChildComment(comment);
+        comment.member = member;
+        comment.content = content;
+        comment.level = level;
+
+        return comment;
+    }
+
     //== 연관 관계 편의 메서드 ==//
     public void addChildComment(Comment child) {
         this.child.add(child);

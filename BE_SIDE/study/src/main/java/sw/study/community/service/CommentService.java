@@ -49,6 +49,28 @@ public class CommentService {
     }
 
     /**
+     * 대댓글 작성
+     */
+    public Long reply(CommentRequest replyRequest, Long postId, Long commentId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
+        Member member = memberRepository.findById(replyRequest.getMemberId())
+                .orElseThrow(() -> new UserNotFoundException("해당하는 사용자를 찾을 수 없습니다."));
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("해당하는 댓글을 찾을 수 없습니다."));
+
+        // 댓글이 해당 게시글에 속하는지 검증
+        if (!post.getComments().contains(comment)) {
+            throw new CommentNotBelongToPostException("댓글이 해당 게시글에 속하지 않습니다.");
+        }
+
+        Comment reply = Comment.createReply(comment, member, comment.getContent(), comment.getLevel());
+        commentRepository.save(reply);
+        log.info("대댓글이 성공적으로 반영: postId={}, commentId={}, replyId={}", postId, comment.getId(), reply.getId());
+        return reply.getId();
+    }
+
+    /**
      * 댓글 삭제
      */
     public void delete(Long postId, Long commentId) {

@@ -180,4 +180,22 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
+    @PostMapping("/{postId}/comment/{commentId}/reply")
+    public ResponseEntity<?> createReply(@PathVariable Long postId, @PathVariable Long commentId, @RequestBody CommentRequest commentRequest) {
+        log.info("대댓글 요청: postId = {}, commentId={}, replierId = {}", postId, commentId,commentRequest.getMemberId());
+        try {
+            commentService.reply(commentRequest, postId, commentId);
+            return ResponseEntity.status(HttpStatus.CREATED).body("정상적으로 대댓글이 생성되었습니다.");
+
+
+        } catch (PostNotFoundException | UserNotFoundException | CommentNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
+        } catch (CommentNotBelongToPostException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 }
