@@ -28,7 +28,7 @@ public interface NoticeApiDocumentation {
     })
     ResponseEntity<?> createNotice(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestBody NoticeRequestDto requestDto);
 
     // 공지사항 목록 조회
@@ -42,12 +42,12 @@ public interface NoticeApiDocumentation {
     @Parameters(value = {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
             @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1"),
-            @Parameter(name = "page", description = "현재 페이지", example = "1"),
+            @Parameter(name = "page", description = "현재 페이지 ( 0 부터 시작하는것 주의 ) ", example = "0"),
             @Parameter(name = "size", description = "페이지당 보여질 항목 수", example = "5")
     })
     ResponseEntity<?> listOfNotices(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestParam int page,
             @RequestParam int size);
 
@@ -67,8 +67,8 @@ public interface NoticeApiDocumentation {
     })
     ResponseEntity<?> noticeDetail(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long noticeId);
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("noticeId") Long noticeId);
 
 
     // 공지사항 수정
@@ -89,8 +89,8 @@ public interface NoticeApiDocumentation {
     })
     ResponseEntity<?> updateNotice(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long noticeId,
+            @PathVariable("groupId")Long groupId,
+            @PathVariable("noticeId") Long noticeId,
             @RequestBody NoticeRequestDto noticeRequestDto);
 
     // 공지사항 삭제
@@ -109,6 +109,6 @@ public interface NoticeApiDocumentation {
     })
     ResponseEntity<?> deleteNotice(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long noticeId);
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("noticeId") Long noticeId);
 }

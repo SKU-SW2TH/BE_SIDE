@@ -29,7 +29,7 @@ public class NoticeController implements NoticeApiDocumentation {
     @PostMapping("/create")
     public ResponseEntity<?> createNotice(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestBody NoticeRequestDto requestDto) {
         try{
             noticeService.createNotice(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
@@ -46,7 +46,7 @@ public class NoticeController implements NoticeApiDocumentation {
     @GetMapping("/list")
     public ResponseEntity<?> listOfNotices(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
+            @PathVariable("groupId") Long groupId,
             @RequestParam(name = "page") int page,
             @RequestParam(name = "size") int size) {
         try {
@@ -71,8 +71,8 @@ public class NoticeController implements NoticeApiDocumentation {
     @GetMapping("/{noticeId}")
     public ResponseEntity<?> noticeDetail(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long noticeId) {
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("noticeId") Long noticeId) {
         try {
 
             NoticeResponseDto notice = noticeService.noticeDetail(accessToken, groupId, noticeId);
@@ -94,8 +94,8 @@ public class NoticeController implements NoticeApiDocumentation {
     @PutMapping("/update/{noticeId}")
     public ResponseEntity<?> updateNotice(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long noticeId,
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("noticeId") Long noticeId,
             @RequestBody NoticeRequestDto noticeRequestDto) {
         try {
             noticeService.updateNotice(accessToken,groupId, noticeId, noticeRequestDto.getTitle(),noticeRequestDto.getContent());
@@ -114,8 +114,8 @@ public class NoticeController implements NoticeApiDocumentation {
     @DeleteMapping("/delete/{noticeId}")
     public ResponseEntity<?> deleteNotice(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable long groupId,
-            @PathVariable long noticeId) {
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("noticeId") Long noticeId) {
         try {
             noticeService.deleteNotice(accessToken, groupId, noticeId);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("공지사항이 성공적으로 삭제되었습니다.");
