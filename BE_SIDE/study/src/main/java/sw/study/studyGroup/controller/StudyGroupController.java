@@ -87,7 +87,6 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("참여중인 스터디그룹이 존재하지 않습니다.");
         }
-
         return ResponseEntity.ok(joinedResponses);
     }
 
@@ -100,18 +99,8 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
 
         String nickname = searchByNickname.getNickname();
 
-        try {
-            studyGroupService.acceptInvitation(accessToken,groupId, nickname);
-            return ResponseEntity.ok("초대를 수락하였습니다.");
-        } catch (DuplicateNicknameException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage()); // 409 Conflict
-        } catch (MaxStudyGroupException ex) { // 개인이 참가할 수 있는 최대 그룹 수 초과
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage()); // 403 Forbidden
-        } catch (StudyGroupFullException ex) { // 스터디 그룹 인원이 가득찼을 때
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage()); // 400 Bad Request
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+        studyGroupService.acceptInvitation(accessToken,groupId, nickname);
+        return ResponseEntity.ok("초대를 수락하였습니다.");
     }
 
     @Override
@@ -119,6 +108,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> rejectInvitation(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId){
+
         studyGroupService.rejectInvitation(accessToken,groupId);
         return ResponseEntity.ok("초대를 거절하였습니다.");
     }
@@ -129,14 +119,9 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> listOfAll(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId) {
-        try {
-            List<GroupParticipants> participants = studyGroupService.listOfEveryone(accessToken,groupId);
-            return ResponseEntity.ok(participants);
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        List<GroupParticipants> participants = studyGroupService.listOfEveryone(accessToken,groupId);
+        return ResponseEntity.ok(participants);
     }
 
     @Override
@@ -144,14 +129,9 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> listOfManagers(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId) {
-        try {
-            List<GroupParticipants> managers = studyGroupService.listOfManagers(accessToken,groupId);
-            return ResponseEntity.ok(managers);
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        List<GroupParticipants> managers = studyGroupService.listOfManagers(accessToken,groupId);
+        return ResponseEntity.ok(managers);
     }
 
     @Override
@@ -159,14 +139,9 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> listOfMembers(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId) {
-        try {
-            List<GroupParticipants> members = studyGroupService.listOfMembers(accessToken,groupId);
-            return ResponseEntity.ok(members);
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        List<GroupParticipants> members = studyGroupService.listOfMembers(accessToken,groupId);
+        return ResponseEntity.ok(members);
     }
 
     @Override
@@ -175,14 +150,9 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("nickname") String nickname) {
-        try {
-            studyGroupService.changeRole(accessToken,groupId, nickname);
-            return ResponseEntity.ok("성공적으로 권한이 수정되었습니다.");
-        } catch (UnauthorizedException | PermissionDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        studyGroupService.changeRole(accessToken,groupId, nickname);
+        return ResponseEntity.ok("성공적으로 권한이 수정되었습니다.");
     }
 
     @Override
@@ -190,16 +160,9 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> checkWaiting(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId){
-        try{
-            List<String> nicknames = studyGroupService.listOfWaiting(accessToken,groupId);
-            return ResponseEntity.ok(nicknames);
-        } catch (UnauthorizedException | PermissionDeniedException e) {
-            // 특정 스터디그룹에 참가하지 않은 비정상적 케이스
-            // 혹은 그룹 내에서 권한이 부여되지 않은 경우
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        List<String> nicknames = studyGroupService.listOfWaiting(accessToken,groupId);
+        return ResponseEntity.ok(nicknames);
     }
 
     @Override
@@ -208,17 +171,12 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("nickname") String nickname) {
-        try {
-            boolean isCancelled = studyGroupService.cancelInvitation(accessToken,groupId, nickname);
-            if (isCancelled) {
-                return ResponseEntity.ok("초대를 취소 하였습니다.");
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("초대 취소에 실패하였습니다.");
-            }
-        } catch (UnauthorizedException | PermissionDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+
+        boolean isCancelled = studyGroupService.cancelInvitation(accessToken,groupId, nickname);
+        if (isCancelled) {
+            return ResponseEntity.ok("초대를 취소 하였습니다.");
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("초대 취소에 실패하였습니다.");
         }
     }
 
@@ -228,16 +186,9 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @RequestBody nicknameDto nicknameDto){
-        try{
-            studyGroupService.changeParticipantNickname(accessToken,groupId, nicknameDto.getNickname());
-            return ResponseEntity.ok("닉네임 변경에 성공하였습니다.");
-        }catch (UnauthorizedException e){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        }catch (DuplicateNicknameException e){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        studyGroupService.changeParticipantNickname(accessToken,groupId, nicknameDto.getNickname());
+        return ResponseEntity.ok("닉네임 변경에 성공하였습니다.");
     }
 
     @Override
@@ -246,16 +197,9 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @RequestBody InviteNewMember listOfMembers){
-        try {
-            studyGroupService.inviteNewMember(accessToken,groupId, listOfMembers.getSelectedNicknames());
-            return ResponseEntity.ok(String.format("총 %d 명에게 초대가 전송되었습니다.", listOfMembers.getSelectedNicknames().size()));
-        } catch (StudyGroupNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (UnauthorizedException | PermissionDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        studyGroupService.inviteNewMember(accessToken,groupId, listOfMembers.getSelectedNicknames());
+        return ResponseEntity.ok(String.format("총 %d 명에게 초대가 전송되었습니다.", listOfMembers.getSelectedNicknames().size()));
     }
 
     @Override
@@ -264,14 +208,9 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("nickname") String nickname){
-        try {
-            studyGroupService.userKick(accessToken,groupId, nickname);
-            return ResponseEntity.ok(String.format("%s 님을 추방하였습니다.", nickname));
-        } catch (UnauthorizedException | PermissionDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        studyGroupService.userKick(accessToken,groupId, nickname);
+        return ResponseEntity.ok(String.format("%s 님을 추방하였습니다.", nickname));
     }
 
     @Override
@@ -279,15 +218,8 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> quitStudyGroup(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId){
-        try {
-            studyGroupService.quitGroup(accessToken, groupId);
-            return ResponseEntity.ok("해당 스터디그룹을 탈퇴하였습니다.");
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (PermissionDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        studyGroupService.quitGroup(accessToken, groupId);
+        return ResponseEntity.ok("해당 스터디그룹을 탈퇴하였습니다.");
     }
 }
