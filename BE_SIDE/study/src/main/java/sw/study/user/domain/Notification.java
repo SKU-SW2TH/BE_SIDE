@@ -31,9 +31,6 @@ public class Notification {
     private Long targetId;
 
     @Column(nullable = false)
-    private String title;
-
-    @Column(nullable = false)
     private String content;
 
     private boolean isRead = false;
@@ -45,10 +42,9 @@ public class Notification {
         this.createdAt = LocalDateTime.now();
     }
 
-    public static Notification createNotification(NotificationCategory category, String title, String content, Long targetId) {
+    public static Notification createNotification(NotificationCategory category, String content, Long targetId) {
         Notification notification = new Notification();
         notification.category = category;
-        notification.title = title;
         notification.content = content;
         notification.targetId = targetId;
 

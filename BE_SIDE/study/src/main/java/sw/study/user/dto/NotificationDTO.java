@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Data
 public class NotificationDTO {
     private long id;
-    private String title;
+    private long targetId;
     private String content;
     private String type;
     private boolean isRead;

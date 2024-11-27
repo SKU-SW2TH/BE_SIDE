@@ -196,10 +196,9 @@ public class InitDb {
             memberRepository.save(member);
 
             for(int i = 1; i < 21; i++){
-                String title = "테스트" + i;
                 String content = "내용" + i;
                 Long id = Long.valueOf(i);
-                Notification notification = Notification.createNotification(notificationCategories.get(0), title, content, id);
+                Notification notification = Notification.createNotification(notificationCategories.get(0), content, id);
                 notification.addMember(member);
                 notificationRepository.save(notification);
             }
