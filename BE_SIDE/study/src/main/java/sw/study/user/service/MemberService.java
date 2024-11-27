@@ -426,11 +426,11 @@ public class MemberService {
         Page<NotificationDTO> notificationDTOS = notificationsPage.map(notification -> {
             NotificationDTO dto = new NotificationDTO();
             dto.setId(notification.getId());
-            dto.setTitle(notification.getTitle());
             dto.setContent(notification.getContent());
             dto.setRead(notification.isRead());
             dto.setType(notification.getCategory().getCategoryName());
             dto.setCreatedAt(notification.getCreatedAt());
+            dto.setTargetId(notification.getTargetId() != null ? notification.getTargetId() : 0);
             return dto;
         });
 

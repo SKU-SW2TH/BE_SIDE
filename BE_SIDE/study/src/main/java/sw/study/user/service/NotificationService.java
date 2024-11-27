@@ -26,8 +26,8 @@ public class NotificationService {
     private final NotificationSettingRepository notificationSettingRepository;
 
     @Transactional
-    public void sendNotification(Member member, String title, String content, String type, Long targetId) {
-        if (member == null || title == null || content == null) {
+    public void sendNotification(Member member, String content, String type, Long targetId) {
+        if (member == null || content == null) {
             throw new IllegalArgumentException("파라미터가 null입니다.");
         }
 
@@ -37,7 +37,7 @@ public class NotificationService {
         Optional<NotificationSetting> notificationSetting = notificationSettingRepository.findByMemberAndCategory(member, category);
 
         if (notificationSetting.isPresent() && notificationSetting.get().isEnabled()) {
-            Notification notification = Notification.createNotification(category, title, content, targetId);
+            Notification notification = Notification.createNotification(category, content, targetId);
             member.addNotification(notification);
             notificationRepository.save(notification);
         }
