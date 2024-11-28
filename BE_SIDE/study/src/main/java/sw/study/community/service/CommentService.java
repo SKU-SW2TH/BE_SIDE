@@ -65,7 +65,7 @@ public class CommentService {
             throw new CommentNotBelongToPostException("댓글이 해당 게시글에 속하지 않습니다.");
         }
 
-        Comment reply = Comment.createReply(comment, member, comment.getContent(), comment.getLevel());
+        Comment reply = Comment.createReply(comment, member, replyRequest.getContent(), replyRequest.getLevel());
         commentRepository.save(reply);
         log.info("대댓글이 성공적으로 반영: postId={}, commentId={}, replyId={}", postId, comment.getId(), reply.getId());
         return reply.getId();

@@ -400,15 +400,6 @@ public class PostServiceTest {
 //
 //    }
 //
-//    @Test
-//    void 게시글_불러오기() throws Exception {
-//        //given
-//
-//        //when
-//
-//        //then
-//
-//    }
 //
 //
 //

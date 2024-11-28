@@ -9,10 +9,8 @@ import sw.study.admin.domain.Report;
 import sw.study.admin.dto.ReportRequest;
 import sw.study.admin.role.ReportStatus;
 import sw.study.admin.service.ReportService;
-import sw.study.community.domain.Category;
-import sw.study.community.domain.Post;
-import sw.study.community.domain.PostLike;
-import sw.study.community.dto.PostRequest;
+import sw.study.community.domain.*;
+import sw.study.community.dto.*;
 import sw.study.community.repository.CategoryRepository;
 import sw.study.community.repository.PostLikeRepository;
 import sw.study.community.repository.PostRepository;
@@ -71,6 +69,82 @@ public class PostService {
         Post post = Post.createPost(postRequest.getTitle(), postRequest.getContent(), category, member, areas, urls);
         log.info("게시글 생성 완료: postId = {}", post.getId());
         return postRepository.save(post).getId();
+    }
+
+    /**
+     * 게시글 상세 조회
+     */
+    public PostDetailResponse getPostById(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
+
+        // 삭제된 게시글을 조회하려는 경우
+        if (post.isDeleted()) {
+            throw new IllegalStateException("이미 삭제된 게시글입니다.");
+        }
+
+        PostDetailResponse postDetailResponse = new PostDetailResponse();
+        postDetailResponse.setPostId(post.getId());
+        postDetailResponse.setTitle(post.getTitle());
+        postDetailResponse.setContent(post.getContent());
+        postDetailResponse.setCategory(post.getCategory().getName());
+        postDetailResponse.setViewCount(post.getViewCount());
+        postDetailResponse.setReportCount(post.getReportCount());
+        postDetailResponse.setLikeCount(post.getLikes().size());
+
+        Member author = post.getMember();
+        PostAuthorResponse postAuthorResponse = new PostAuthorResponse();
+        postAuthorResponse.setNickname(author.getNickname());
+        postAuthorResponse.setDeleted(author.isDeleted());
+        postDetailResponse.setPostAuthorResponse(postAuthorResponse);
+
+        for (PostFile file : post.getFiles()) {
+            postDetailResponse.getFilesResponse().add(new PostFileResponse(file.getUrl()));
+        }
+
+        for (PostArea postArea : post.getInterests()) {
+            Area area = postArea.getArea();
+            postDetailResponse.getInterestsResponse().add(new PostAreaResponse(area.getLevel(), area.getAreaName()));
+        }
+
+        for (Comment comment : post.getComments()) {
+            CommentResponse commentResponse = new CommentResponse(); // 댓글
+            commentResponse.setCommentId(comment.getId());
+            commentResponse.setContent(comment.getContent());
+            commentResponse.setLikeCount(comment.getCommentLikes().size());
+            commentResponse.setLevel(comment.getLevel());
+
+            CommentAuthorResponse commentAuthorResponse = new CommentAuthorResponse(); // 댓글 작성자
+            Member commentAuthor = comment.getMember();
+            commentAuthorResponse.setNickname(commentAuthor.getNickname());
+            commentAuthorResponse.setProfile(commentAuthor.getProfile());
+            commentAuthorResponse.setDeleted(commentAuthor.isDeleted());
+            commentResponse.setCommentAuthorResponse(commentAuthorResponse);
+
+            if (comment.hasChildComment()) {
+                for (Comment reply : comment.getChild()) {
+                    CommentResponse replyResponse = new CommentResponse(); // 대댓글
+                    replyResponse.setCommentId(reply.getId());
+                    replyResponse.setContent(reply.getContent());
+                    replyResponse.setLikeCount(reply.getCommentLikes().size());
+                    replyResponse.setLevel(reply.getLevel());
+
+                    CommentAuthorResponse replyAuthorResponse = new CommentAuthorResponse(); // 대댓글 작성자
+                    Member replyAuthor = reply.getMember();
+                    replyAuthorResponse.setNickname(replyAuthor.getNickname());
+                    replyAuthorResponse.setProfile(replyAuthor.getProfile());
+                    replyAuthorResponse.setDeleted(replyAuthor.isDeleted());
+                    replyResponse.setCommentAuthorResponse(replyAuthorResponse);
+
+                    commentResponse.getChild().add(replyResponse);
+                }
+            }
+
+            postDetailResponse.getCommentsResponse().add(commentResponse);
+        }
+
+        log.info("게시글 DTO 전송 완료: postId = {}", post.getId());
+        return postDetailResponse;
     }
 
     /**

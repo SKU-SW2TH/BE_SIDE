@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.admin.dto.ReportRequest;
 import sw.study.community.dto.CommentRequest;
+import sw.study.community.dto.PostDetailResponse;
 import sw.study.community.dto.PostRequest;
 import sw.study.community.service.CommentService;
 import sw.study.community.service.PostService;
@@ -43,6 +44,23 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않는 토큰입니다.");
         } catch (Exception e) {
             // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{postId}")
+    public ResponseEntity<?> getPost(@PathVariable Long postId) {
+        log.info("게시글 상세 조회 요청: postId = {}", postId);
+        try {
+            PostDetailResponse postDetailResponse = postService.getPostById(postId);
+            return ResponseEntity.status(HttpStatus.OK).body(postDetailResponse);
+
+
+        } catch (PostNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
@@ -329,4 +347,6 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
+
 }
