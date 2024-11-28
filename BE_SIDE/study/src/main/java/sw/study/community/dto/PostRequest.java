@@ -7,7 +7,6 @@ import java.util.List;
 
 @Data
 public class PostRequest {
-    private Long memberId;
     private String title;
     private String content;
     private String category;

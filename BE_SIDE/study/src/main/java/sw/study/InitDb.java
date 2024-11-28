@@ -230,7 +230,6 @@ public class InitDb {
             postRequest.setTitle("반갑습니다");
             postRequest.setContent("안녕하세요 으아아아");
             postRequest.setCategory("FREE");
-            postRequest.setMemberId(member.getId());
 
             List<String> interestAreas = new ArrayList<>();
             interestAreas.add("Java");
@@ -239,7 +238,7 @@ public class InitDb {
             List<MultipartFile> files = new ArrayList<>();
             postRequest.setFiles(files);
 
-            Long postId = postService.save(postRequest);
+            Long postId = postService.save(postRequest,member.getId());
         }
     }
 }
