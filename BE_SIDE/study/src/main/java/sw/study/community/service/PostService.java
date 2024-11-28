@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class PostService {
@@ -74,6 +75,7 @@ public class PostService {
     /**
      * 게시글 상세 조회
      */
+    @Transactional
     public PostDetailResponse getPostById(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
@@ -83,11 +85,14 @@ public class PostService {
             throw new IllegalStateException("이미 삭제된 게시글입니다.");
         }
 
+
+
         PostDetailResponse postDetailResponse = new PostDetailResponse();
         postDetailResponse.setPostId(post.getId());
         postDetailResponse.setTitle(post.getTitle());
         postDetailResponse.setContent(post.getContent());
         postDetailResponse.setCategory(post.getCategory().getName());
+        post.incrementViewCount(); // 조회 수 증가
         postDetailResponse.setViewCount(post.getViewCount());
         postDetailResponse.setReportCount(post.getReportCount());
         postDetailResponse.setLikeCount(post.getLikes().size());
