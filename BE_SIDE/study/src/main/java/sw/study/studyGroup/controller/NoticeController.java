@@ -31,14 +31,9 @@ public class NoticeController implements NoticeApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @RequestBody NoticeRequestDto requestDto) {
-        try{
-            noticeService.createNotice(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
-            return ResponseEntity.status(HttpStatus.CREATED).body("공지사항이 성공적으로 작성되었습니다.");
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        noticeService.createNotice(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
+        return ResponseEntity.status(HttpStatus.CREATED).body("공지사항이 성공적으로 작성되었습니다.");
     }
 
     // 공지사항 목록 조회
@@ -49,21 +44,14 @@ public class NoticeController implements NoticeApiDocumentation {
             @PathVariable("groupId") Long groupId,
             @RequestParam(name = "page") int page,
             @RequestParam(name = "size") int size) {
-        try {
-            List<NoticeResponseDto> notices = noticeService.listOfNotice(accessToken, groupId, page, size);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "조회에 성공하였습니다.");
-            response.put("data", notices);
+        List<NoticeResponseDto> notices = noticeService.listOfNotice(accessToken, groupId, page, size);
 
-            return ResponseEntity.ok().body(response);
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (NoticeNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "조회에 성공하였습니다.");
+        response.put("data", notices);
+
+        return ResponseEntity.ok().body(response);
     }
 
     // 특정 게시글 상세 조회
@@ -73,20 +61,14 @@ public class NoticeController implements NoticeApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("noticeId") Long noticeId) {
-        try {
 
-            NoticeResponseDto notice = noticeService.noticeDetail(accessToken, groupId, noticeId);
+        NoticeResponseDto notice = noticeService.noticeDetail(accessToken, groupId, noticeId);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "조회에 성공하였습니다.");
-            response.put("data", notice);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "조회에 성공하였습니다.");
+        response.put("data", notice);
 
-            return ResponseEntity.ok().body(response);
-        } catch (NoticeNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+        return ResponseEntity.ok().body(response);
     }
 
     // 공지사항 수정
@@ -97,16 +79,9 @@ public class NoticeController implements NoticeApiDocumentation {
             @PathVariable("groupId") Long groupId,
             @PathVariable("noticeId") Long noticeId,
             @RequestBody NoticeRequestDto noticeRequestDto) {
-        try {
-            noticeService.updateNotice(accessToken,groupId, noticeId, noticeRequestDto.getTitle(),noticeRequestDto.getContent());
-            return ResponseEntity.status(HttpStatus.OK).body("공지사항이 성공적으로 수정되었습니다.");
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (NoticeNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        noticeService.updateNotice(accessToken,groupId, noticeId, noticeRequestDto.getTitle(),noticeRequestDto.getContent());
+        return ResponseEntity.status(HttpStatus.OK).body("공지사항이 성공적으로 수정되었습니다.");
     }
 
     // 공지사항 삭제
@@ -116,15 +91,8 @@ public class NoticeController implements NoticeApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("noticeId") Long noticeId) {
-        try {
-            noticeService.deleteNotice(accessToken, groupId, noticeId);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("공지사항이 성공적으로 삭제되었습니다.");
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (NoticeNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        noticeService.deleteNotice(accessToken, groupId, noticeId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body("공지사항이 성공적으로 삭제되었습니다.");
     }
 }

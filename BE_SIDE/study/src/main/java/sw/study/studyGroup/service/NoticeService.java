@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.config.jwt.JWTService;
+import sw.study.exception.BaseException;
+import sw.study.exception.ErrorCode;
 import sw.study.exception.UserNotFoundException;
 import sw.study.exception.studyGroup.NoticeNotFoundException;
 import sw.study.exception.studyGroup.StudyGroupNotFoundException;
@@ -52,7 +54,7 @@ public class NoticeService {
     // 그룹에 참가중인지 확인
     private Participant checkGroupParticipant(long groupId, Member member) {
         return participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
-                .orElseThrow(() -> new UnauthorizedException("해당 그룹에 참가하지 않은 비정상적인 접근입니다."));
+                .orElseThrow(() -> new BaseException(ErrorCode.UNAUTHORIZED));
     }
 
     // 공지사항 작성
@@ -64,11 +66,11 @@ public class NoticeService {
         Participant participant = checkGroupParticipant(groupId, member);
 
         StudyGroup studyGroup = studyGroupRepository.findById(groupId)
-                .orElseThrow(() -> new StudyGroupNotFoundException("스터디 그룹이 존재하지 않습니다."));
+                .orElseThrow(() -> new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
 
         if(participant.getRole()== Participant.Role.MEMBER){
             // 리더 혹은 운영진만 가능
-            throw new UnauthorizedException("작성할 수 있는 권한이 없습니다.");
+            throw new BaseException(ErrorCode.PERMISSION_DENIED);
         }
 
         Notice notice = Notice.createNotice(studyGroup,participant,title,content);
@@ -88,7 +90,7 @@ public class NoticeService {
         Page<Notice> noticePage = noticeRepository.findAllByStudyGroup_Id(groupId, pageable);
 
         if(noticePage.isEmpty())
-            throw new NoticeNotFoundException("조회된 공지사항이 존재하지 않습니다.");
+            throw new BaseException(ErrorCode.NOTICE_NOT_FOUND);
 
         return noticePage.stream().map(NoticeResponseDto::fromList).toList();
     }
@@ -102,7 +104,7 @@ public class NoticeService {
         checkGroupParticipant(groupId, member);
 
         Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
-                .orElseThrow(()-> new NoticeNotFoundException("해당하는 공지사항이 존재하지 않습니다."));
+                .orElseThrow(()-> new BaseException(ErrorCode.NOTICE_NOT_FOUND));
 
         return NoticeResponseDto.fromDetail(notice);
     }
@@ -116,11 +118,11 @@ public class NoticeService {
         Participant participant = checkGroupParticipant(groupId, member);
 
         Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
-                .orElseThrow(()-> new NoticeNotFoundException("해당하는 공지사항이 존재하지 않습니다."));
+                .orElseThrow(()-> new BaseException(ErrorCode.NOTICE_NOT_FOUND));
 
         if(participant.getRole()== Participant.Role.MEMBER){
             // 리더 혹은 운영진만 가능
-            throw new UnauthorizedException("수정할 수 있는 권한이 없습니다.");
+            throw new BaseException(ErrorCode.PERMISSION_DENIED);
         }
 
         notice.updateContent(title, content);
@@ -134,12 +136,12 @@ public class NoticeService {
         Participant participant = checkGroupParticipant(groupId, member);
 
         Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
-                .orElseThrow(()-> new NoticeNotFoundException("해당하는 공지사항이 존재하지 않습니다."));
+                .orElseThrow(()->new BaseException(ErrorCode.NOTICE_NOT_FOUND));
 
 
         if(participant.getRole()== Participant.Role.MEMBER){
             // 리더 혹은 운영진만 가능
-            throw new UnauthorizedException("삭제 할 수 있는 권한이 없습니다.");
+            throw new BaseException(ErrorCode.PERMISSION_DENIED);
         }
 
         noticeRepository.delete(notice);

@@ -210,6 +210,19 @@ public class MemberService {
     }
 
     @Transactional
+    public String resetMemberProfile(String accessToken) {
+        String token = jwtService.extractToken(accessToken);
+        String email = jwtService.extractEmail(token);
+        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        member.updateProfilePicture("");
+        memberRepository.save(member);
+
+        return member.getProfile();
+    }
+
+
+    @Transactional
     public void changePassword(String accessToken, String oldPassword, String newPassword) {
         String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
@@ -429,11 +442,11 @@ public class MemberService {
         Page<NotificationDTO> notificationDTOS = notificationsPage.map(notification -> {
             NotificationDTO dto = new NotificationDTO();
             dto.setId(notification.getId());
-            dto.setTitle(notification.getTitle());
             dto.setContent(notification.getContent());
             dto.setRead(notification.isRead());
             dto.setType(notification.getCategory().getCategoryName());
             dto.setCreatedAt(notification.getCreatedAt());
+            dto.setTargetId(notification.getTargetId() != null ? notification.getTargetId() : 0);
             return dto;
         });
 
