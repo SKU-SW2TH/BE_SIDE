@@ -11,14 +11,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.config.jwt.JWTService;
 import sw.study.exception.*;
-import sw.study.exception.studyGroup.*;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.Participant.Role;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.domain.WaitingPeople;
-import sw.study.studyGroup.dto.GroupParticipants;
-import sw.study.studyGroup.dto.InvitedResponse;
-import sw.study.studyGroup.dto.JoinedResponse;
+import sw.study.studyGroup.dto.ParticipantsResponse;
+import sw.study.studyGroup.dto.StudyGroupResponse;
 import sw.study.studyGroup.repository.*;
 import sw.study.user.domain.Member;
 import sw.study.user.repository.MemberRepository;
@@ -121,20 +119,20 @@ public class StudyGroupService {
     }
 
     // 초대를 받은 스터디그룹 확인하기
-    public List<InvitedResponse> checkInvited(String accessToken) {
+    public List<StudyGroupResponse> checkInvited(String accessToken) {
 
         Member user = currentLogginedInfo(accessToken);
 
         // 대기 명단에서 로그인된 사용자의 정보만 따로 뺀 후에
         List<WaitingPeople> waitingPeopleList = waitingPeopleRepository.findByMemberId(user.getId());
 
-        List<InvitedResponse> invitedResponses = new ArrayList<>();
+        List<StudyGroupResponse> invitedResponses = new ArrayList<>();
 
         // waitingPeople 의 StudyGroup 으로 초대받은 그룹 탐색
         for (WaitingPeople waitingPerson : waitingPeopleList) {
 
             StudyGroup studyGroup = waitingPerson.getStudyGroup(); // Exception 핸들링 불필요
-            InvitedResponse groupInfo = InvitedResponse.createInvitedResponse(
+            StudyGroupResponse groupInfo = StudyGroupResponse.createStudyGroupResponse(
                     studyGroup.getId(),
                     studyGroup.getName(),
                     studyGroup.getDescription(),
@@ -146,20 +144,20 @@ public class StudyGroupService {
     }
 
     // 참여중인 스터디 그룹 확인
-    public List<JoinedResponse> checkJoined(String accessToken) {
+    public List<StudyGroupResponse> checkJoined(String accessToken) {
 
         Member user = currentLogginedInfo(accessToken);
 
         // 얻은 user 객체로 Participant 테이블 확인
         List<Participant> Participants = participantRepository.findByMemberId(user.getId());
 
-        List<JoinedResponse> joinedGroups = new ArrayList<>();
+        List<StudyGroupResponse> joinedGroups = new ArrayList<>();
 
         // participants 의 StudyGroup 으로 초대받은 그룹 탐색
         for (Participant participants : Participants) {
             StudyGroup studyGroup = participants.getStudyGroup(); // Exception 핸들링 불필요
 
-            JoinedResponse groupInfo = JoinedResponse.createJoinedResponse(
+            StudyGroupResponse groupInfo = StudyGroupResponse.createStudyGroupResponse(
                     studyGroup.getId(),
                     studyGroup.getName(),
                     studyGroup.getDescription(),
@@ -231,7 +229,7 @@ public class StudyGroupService {
     }
 
     //참가자 전체 리스트 확인
-    public List<GroupParticipants> listOfEveryone(String accessToken, Long groupId) {
+    public List<ParticipantsResponse> listOfEveryone(String accessToken, Long groupId) {
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -240,18 +238,18 @@ public class StudyGroupService {
 
         List<Participant> participants = participantRepository.findAllByStudyGroupId(groupId);
 
-        List<GroupParticipants> result = new ArrayList<>();
+        List<ParticipantsResponse> result = new ArrayList<>();
 
         // 응답 DTO ( 닉네임, 신분 )
         for (Participant p : participants) {
-            result.add(GroupParticipants.createGroupParticipants(
+            result.add(ParticipantsResponse.createGroupParticipants(
                     p.getNickname(), p.getRole()));
         }
         return result;
     }
 
     // 운영진 리스트 확인 (방장 포함)
-    public List<GroupParticipants> listOfManagers(String accessToken, Long groupId) {
+    public List<ParticipantsResponse> listOfManagers(String accessToken, Long groupId) {
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -260,16 +258,16 @@ public class StudyGroupService {
 
         List<Participant> participants = participantRepository.findAllByStudyGroupIdAndRole(groupId, Role.MANAGER);
 
-        List<GroupParticipants> result = new ArrayList<>();
+        List<ParticipantsResponse> result = new ArrayList<>();
         for (Participant p : participants) {
-            result.add(GroupParticipants.createGroupParticipants(p.getNickname(), p.getRole()));
+            result.add(ParticipantsResponse.createGroupParticipants(p.getNickname(), p.getRole()));
         }
 
         return result;
     }
 
     // 팀원 리스트 확인
-    public List<GroupParticipants> listOfMembers(String accessToken, Long groupId) {
+    public List<ParticipantsResponse> listOfMembers(String accessToken, Long groupId) {
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -278,9 +276,9 @@ public class StudyGroupService {
 
         List<Participant> participants = participantRepository.findAllByStudyGroupIdAndRole(groupId, Role.MEMBER);
 
-        List<GroupParticipants> result = new ArrayList<>();
+        List<ParticipantsResponse> result = new ArrayList<>();
         for (Participant p : participants) {
-            result.add(GroupParticipants.createGroupParticipants(p.getNickname(), p.getRole()));
+            result.add(ParticipantsResponse.createGroupParticipants(p.getNickname(), p.getRole()));
         }
 
         return result;

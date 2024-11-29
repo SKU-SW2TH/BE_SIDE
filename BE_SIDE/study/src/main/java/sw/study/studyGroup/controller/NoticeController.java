@@ -5,11 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sw.study.exception.studyGroup.NoticeNotFoundException;
-import sw.study.exception.studyGroup.UnauthorizedException;
 import sw.study.studyGroup.apiDoc.NoticeApiDocumentation;
-import sw.study.studyGroup.dto.NoticeRequestDto;
-import sw.study.studyGroup.dto.NoticeResponseDto;
+import sw.study.studyGroup.dto.NoticeRequest;
+import sw.study.studyGroup.dto.NoticeResponse;
 import sw.study.studyGroup.service.NoticeService;
 
 import java.util.HashMap;
@@ -30,7 +28,7 @@ public class NoticeController implements NoticeApiDocumentation {
     public ResponseEntity<?> createNotice(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody NoticeRequestDto requestDto) {
+            @RequestBody NoticeRequest requestDto) {
 
         noticeService.createNotice(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
         return ResponseEntity.status(HttpStatus.CREATED).body("공지사항이 성공적으로 작성되었습니다.");
@@ -45,7 +43,7 @@ public class NoticeController implements NoticeApiDocumentation {
             @RequestParam(name = "page") int page,
             @RequestParam(name = "size") int size) {
 
-        List<NoticeResponseDto> notices = noticeService.listOfNotice(accessToken, groupId, page, size);
+        List<NoticeResponse> notices = noticeService.listOfNotice(accessToken, groupId, page, size);
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "조회에 성공하였습니다.");
@@ -62,7 +60,7 @@ public class NoticeController implements NoticeApiDocumentation {
             @PathVariable("groupId") Long groupId,
             @PathVariable("noticeId") Long noticeId) {
 
-        NoticeResponseDto notice = noticeService.noticeDetail(accessToken, groupId, noticeId);
+        NoticeResponse notice = noticeService.noticeDetail(accessToken, groupId, noticeId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "조회에 성공하였습니다.");
@@ -78,9 +76,9 @@ public class NoticeController implements NoticeApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("noticeId") Long noticeId,
-            @RequestBody NoticeRequestDto noticeRequestDto) {
+            @RequestBody NoticeRequest noticeRequest) {
 
-        noticeService.updateNotice(accessToken,groupId, noticeId, noticeRequestDto.getTitle(),noticeRequestDto.getContent());
+        noticeService.updateNotice(accessToken,groupId, noticeId, noticeRequest.getTitle(), noticeRequest.getContent());
         return ResponseEntity.status(HttpStatus.OK).body("공지사항이 성공적으로 수정되었습니다.");
     }
 

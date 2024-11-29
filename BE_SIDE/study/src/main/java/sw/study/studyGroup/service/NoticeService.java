@@ -11,13 +11,10 @@ import sw.study.config.jwt.JWTService;
 import sw.study.exception.BaseException;
 import sw.study.exception.ErrorCode;
 import sw.study.exception.UserNotFoundException;
-import sw.study.exception.studyGroup.NoticeNotFoundException;
-import sw.study.exception.studyGroup.StudyGroupNotFoundException;
-import sw.study.exception.studyGroup.UnauthorizedException;
 import sw.study.studyGroup.domain.Notice;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.StudyGroup;
-import sw.study.studyGroup.dto.NoticeResponseDto;
+import sw.study.studyGroup.dto.NoticeResponse;
 import sw.study.studyGroup.repository.NoticeRepository;
 import sw.study.studyGroup.repository.ParticipantRepository;
 import sw.study.studyGroup.repository.StudyGroupRepository;
@@ -79,7 +76,7 @@ public class NoticeService {
 
     // 공지사항 조회 ( 목록 )
     @Transactional(readOnly = true)
-    public List<NoticeResponseDto> listOfNotice(String accessToken, long groupId, int page, int size){
+    public List<NoticeResponse> listOfNotice(String accessToken, long groupId, int page, int size){
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -92,12 +89,12 @@ public class NoticeService {
         if(noticePage.isEmpty())
             throw new BaseException(ErrorCode.NOTICE_NOT_FOUND);
 
-        return noticePage.stream().map(NoticeResponseDto::fromList).toList();
+        return noticePage.stream().map(NoticeResponse::fromList).toList();
     }
 
     // 공지사항 조회 ( 상세 )
     @Transactional(readOnly = true)
-    public NoticeResponseDto noticeDetail(String accessToken, long groupId, long noticeId){
+    public NoticeResponse noticeDetail(String accessToken, long groupId, long noticeId){
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -106,7 +103,7 @@ public class NoticeService {
         Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
                 .orElseThrow(()-> new BaseException(ErrorCode.NOTICE_NOT_FOUND));
 
-        return NoticeResponseDto.fromDetail(notice);
+        return NoticeResponse.fromDetail(notice);
     }
 
     // 공지사항 수정

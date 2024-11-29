@@ -1,17 +1,10 @@
 package sw.study.studyGroup.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sw.study.exception.*;
-import sw.study.exception.studyGroup.*;
 import sw.study.studyGroup.apiDoc.StudyGroupApiDocumentation;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.dto.*;
@@ -49,7 +42,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @PostMapping("/create")
     public ResponseEntity<Map<String,Object>> createStudyGroup(
             @RequestHeader("Authorization") String accessToken,
-            @RequestBody CreateStudyGroup requestDto) {
+            @RequestBody StudyGroupRequest requestDto) {
 
         StudyGroup createdGroup = studyGroupService.createStudyGroup(
                 accessToken,
@@ -69,7 +62,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @Override
     @GetMapping("/invitedList")
     public ResponseEntity<?> checkInvitedList(@RequestHeader("Authorization") String accessToken) {
-        List<InvitedResponse> invitedResponses = studyGroupService.checkInvited(accessToken);
+        List<StudyGroupResponse> invitedResponses = studyGroupService.checkInvited(accessToken);
 
         if (invitedResponses.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -81,7 +74,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @Override
     @GetMapping("/joinedList")
     public ResponseEntity<?> checkJoinedList(@RequestHeader("Authorization") String accessToken) {
-        List<JoinedResponse> joinedResponses = studyGroupService.checkJoined(accessToken);
+        List<StudyGroupResponse> joinedResponses = studyGroupService.checkJoined(accessToken);
 
         if (joinedResponses.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -95,9 +88,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> acceptInvitation(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody nicknameDto searchByNickname) {
-
-        String nickname = searchByNickname.getNickname();
+            @RequestBody String nickname) {
 
         studyGroupService.acceptInvitation(accessToken,groupId, nickname);
         return ResponseEntity.ok("초대를 수락하였습니다.");
@@ -120,7 +111,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId) {
 
-        List<GroupParticipants> participants = studyGroupService.listOfEveryone(accessToken,groupId);
+        List<ParticipantsResponse> participants = studyGroupService.listOfEveryone(accessToken,groupId);
         return ResponseEntity.ok(participants);
     }
 
@@ -130,7 +121,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId) {
 
-        List<GroupParticipants> managers = studyGroupService.listOfManagers(accessToken,groupId);
+        List<ParticipantsResponse> managers = studyGroupService.listOfManagers(accessToken,groupId);
         return ResponseEntity.ok(managers);
     }
 
@@ -140,7 +131,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId) {
 
-        List<GroupParticipants> members = studyGroupService.listOfMembers(accessToken,groupId);
+        List<ParticipantsResponse> members = studyGroupService.listOfMembers(accessToken,groupId);
         return ResponseEntity.ok(members);
     }
 
@@ -185,9 +176,9 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> changeNickname(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody nicknameDto nicknameDto){
+            @RequestBody String nickname){
 
-        studyGroupService.changeParticipantNickname(accessToken,groupId, nicknameDto.getNickname());
+        studyGroupService.changeParticipantNickname(accessToken,groupId, nickname);
         return ResponseEntity.ok("닉네임 변경에 성공하였습니다.");
     }
 
@@ -196,10 +187,10 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> inviteNewMember(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody InviteNewMember listOfMembers){
+            @RequestBody List<String> nicknames){
 
-        studyGroupService.inviteNewMember(accessToken,groupId, listOfMembers.getSelectedNicknames());
-        return ResponseEntity.ok(String.format("총 %d 명에게 초대가 전송되었습니다.", listOfMembers.getSelectedNicknames().size()));
+        studyGroupService.inviteNewMember(accessToken,groupId, nicknames);
+        return ResponseEntity.ok(String.format("총 %d 명에게 초대가 전송되었습니다.", nicknames.size()));
     }
 
     @Override

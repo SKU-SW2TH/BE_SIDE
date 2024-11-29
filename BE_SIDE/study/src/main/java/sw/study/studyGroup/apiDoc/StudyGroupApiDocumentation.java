@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.studyGroup.dto.*;
+
+import java.util.List;
 import java.util.Map;
 
 public interface StudyGroupApiDocumentation {
@@ -54,7 +56,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<Map<String,Object>> createStudyGroup(
             @RequestHeader("Authorization") String accessToken,
-            @RequestBody CreateStudyGroup requestDto);
+            @RequestBody StudyGroupRequest requestDto);
     
     // 받은 초대 확인
     @Operation(summary = "받은 초대 내역 확인", description = "받은 초대 리스트를 확인")
@@ -97,7 +99,7 @@ public interface StudyGroupApiDocumentation {
     ResponseEntity<?> acceptInvitation(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId,
-            @RequestBody nicknameDto searchByNickname);
+            @RequestBody String nickname);
 
     // 초대 거절
     @Operation(summary = "받은 초대 거절", description = "받은 초대를 거절할 때 사용")
@@ -224,7 +226,7 @@ public interface StudyGroupApiDocumentation {
     ResponseEntity<?> changeNickname(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId,
-            @RequestBody nicknameDto nicknameDto);
+            @RequestBody String nickname);
 
     // 그룹 내 신규 초대
     @Operation(summary = "그룹 내 새로운 멤버 초대",
@@ -238,13 +240,13 @@ public interface StudyGroupApiDocumentation {
     @Parameters(value = {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
             @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1"),
-            @Parameter(name = "selectedNicknames", description = "초대할 사용자들의 닉네임 리스트",
+            @Parameter(name = "nicknames", description = "초대할 사용자들의 닉네임 리스트",
                     example = "[\"스폰지밥\", \"뚱이\", \"집게사장\"]")
     })
     ResponseEntity<?> inviteNewMember(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId,
-            @RequestBody InviteNewMember listOfMembers);
+            @RequestBody List<String> nicknames);
 
 
     // 그룹 내 사용자 추방

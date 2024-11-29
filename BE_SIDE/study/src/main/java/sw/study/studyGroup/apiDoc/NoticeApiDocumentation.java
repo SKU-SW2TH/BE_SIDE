@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sw.study.studyGroup.dto.NoticeRequestDto;
+import sw.study.studyGroup.dto.NoticeRequest;
 
 
 public interface NoticeApiDocumentation {
@@ -29,7 +29,7 @@ public interface NoticeApiDocumentation {
     ResponseEntity<?> createNotice(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody NoticeRequestDto requestDto);
+            @RequestBody NoticeRequest requestDto);
 
     // 공지사항 목록 조회
     @Operation(summary = "공지사항 리스트 조회",
@@ -91,7 +91,7 @@ public interface NoticeApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId")Long groupId,
             @PathVariable("noticeId") Long noticeId,
-            @RequestBody NoticeRequestDto noticeRequestDto);
+            @RequestBody NoticeRequest noticeRequest);
 
     // 공지사항 삭제
     @Operation(summary = "공지사항 삭제",

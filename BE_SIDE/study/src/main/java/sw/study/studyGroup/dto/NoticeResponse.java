@@ -6,7 +6,7 @@ import sw.study.studyGroup.domain.Notice;
 import java.time.LocalDateTime;
 
 @Data
-public class NoticeResponseDto {
+public class NoticeResponse {
 
     private Long id;
     private String nickname;
@@ -15,7 +15,7 @@ public class NoticeResponseDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public NoticeResponseDto(Long id, String nickname, String title, String content, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public NoticeResponse(Long id, String nickname, String title, String content, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.nickname = nickname;
         this.title = title;
@@ -25,8 +25,8 @@ public class NoticeResponseDto {
     }
 
     // 목록 조회용 생성 메서드
-    public static NoticeResponseDto fromList(Notice notice) {
-        return new NoticeResponseDto(
+    public static NoticeResponse fromList(Notice notice) {
+        return new NoticeResponse(
                 notice.getId(),
                 notice.getAuthor().getNickname(),
                 notice.getTitle(),
@@ -37,8 +37,8 @@ public class NoticeResponseDto {
     }
 
     // 게시글 상세
-    public static NoticeResponseDto fromDetail(Notice notice) {
-        return new NoticeResponseDto(
+    public static NoticeResponse fromDetail(Notice notice) {
+        return new NoticeResponse(
                 notice.getId(),
                 notice.getAuthor().getNickname(),
                 notice.getTitle(),

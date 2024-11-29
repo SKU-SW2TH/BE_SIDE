@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sw.study.studyGroup.dto.DailyLogRequestDto;
+import sw.study.studyGroup.dto.DailyLogRequest;
 
 public interface DailyLogApiDocumentation {
 
@@ -30,7 +30,7 @@ public interface DailyLogApiDocumentation {
     ResponseEntity<?> createDailyLog(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody DailyLogRequestDto requestDto);
+            @RequestBody DailyLogRequest requestDto);
     
     // 데일리 로그 조회
     @Operation(summary = "데일리 로그 조회",
@@ -75,7 +75,7 @@ public interface DailyLogApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("logId") Long logId,
-            @RequestBody DailyLogRequestDto requestDto);
+            @RequestBody DailyLogRequest requestDto);
 
 
     // 데일리 로그 삭제
