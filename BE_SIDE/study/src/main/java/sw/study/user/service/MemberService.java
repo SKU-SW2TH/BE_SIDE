@@ -98,6 +98,22 @@ public class MemberService {
         }
     }
 
+    public Long getMemberIdByToken(String token) {
+        // 토큰 유효성 검사
+        token = jwtService.extractToken(token);
+
+        if (!tokenProvider.validateToken(token)) {
+            throw new InvalidTokenException("유효하지 않은 토큰입니다.");
+        }
+
+        String email = jwtService.extractEmail(token);
+
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        return member.getId();
+    }
+
     public MemberDto getMemberByToken(String token) {
         // 토큰 유효성 검사
         token = jwtService.extractToken(token);
@@ -426,11 +442,11 @@ public class MemberService {
         Page<NotificationDTO> notificationDTOS = notificationsPage.map(notification -> {
             NotificationDTO dto = new NotificationDTO();
             dto.setId(notification.getId());
-            dto.setTitle(notification.getTitle());
             dto.setContent(notification.getContent());
             dto.setRead(notification.isRead());
             dto.setType(notification.getCategory().getCategoryName());
             dto.setCreatedAt(notification.getCreatedAt());
+            dto.setTargetId(notification.getTargetId() != null ? notification.getTargetId() : 0);
             return dto;
         });
 

@@ -124,4 +124,15 @@ public class Post {
     public void incrementReportCount() {
         this.reportCount++;
     }
+
+    public void decrementReportCount() {
+        this.reportCount--;
+    }
+
+    public void incrementViewCount() {
+        this.viewCount++;
+    }
+    public void decrementViewCount() {
+        this.viewCount--;
+    }
 }

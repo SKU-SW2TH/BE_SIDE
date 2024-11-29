@@ -30,16 +30,9 @@ public class DailyLogController implements DailyLogApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @RequestBody DailyLogRequestDto requestDto) {
-        try {
-            dailyLogService.createDailyLog(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
-            return ResponseEntity.status(HttpStatus.CREATED).body("데일리 로그가 성공적으로 작성되었습니다.");
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (StudyGroupNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        dailyLogService.createDailyLog(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
+        return ResponseEntity.status(HttpStatus.CREATED).body("데일리 로그가 성공적으로 작성되었습니다.");
     }
 
     // 데일리 로그 조회
@@ -51,14 +44,9 @@ public class DailyLogController implements DailyLogApiDocumentation {
             @RequestParam(name = "size") int size,
             @PathVariable("groupId") Long groupId,
             @RequestParam(name = "date") String date) {
-        try {
-            List<DailyLogResponseDto> logs = dailyLogService.listOfDailyLog(accessToken, page, size, groupId, date);
-            return ResponseEntity.ok().body(logs); // 리스트 반환
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        List<DailyLogResponseDto> logs = dailyLogService.listOfDailyLog(accessToken, page, size, groupId, date);
+        return ResponseEntity.ok().body(logs); // 리스트 반환
     }
 
     // 데일리 로그 수정
@@ -69,16 +57,10 @@ public class DailyLogController implements DailyLogApiDocumentation {
             @PathVariable("groupId") Long groupId,
             @PathVariable("logId") Long logId,
             @RequestBody DailyLogRequestDto requestDto) {
-        try {
-            dailyLogService.updateDailyLog(accessToken, groupId, logId, requestDto.getTitle(), requestDto.getContent());
-            return ResponseEntity.status(HttpStatus.OK).body("데일리 로그가 성공적으로 수정되었습니다.");
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (DailyLogNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        dailyLogService.updateDailyLog(accessToken, groupId, logId, requestDto.getTitle(), requestDto.getContent());
+        return ResponseEntity.status(HttpStatus.OK).body("데일리 로그가 성공적으로 수정되었습니다.");
+
     }
 
     // 데일리 로그 삭제
@@ -88,15 +70,8 @@ public class DailyLogController implements DailyLogApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("logId") Long logId) {
-        try {
-            dailyLogService.deleteDailyLog(accessToken,groupId, logId);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("데일리 로그가 성공적으로 삭제되었습니다.");
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (DailyLogNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+
+        dailyLogService.deleteDailyLog(accessToken,groupId, logId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body("데일리 로그가 성공적으로 삭제되었습니다.");
     }
 }
