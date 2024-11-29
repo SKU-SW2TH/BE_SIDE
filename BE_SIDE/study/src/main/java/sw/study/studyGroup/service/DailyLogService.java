@@ -41,14 +41,7 @@ public class DailyLogService {
 
     // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
     private Member currentLogginedInfo(String accessToken) {
-        // accessToken 유효성 검사
-        if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다.");
-        }
-
-        // "Bearer " 부분 제거 후 실제 토큰만 추출
-        String token = accessToken.substring(7);
-
+        String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
 
         return memberRepository.findByEmail(email)
