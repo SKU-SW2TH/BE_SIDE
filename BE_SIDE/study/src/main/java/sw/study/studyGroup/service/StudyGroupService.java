@@ -35,7 +35,6 @@ public class StudyGroupService {
     private final StudyGroupRepository studyGroupRepository;
     private final ParticipantRepository participantRepository;
     private final WaitingPeopleRepository waitingPeopleRepository;
-
     private final JWTService jwtService;
 
     // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
@@ -57,10 +56,10 @@ public class StudyGroupService {
         Member loggedUser = currentLogginedInfo(accessToken);
         String loggedUserNickname = loggedUser.getNickname();
 
-        List<String> existingParticipants = new ArrayList<>(); // 방 생성 이후 (groupId 존재)
+        List<String> participants = new ArrayList<>(); // 방 생성 이후 (groupId 존재)
 
         if (groupId != null) {
-            existingParticipants = participantRepository.findAllByStudyGroupId(groupId)
+            participants = participantRepository.findAllByStudyGroupId(groupId)
                     .stream()
                     .map(participant -> participant.getMember().getNickname())
                     .toList();
@@ -73,7 +72,7 @@ public class StudyGroupService {
         for (Member member : members) {
             // 로그인된 사용자  / 기존 참가자는 제외
             if (!loggedUserNickname.equals(member.getNickname())
-                    && !existingParticipants.contains(member.getNickname()))
+                    && !participants.contains(member.getNickname()))
                 nicknames.add(member.getNickname());
         }
         return nicknames;
@@ -99,15 +98,15 @@ public class StudyGroupService {
         List<Member> members = memberRepository.findByNicknameIn(selectedNicknames);
 
         // 대기 명단에 추가
-        List<WaitingPeople> waitingPeopleList = new ArrayList<>();
+        List<WaitingPeople> waitingPeople = new ArrayList<>();
 
         for (Member member : members) {
             WaitingPeople waitingPerson = WaitingPeople.createWaitingPerson(member, studyGroup);
-            waitingPeopleList.add(waitingPerson);
+            waitingPeople.add(waitingPerson);
         }
 
-        studyGroup.whoEverInvited(waitingPeopleList.size());
-        waitingPeopleRepository.saveAll(waitingPeopleList);
+        studyGroup.whoEverInvited(waitingPeople.size());
+        waitingPeopleRepository.saveAll(waitingPeople);
         return studyGroup;
     }
 
@@ -117,12 +116,12 @@ public class StudyGroupService {
         Member user = currentLogginedInfo(accessToken);
 
         // 대기 명단에서 로그인된 사용자의 정보만 따로 뺀 후에
-        List<WaitingPeople> waitingPeopleList = waitingPeopleRepository.findByMemberId(user.getId());
+        List<WaitingPeople> waitingPeople = waitingPeopleRepository.findByMemberId(user.getId());
 
-        List<StudyGroupResponse> invitedResponses = new ArrayList<>();
+        List<StudyGroupResponse> studyGroups = new ArrayList<>();
 
         // waitingPeople 의 StudyGroup 으로 초대받은 그룹 탐색
-        for (WaitingPeople waitingPerson : waitingPeopleList) {
+        for (WaitingPeople waitingPerson : waitingPeople) {
 
             StudyGroup studyGroup = waitingPerson.getStudyGroup(); // Exception 핸들링 불필요
             StudyGroupResponse groupInfo = StudyGroupResponse.createStudyGroupResponse(
@@ -131,9 +130,9 @@ public class StudyGroupService {
                     studyGroup.getDescription(),
                     studyGroup.getMemberCount()
             );
-            invitedResponses.add(groupInfo);
+            studyGroups.add(groupInfo);
         }
-        return invitedResponses;
+        return studyGroups;
     }
 
     // 참여중인 스터디 그룹 확인
@@ -144,7 +143,7 @@ public class StudyGroupService {
         // 얻은 user 객체로 Participant 테이블 확인
         List<Participant> Participants = participantRepository.findByMemberId(user.getId());
 
-        List<StudyGroupResponse> joinedGroups = new ArrayList<>();
+        List<StudyGroupResponse> studyGroups = new ArrayList<>();
 
         // participants 의 StudyGroup 으로 초대받은 그룹 탐색
         for (Participant participants : Participants) {
@@ -157,47 +156,39 @@ public class StudyGroupService {
                     studyGroup.getMemberCount()
             );
 
-            joinedGroups.add(groupInfo);
+            studyGroups.add(groupInfo);
         }
-        return joinedGroups;
+        return studyGroups;
     }
 
     //초대 수락
     @Transactional
     public void acceptInvitation(String accessToken, Long groupId, String nickname) {
-        Logger logger = LoggerFactory.getLogger(getClass());
-        try {
-            Member member = currentLogginedInfo(accessToken);
-            waitingPeopleRepository.deleteByMemberId(member.getId());
 
-            // 닉네임 중복확인
-            Optional<Participant> participant = participantRepository.findByNickname(nickname);
-            if (participant.isPresent()) {  // 닉네임이 존재하는 경우
-                throw new BaseException(ErrorCode.DUPLICATE_NICKNAME);
-            }
+        Member member = currentLogginedInfo(accessToken);
+        waitingPeopleRepository.deleteByMemberId(member.getId());
 
-            // Optional을 사용하여 StudyGroup을 가져오고, 그룹이 없으면 예외 처리
-            StudyGroup studyGroup = studyGroupRepository.findById(groupId)
-                    .orElseThrow(() -> new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
+        // 중복 확인
+        participantRepository.findByNickname(nickname)
+                .orElseThrow(() -> new BaseException(ErrorCode.DUPLICATE_NICKNAME));
 
-            // 스터디 그룹의 인원이 꽉 찼을 때
-            if (studyGroup.getMemberCount() == 50) {
-                throw new BaseException(ErrorCode.STUDYGROUP_FULL);
-            }
+        // 그룹 존재 여부 확인
+        StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                .orElseThrow(() -> new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
 
-            // 사용자가 이미 허용된 수 만큼의 그룹에 참가중이라면
-            if (participantRepository.countByMemberId(member.getId()) == 20) {
-                throw new BaseException(ErrorCode.MAX_STUDYGROUP);
-            }
-
-            Participant newParticipant = Participant.createParticipant(nickname, member, Role.MEMBER, studyGroup);
-            studyGroup.whoEverAccepted(newParticipant);
-            studyGroupRepository.save(studyGroup);
-        } catch (Exception e) {
-            // 예외 발생 시 로깅
-            logger.error("초대 수락 중 오류 발생: ", e);
-            throw e;  // 예외를 다시 던져서 위의 Controller에서 처리하도록 합니다.
+        // 스터디 그룹의 인원이 꽉 찬 경우
+        if (studyGroup.getMemberCount() == 50) {
+            throw new BaseException(ErrorCode.STUDYGROUP_FULL);
         }
+
+        // 사용자가 이미 허용된 수 만큼의 그룹에 참가중이라면
+        if (participantRepository.countByMemberId(member.getId()) == 20) {
+            throw new BaseException(ErrorCode.MAX_STUDYGROUP);
+        }
+
+        Participant participant = Participant.createParticipant(nickname, member, Role.MEMBER, studyGroup);
+        studyGroup.whoEverAccepted(participant);
+        studyGroupRepository.save(studyGroup);
     }
 
     //초대 거절
@@ -206,19 +197,14 @@ public class StudyGroupService {
 
         Member member = currentLogginedInfo(accessToken);
 
-        // findByMember로 조회하고 지우면 큰일남.. 특정 사용자가 받은 초대 다 지워버림;
-        Optional<WaitingPeople> targetMemberOptional = waitingPeopleRepository.findByMemberIdAndStudyGroup_Id(member.getId(), groupId);
+        WaitingPeople targetMember = waitingPeopleRepository.findByMemberIdAndStudyGroup_Id(member.getId(), groupId)
+                .orElseThrow(() -> new BaseException(ErrorCode.WAITING_NOT_FOUND));
 
-        if (targetMemberOptional.isPresent()) {
-            WaitingPeople targetMember = targetMemberOptional.get();
+        StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                .orElseThrow(() -> new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
 
-            Optional<StudyGroup> studyGroup = studyGroupRepository.findById(groupId);
-            if (studyGroup.isPresent()) {
-                studyGroup.get().whoEverRejected(targetMember);
-                // 특정 그룹의 초대만 삭제해야됨.
-                waitingPeopleRepository.delete(targetMember);
-            }
-        }
+        studyGroup.whoEverRejected(targetMember);
+        waitingPeopleRepository.delete(targetMember);
     }
 
     //참가자 전체 리스트 확인
@@ -316,19 +302,14 @@ public class StudyGroupService {
             throw new BaseException(ErrorCode.PERMISSION_DENIED);
         }
 
-        Optional<Member> target = memberRepository.findByNickname(nickname);
+        Member target = memberRepository.findByNickname(nickname)
+                .orElseThrow(()-> new BaseException(ErrorCode.MEMBER_NOT_FOUND));
 
-        if (target.isPresent()) {
-            Optional<WaitingPeople> waitingPeopleOpt = waitingPeopleRepository.findByMemberIdAndStudyGroup_Id(target.get().getId(), groupId);
+        WaitingPeople waitingPerson = waitingPeopleRepository.findByMemberIdAndStudyGroup_Id(target.getId(),groupId)
+                .orElseThrow(()-> new BaseException(ErrorCode.WAITING_NOT_FOUND));
 
-            if (waitingPeopleOpt.isPresent()) {
-                waitingPeopleRepository.delete(waitingPeopleOpt.get());
-                return true; // 초대 취소 처리
-            }
-        } else {
-            throw new UserNotFoundException("해당 닉네임을 가진 사용자가 존재하지 않습니다.");
-        }
-        return false;
+        waitingPeopleRepository.delete(waitingPerson);
+        return true;
     }
 
     // 그룹 내 권한 변경
@@ -364,11 +345,11 @@ public class StudyGroupService {
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new BaseException(ErrorCode.UNAUTHORIZED));
 
-        Optional<Participant> isTaken = participantRepository.findByStudyGroupIdAndNickname(groupId, nickname);
-
-        if (isTaken.isPresent()) throw new BaseException(ErrorCode.DUPLICATE_NICKNAME);
-
-        participant.changedNickname(nickname);
+        participantRepository.findByStudyGroupIdAndNickname(groupId, nickname)
+                .ifPresent(isTaken-> {
+                    throw new BaseException(ErrorCode.DUPLICATE_NICKNAME);
+                });
+        participant.updateNickname(nickname);
     }
 
     // 그룹 내 신규 초대
@@ -414,12 +395,11 @@ public class StudyGroupService {
             throw new BaseException(ErrorCode.LEADER_CANNOT_LEAVE);
         }
 
-        studyGroupRepository.findById(groupId).ifPresent(studyGroup -> {
-            studyGroup.getParticipants().remove(participant);
-            //participantRepository.delete(participant);
-            //양방향 리스트 : list.remove() 에 의해 고아가 되고 자동으로 삭제됨 (orphanRemoval)
-            studyGroup.whoEverQuit();
-        });
+        StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                        .orElseThrow(()->new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
+
+        studyGroup.getParticipants().remove(participant);
+        studyGroup.whoEverQuit();
     }
 
 
@@ -436,14 +416,13 @@ public class StudyGroupService {
             throw new BaseException(ErrorCode.PERMISSION_DENIED);
         }
 
-        studyGroupRepository.findById(groupId).ifPresent(
-                studyGroup -> {
-                    Optional<Participant> target = participantRepository.findByStudyGroupIdAndNickname(groupId, nickname);
-                    target.ifPresent(value -> studyGroup.getParticipants().remove(value));
-                    // 여러 닉네임을 여러 그룹에서 사용하는 경우 -> 수정 필요
-                    // 이 또한 orphanRemoval 덕분에 repo.delete 할 필요 없다.
-                    studyGroup.whoEverKicked();
-                }
-        );
+        StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                .orElseThrow(()->new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
+
+        Participant target = participantRepository.findByStudyGroupIdAndNickname(groupId, nickname)
+                        .orElseThrow(()->new BaseException(ErrorCode.PARTICIPANT_NOT_FOUND));
+
+        studyGroup.getParticipants().remove(target);
+        studyGroup.whoEverKicked();
     }
 }

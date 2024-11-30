@@ -105,6 +105,7 @@ public interface StudyGroupApiDocumentation {
     @Operation(summary = "받은 초대 거절", description = "받은 초대를 거절할 때 사용")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "초대를 거절하였습니다."),
+            @ApiResponse(responseCode = "404", description = "해당하는 그룹에 초대를 받은 상태가 아닙니다."),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.")
     })
     @Parameters(value = {
@@ -255,6 +256,7 @@ public interface StudyGroupApiDocumentation {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "[닉네임] 님을 추방하였습니다."),
             @ApiResponse(responseCode = "403", description = "비정상적인 접근 (그룹에 참여 중이지 않거나 권한이 없음)"),
+            @ApiResponse(responseCode = "404", description = "그롭 내 해당하는 참가자가 존재하지 않습니다."),
             @ApiResponse(responseCode = "500", description = "서버 오류가 발생했습니다.")
     })
     @Parameters(value = {

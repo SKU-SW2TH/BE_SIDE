@@ -131,7 +131,6 @@ public class NoticeService {
         Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
                 .orElseThrow(()->new BaseException(ErrorCode.NOTICE_NOT_FOUND));
 
-
         if(participant.getRole()== Participant.Role.MEMBER){
             // 리더 혹은 운영진만 가능
             throw new BaseException(ErrorCode.PERMISSION_DENIED);
