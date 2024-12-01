@@ -59,7 +59,7 @@ public class PostService {
         }
 
         List<String> urls = new ArrayList<>();
-        if (!postRequest.getFiles().isEmpty()) {
+        if (postRequest.getFiles() != null) {
             for (MultipartFile file : postRequest.getFiles()) {
                 String url = s3Service.upload(file, "post/");
                 urls.add(url);
