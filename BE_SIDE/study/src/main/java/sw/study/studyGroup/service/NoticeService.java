@@ -92,7 +92,7 @@ public class NoticeService {
     }
 
     // 공지사항 조회 ( 상세 )
-    @Transactional(readOnly = true)
+    @Transactional
     public NoticeDetailResponse noticeDetail(String accessToken, long groupId, long noticeId){
 
         Member member = currentLogginedInfo(accessToken);
@@ -101,6 +101,9 @@ public class NoticeService {
 
         Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
                 .orElseThrow(()-> new BaseException(ErrorCode.NOTICE_NOT_FOUND));
+
+        notice.IncreaseViewCount();
+        noticeRepository.save(notice);
 
         boolean isChecked = noticeCheckRepository.existsByNoticeIdAndParticipantId(noticeId, participant.getId());
         int numOfChecks = noticeCheckRepository.countByNoticeId(noticeId);

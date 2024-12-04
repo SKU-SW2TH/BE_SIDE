@@ -14,13 +14,14 @@ public class NoticeDetailResponse {
     private String content;
     private boolean isChecked;
     private int numOfChecks;
+    private int viewCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public NoticeDetailResponse(
             Long id, String nickname, String title, String content,
-            LocalDateTime createdAt, LocalDateTime updatedAt,
-            boolean isChecked, int numOfChecks) {
+            boolean isChecked, int numOfChecks, int viewCount,
+            LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.nickname = nickname;
         this.title = title;
@@ -29,6 +30,7 @@ public class NoticeDetailResponse {
         this.updatedAt = updatedAt;
         this.isChecked = isChecked;
         this.numOfChecks = numOfChecks;
+        this.viewCount = viewCount;
     }
 
     public static NoticeDetailResponse createNoticeDetail(Notice notice, boolean isChecked, int numOfChecks) {
@@ -37,10 +39,11 @@ public class NoticeDetailResponse {
                 notice.getAuthor().getNickname(),
                 notice.getTitle(),
                 notice.getContent(),
-                notice.getCreatedAt(),
-                notice.getUpdatedAt(),
                 isChecked,
-                numOfChecks
+                numOfChecks,
+                notice.getViewCount(),
+                notice.getCreatedAt(),
+                notice.getUpdatedAt()
         );
     }
 }
