@@ -19,7 +19,7 @@ public enum ErrorCode {
 
     MAX_STUDYGROUP(HttpStatus.FORBIDDEN,"MAX_STUDYGROUP","더 이상 스터디그룹에 참가할 수 없습니다."),
     UNAUTHORIZED(HttpStatus.FORBIDDEN,"UNAUTHORIZED","해당 스터디그룹에 참여중이지 않습니다."),
-    PERMISSION_DENIED(HttpStatus.FORBIDDEN,"PERMISSION_DENIED","비정상적 접근입니다 (권한이 없거나 그룹에 참여하지 않음."),
+    PERMISSION_DENIED(HttpStatus.FORBIDDEN,"PERMISSION_DENIED","운영진 권한을 가지고 있지 않습니다."),
     LEADER_CANNOT_LEAVE(HttpStatus.FORBIDDEN,"LEADER_CANNOT_LEAVE","리더는 그룹 탈퇴를 하기 위해 권한 위임이 필요합니다."),
     STUDYGROUP_FULL(HttpStatus.BAD_REQUEST,"STUDYGROUP_FULL","해당 스터디그룹은 이미 가득 찬 상태입니다."),
 
