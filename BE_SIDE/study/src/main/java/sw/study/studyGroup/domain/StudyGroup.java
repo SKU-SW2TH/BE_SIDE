@@ -19,10 +19,6 @@ public class StudyGroup {
     @Column(name = "group_id")
     private Long id; // 그룹 ID
 
-    //@ManyToOne(fetch = FetchType.LAZY)
-    //@JoinColumn(name = "leader_id") // 방장 ID
-    //private Member leader;  // FK (회원 테이블 참조)
-
     @Column(name = "room_name", nullable = false)
     private String name; // 방 이름
 
@@ -42,13 +38,6 @@ public class StudyGroup {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    // 해당 엔티티 내부에서의 수정 사항 -> 방 이름 / 설명 / 멤버수, 대기수 변환과 관련
-
-    /*
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt; // 삭제날짜 -> 수정에 포함되서 지우기
-    */
 
     // 양방향 관계 설정을 위한 참가자 리스트
     @OneToMany(mappedBy = "studyGroup", cascade = CascadeType.ALL, orphanRemoval = true)

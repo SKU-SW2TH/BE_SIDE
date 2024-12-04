@@ -88,9 +88,9 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> acceptInvitation(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody String nickname) {
+            @RequestBody NicknameRequest nicknameRequest) {
 
-        studyGroupService.acceptInvitation(accessToken,groupId, nickname);
+        studyGroupService.acceptInvitation(accessToken,groupId, nicknameRequest.getNickname());
         return ResponseEntity.ok("초대를 수락하였습니다.");
     }
 
@@ -176,9 +176,9 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> changeNickname(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody String nickname){
+            @RequestBody NicknameRequest nicknameRequest){
 
-        studyGroupService.changeParticipantNickname(accessToken,groupId, nickname);
+        studyGroupService.changeParticipantNickname(accessToken,groupId, nicknameRequest.getNickname());
         return ResponseEntity.ok("닉네임 변경에 성공하였습니다.");
     }
 
@@ -187,7 +187,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     public ResponseEntity<?> inviteNewMember(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody List<String> nicknames){
+            @RequestBody List<NicknameRequest> nicknames){
 
         studyGroupService.inviteNewMember(accessToken,groupId, nicknames);
         return ResponseEntity.ok(String.format("총 %d 명에게 초대가 전송되었습니다.", nicknames.size()));

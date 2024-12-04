@@ -15,6 +15,7 @@ import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.Participant.Role;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.domain.WaitingPeople;
+import sw.study.studyGroup.dto.NicknameRequest;
 import sw.study.studyGroup.dto.ParticipantsResponse;
 import sw.study.studyGroup.dto.StudyGroupResponse;
 import sw.study.studyGroup.repository.*;
@@ -169,8 +170,9 @@ public class StudyGroupService {
         waitingPeopleRepository.deleteByMemberId(member.getId());
 
         // 중복 확인
-        participantRepository.findByNickname(nickname)
-                .orElseThrow(() -> new BaseException(ErrorCode.DUPLICATE_NICKNAME));
+        if (participantRepository.findByNickname(nickname).isPresent()) {
+            throw new BaseException(ErrorCode.DUPLICATE_NICKNAME);
+        }
 
         // 그룹 존재 여부 확인
         StudyGroup studyGroup = studyGroupRepository.findById(groupId)
@@ -354,7 +356,7 @@ public class StudyGroupService {
 
     // 그룹 내 신규 초대
     @Transactional
-    public void inviteNewMember(String accessToken, Long groupId, List<String> selectedNicknames) {
+    public void inviteNewMember(String accessToken, Long groupId, List<NicknameRequest> nicknameRequest) {
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -367,6 +369,10 @@ public class StudyGroupService {
         if (participant.getRole() == Role.MEMBER) {
             throw new BaseException(ErrorCode.PERMISSION_DENIED);
         }
+
+        List<String> selectedNicknames = nicknameRequest.stream()
+                .map(NicknameRequest::getNickname)
+                .toList();
 
         List<Member> members = memberRepository.findByNicknameIn(selectedNicknames);
 

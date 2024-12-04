@@ -99,7 +99,7 @@ public interface StudyGroupApiDocumentation {
     ResponseEntity<?> acceptInvitation(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId,
-            @RequestBody String nickname);
+            @RequestBody NicknameRequest nicknameRequest);
 
     // 초대 거절
     @Operation(summary = "받은 초대 거절", description = "받은 초대를 거절할 때 사용")
@@ -227,7 +227,7 @@ public interface StudyGroupApiDocumentation {
     ResponseEntity<?> changeNickname(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId,
-            @RequestBody String nickname);
+            @RequestBody NicknameRequest nicknameRequest);
 
     // 그룹 내 신규 초대
     @Operation(summary = "그룹 내 새로운 멤버 초대",
@@ -247,7 +247,7 @@ public interface StudyGroupApiDocumentation {
     ResponseEntity<?> inviteNewMember(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId,
-            @RequestBody List<String> nicknames);
+            @RequestBody List<NicknameRequest> nicknameRequest);
 
 
     // 그룹 내 사용자 추방
