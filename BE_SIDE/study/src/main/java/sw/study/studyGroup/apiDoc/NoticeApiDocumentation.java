@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.studyGroup.dto.NoticeRequest;
@@ -54,7 +55,7 @@ public interface NoticeApiDocumentation {
 
     // 특정 게시글 상세 조회
     @Operation(summary = "공지사항 상세 조회",
-            description = "특정 게시글 상세 조회")
+            description = "특정 게시글 상세 조회, 필드 중 isChecked: 해당 사용자의 체크 여부, numOfChecks : 총 체크 수 응답에 포함.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회에 성공하였습니다. + 특정 게시글 상세 정보 응답"),
             @ApiResponse(responseCode = "404", description = "공지사항이 존재하지 않습니다."),
@@ -111,4 +112,24 @@ public interface NoticeApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("noticeId") Long noticeId);
+
+    // 공지사항 체크 핸들링
+    @Operation(summary = "공지사항 체크",
+            description = "커뮤니티의 좋아요와 유사한 형태. 체크 등록 / 삭제 가능한 단일 API 의 형태")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "공지 사항에 대한 확인 상태가 변경되었습니다."),
+            @ApiResponse(responseCode = "403", description = "해당 스터디그룹에 참여중이지 않습니다."),
+            @ApiResponse(responseCode = "404", description = "공지사항이 존재하지 않습니다."),
+            @ApiResponse(responseCode = "500", description = "서버 오류가 발생했습니다.")
+    })
+    @Parameters(value = {
+            @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
+            @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1"),
+            @Parameter(name = "noticeId", description = "게시글 ID", example = "1")
+    })
+    ResponseEntity<?> checkToggle(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("noticeId") Long noticeId);
+
 }

@@ -14,7 +14,9 @@ import sw.study.exception.UserNotFoundException;
 import sw.study.studyGroup.domain.Notice;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.StudyGroup;
-import sw.study.studyGroup.dto.NoticeResponse;
+import sw.study.studyGroup.dto.NoticeDetailResponse;
+import sw.study.studyGroup.dto.NoticeListResponse;
+import sw.study.studyGroup.repository.NoticeCheckRepository;
 import sw.study.studyGroup.repository.NoticeRepository;
 import sw.study.studyGroup.repository.ParticipantRepository;
 import sw.study.studyGroup.repository.StudyGroupRepository;
@@ -32,6 +34,7 @@ public class NoticeService {
     private final ParticipantRepository participantRepository;
     private final StudyGroupRepository studyGroupRepository;
     private final NoticeRepository noticeRepository;
+    private final NoticeCheckRepository noticeCheckRepository;
 
     private final JWTService jwtService;
 
@@ -72,7 +75,7 @@ public class NoticeService {
 
     // 공지사항 조회 ( 목록 )
     @Transactional(readOnly = true)
-    public List<NoticeResponse> listOfNotice(String accessToken, long groupId, int page, int size){
+    public List<NoticeListResponse> listOfNotice(String accessToken, long groupId, int page, int size){
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -85,21 +88,24 @@ public class NoticeService {
         if(noticePage.isEmpty())
             throw new BaseException(ErrorCode.NOTICE_NOT_FOUND);
 
-        return noticePage.stream().map(NoticeResponse::fromList).toList();
+        return noticePage.stream().map(NoticeListResponse::createNoticeList).toList();
     }
 
     // 공지사항 조회 ( 상세 )
     @Transactional(readOnly = true)
-    public NoticeResponse noticeDetail(String accessToken, long groupId, long noticeId){
+    public NoticeDetailResponse noticeDetail(String accessToken, long groupId, long noticeId){
 
         Member member = currentLogginedInfo(accessToken);
 
-        checkGroupParticipant(groupId, member);
+        Participant participant = checkGroupParticipant(groupId, member);
 
         Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
                 .orElseThrow(()-> new BaseException(ErrorCode.NOTICE_NOT_FOUND));
 
-        return NoticeResponse.fromDetail(notice);
+        boolean isChecked = noticeCheckRepository.existsByNoticeIdAndParticipantId(noticeId, participant.getId());
+        int numOfChecks = noticeCheckRepository.countByNoticeId(noticeId);
+
+        return NoticeDetailResponse.createNoticeDetail(notice, isChecked, numOfChecks);
     }
 
     // 공지사항 수정
