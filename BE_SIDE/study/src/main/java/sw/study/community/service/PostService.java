@@ -96,6 +96,7 @@ public class PostService {
         postDetailResponse.setViewCount(post.getViewCount());
         postDetailResponse.setReportCount(post.getReportCount());
         postDetailResponse.setLikeCount(post.getLikes().size());
+        postDetailResponse.setCreateTime(post.getCreatedAt());
 
         Member author = post.getMember();
         PostAuthorResponse postAuthorResponse = new PostAuthorResponse();
