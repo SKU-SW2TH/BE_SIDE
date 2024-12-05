@@ -251,7 +251,7 @@ public class InitDb {
             Long replyId = commentService.reply(replyRequest, postId, commentId, replier.getId());
 
             // 게시글의 좋아요 수는 1개다.
-            postService.addLike(postId, commentId);
+            postService.addLike(postId, liker1.getId());
 
             // 댓글의 좋아요 수는 2개다.
             commentService.addLike(postId, commentId, liker1.getId());

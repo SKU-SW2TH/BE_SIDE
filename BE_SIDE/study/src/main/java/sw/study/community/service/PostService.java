@@ -85,8 +85,6 @@ public class PostService {
             throw new IllegalStateException("이미 삭제된 게시글입니다.");
         }
 
-
-
         PostDetailResponse postDetailResponse = new PostDetailResponse();
         postDetailResponse.setPostId(post.getId());
         postDetailResponse.setTitle(post.getTitle());
@@ -95,7 +93,6 @@ public class PostService {
         post.incrementViewCount(); // 조회 수 증가
         postDetailResponse.setViewCount(post.getViewCount());
         postDetailResponse.setReportCount(post.getReportCount());
-        postDetailResponse.setLikeCount(post.getLikes().size());
         postDetailResponse.setCreateTime(post.getCreatedAt());
 
         Member author = post.getMember();
@@ -103,6 +100,11 @@ public class PostService {
         postAuthorResponse.setNickname(author.getNickname());
         postAuthorResponse.setDeleted(author.isDeleted());
         postDetailResponse.setPostAuthorResponse(postAuthorResponse);
+
+
+        for (PostLike like : post.getLikes()) {
+            postDetailResponse.getLikerEmailsResponse().add(like.getMember().getEmail());
+        }
 
         for (PostFile file : post.getFiles()) {
             postDetailResponse.getFilesResponse().add(new PostFileResponse(file.getUrl()));
@@ -117,7 +119,6 @@ public class PostService {
             CommentResponse commentResponse = new CommentResponse(); // 댓글
             commentResponse.setCommentId(comment.getId());
             commentResponse.setContent(comment.getContent());
-            commentResponse.setLikeCount(comment.getCommentLikes().size());
             commentResponse.setLevel(comment.getLevel());
             commentResponse.setDeleted(comment.isDeleted());
 
@@ -128,14 +129,21 @@ public class PostService {
             commentAuthorResponse.setDeleted(commentAuthor.isDeleted());
             commentResponse.setCommentAuthorResponse(commentAuthorResponse);
 
+            for (CommentLike commentLike : comment.getCommentLikes()) {
+                commentResponse.getLikerEmailsResponse().add(commentLike.getMember().getEmail());
+            }
+
             if (comment.hasChildComment()) {
                 for (Comment reply : comment.getChild()) {
                     CommentResponse replyResponse = new CommentResponse(); // 대댓글
                     replyResponse.setCommentId(reply.getId());
                     replyResponse.setContent(reply.getContent());
-                    replyResponse.setLikeCount(reply.getCommentLikes().size());
                     replyResponse.setLevel(reply.getLevel());
                     replyResponse.setDeleted(reply.isDeleted());
+
+                    for (CommentLike commentLike : reply.getCommentLikes()) {
+                        replyResponse.getLikerEmailsResponse().add(commentLike.getMember().getEmail());
+                    }
 
                     CommentAuthorResponse replyAuthorResponse = new CommentAuthorResponse(); // 대댓글 작성자
                     Member replyAuthor = reply.getMember();
