@@ -32,6 +32,8 @@ import sw.study.user.repository.MemberRepository;
 import sw.study.user.repository.NotificationCategoryRepository;
 import sw.study.user.repository.NotificationRepository;
 import sw.study.user.role.Role;
+import sw.study.user.service.AuthService;
+import sw.study.user.service.MemberService;
 
 @Component
 @RequiredArgsConstructor
@@ -57,6 +59,8 @@ public class InitDb {
         private final PostService postService;
         private final CommentService commentService;
         private final NotificationCategoryRepository notificationCategoryRepository;
+        private final AuthService authService;
+        private final MemberService memberService;
         private final EntityManager em;
         private final MemberRepository memberRepository;
         private final NotificationRepository notificationRepository;
@@ -226,10 +230,10 @@ public class InitDb {
         }
 
         public void initPost() {
-            Member poster = createMember("poster11@naver.com", "password1", "게시글쓴사람", Role.USER);
-            Member commenter1 = createMember("commenter1@naver.com", "password2", "댓글쓴사람", Role.USER);
-            Member commenter2 = createMember("commenter2@naver.com", "password2", "2번째댓글쓴사람", Role.USER);
-            Member replier = createMember("replier@naver.com", "reasdasd!!!!", "1번째 댓글에 대댓글쓰는사람", Role.USER);
+            Member poster = createMember("poster11@naver.com", encoder.encode("password1"), "게시글쓴사람", Role.USER);
+            Member commenter1 = createMember("commenter1@naver.com", encoder.encode("password2"), "댓글쓴사람", Role.USER);
+            Member commenter2 = createMember("commenter2@naver.com", encoder.encode("password3"), "2번째댓글쓴사람", Role.USER);
+            Member replier = createMember("replier@naver.com", encoder.encode("1111"), "1번째 댓글에 대댓글쓰는사람", Role.USER);
             Member liker1 = createMember("like1@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
             Member liker2 = createMember("like2@naver.com", "asdasd!!!!", "좋아요를누르는사람2", Role.USER);
             Member liker3 = createMember("like3@naver.com", "asdasd!!!!", "좋아요를누르는사람3", Role.USER);
@@ -240,13 +244,14 @@ public class InitDb {
             CommentRequest commentRequest2 = createCommentRequest(1, "나는 두번째 댓글임");
             CommentRequest replyRequest = createCommentRequest(2, "대댓글 단다");
 
+
             Long postId = postService.save(postRequest, poster.getId());
             Long commentId = commentService.save(commentRequest1, postId, commenter1.getId());
             Long commentId2 = commentService.save(commentRequest2, postId, commenter2.getId());
             Long replyId = commentService.reply(replyRequest, postId, commentId, replier.getId());
 
             // 게시글의 좋아요 수는 1개다.
-            postService.addLike(postId, commentId);
+            postService.addLike(postId, liker1.getId());
 
             // 댓글의 좋아요 수는 2개다.
             commentService.addLike(postId, commentId, liker1.getId());

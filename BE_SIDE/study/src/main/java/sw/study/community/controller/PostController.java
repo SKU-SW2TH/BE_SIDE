@@ -11,6 +11,7 @@ import sw.study.admin.dto.ReportRequest;
 import sw.study.community.dto.CommentRequest;
 import sw.study.community.dto.PostDetailResponse;
 import sw.study.community.dto.PostRequest;
+import sw.study.community.repository.CommentRepository;
 import sw.study.community.service.CommentService;
 import sw.study.community.service.PostService;
 import sw.study.exception.InvalidTokenException;
@@ -328,6 +329,7 @@ public class PostController {
         try {
             Long memberId = memberService.getMemberIdByToken(accessToken);
             commentService.deleteReply(postId, commentId, replyId, memberId);
+
             return ResponseEntity.ok("대댓글이 성공적으로 삭제되었습니다.");
 
 

@@ -3,6 +3,7 @@ package sw.study.community.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import sw.study.admin.domain.Report;
 import sw.study.admin.dto.ReportRequest;
 import sw.study.admin.role.ReportStatus;
@@ -26,6 +27,7 @@ import sw.study.user.repository.MemberRepository;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
@@ -36,6 +38,7 @@ public class CommentService {
     /**
      * 댓글 생성
      */
+    @Transactional
     public Long save(CommentRequest commentRequest, Long postId, Long commenterId) {
         Post findPost = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
@@ -52,6 +55,7 @@ public class CommentService {
     /**
      * 대댓글 작성
      */
+    @Transactional
     public Long reply(CommentRequest replyRequest, Long postId, Long commentId, Long replierId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
@@ -74,6 +78,7 @@ public class CommentService {
     /**
      * 댓글 삭제
      */
+    @Transactional
     public void delete(Long postId, Long commentId, Long memberId) {
         // 게시글과 댓글 조회
         Post post = postRepository.findById(postId)
@@ -99,6 +104,7 @@ public class CommentService {
     /**
      * 댓글 좋아요
      */
+    @Transactional
     public void addLike(Long postId, Long commentId, Long memberId) {
         // 게시글, 댓글, 좋아요를 누른 사람 조회
         Post post = postRepository.findById(postId)
@@ -122,6 +128,7 @@ public class CommentService {
     /**
      * 댓글 좋아요 취소
      */
+    @Transactional
     public void cancelLike(Long postId, Long commentId, Long memberId) {
         // 게시글, 댓글, 좋아요를 취소하려는 사람, 해당 좋아요 조회
         Post post = postRepository.findById(postId)
@@ -147,6 +154,7 @@ public class CommentService {
     /**
      * 대댓글 좋아요 취소
      */
+    @Transactional
     public void cancelReplyLike(Long postId, Long commentId, Long replyId, Long cancelerId) {
         // 게시글, 댓글, 대댓글, 좋아요를 취소하려는 사람 조회
         Post post = postRepository.findById(postId)
@@ -176,6 +184,7 @@ public class CommentService {
     /**
      * 댓글 신고
      */
+    @Transactional
     public Long report(ReportRequest reportRequest, Long postId, Long commentId, Long reporterId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
@@ -208,6 +217,7 @@ public class CommentService {
     /**
      * 대댓글 삭제
      */
+    @Transactional
     public void deleteReply(Long postId, Long commentId, Long replyId, Long memberId) {
         // 게시글, 댓글, 대댓글 조회
         Post post = postRepository.findById(postId)
@@ -229,12 +239,14 @@ public class CommentService {
 
         // 대댓글 삭제(논리적 삭제)
         reply.deleteComment();
+        System.out.println("reply.isDeleted() = " + reply.isDeleted());
         log.info("대댓글이 성공적으로 삭제(논리적): replyId={}, commentId={}, postId={}", replyId, commentId, postId);
     }
 
     /**
      * 대댓글 좋아요
      */
+    @Transactional
     public void addReplyLike(Long postId, Long commentId, Long replyId, Long likerId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당 게시글을 찾을 수 없습니다."));
@@ -258,6 +270,7 @@ public class CommentService {
     /**
      * 대댓글 신고
      */
+    @Transactional
     public Long reportReply(ReportRequest reportRequest, Long postId, Long commentId, Long replyId, Long reporterId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
