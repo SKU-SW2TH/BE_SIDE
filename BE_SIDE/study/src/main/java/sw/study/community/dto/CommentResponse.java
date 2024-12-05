@@ -11,6 +11,7 @@ public class CommentResponse {
     private String content;
     private int likeCount;
     private int level;
+    private boolean isDeleted;
 
     private CommentAuthorResponse commentAuthorResponse;
     private List<CommentResponse> child = new ArrayList<>();

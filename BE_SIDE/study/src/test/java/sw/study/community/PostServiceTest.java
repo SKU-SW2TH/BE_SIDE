@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.admin.domain.Report;
@@ -278,6 +279,7 @@ public class PostServiceTest {
     }
 
     @Test
+    @Rollback(value = false)
     void 대댓글_삭제() throws Exception {
         //given
         Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);

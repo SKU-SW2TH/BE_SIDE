@@ -118,6 +118,7 @@ public class PostService {
             commentResponse.setContent(comment.getContent());
             commentResponse.setLikeCount(comment.getCommentLikes().size());
             commentResponse.setLevel(comment.getLevel());
+            commentResponse.setDeleted(comment.isDeleted());
 
             CommentAuthorResponse commentAuthorResponse = new CommentAuthorResponse(); // 댓글 작성자
             Member commentAuthor = comment.getMember();
@@ -133,6 +134,7 @@ public class PostService {
                     replyResponse.setContent(reply.getContent());
                     replyResponse.setLikeCount(reply.getCommentLikes().size());
                     replyResponse.setLevel(reply.getLevel());
+                    replyResponse.setDeleted(reply.isDeleted());
 
                     CommentAuthorResponse replyAuthorResponse = new CommentAuthorResponse(); // 대댓글 작성자
                     Member replyAuthor = reply.getMember();
