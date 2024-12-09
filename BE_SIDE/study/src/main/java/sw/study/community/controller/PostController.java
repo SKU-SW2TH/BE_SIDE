@@ -6,10 +6,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sw.study.admin.dto.ReportRequest;
 import sw.study.community.dto.CommentRequest;
 import sw.study.community.dto.PostDetailResponse;
 import sw.study.community.dto.PostRequest;
+import sw.study.community.repository.CommentRepository;
 import sw.study.community.service.CommentService;
 import sw.study.community.service.PostService;
 import sw.study.exception.InvalidTokenException;
@@ -17,6 +19,8 @@ import sw.study.exception.UserNotFoundException;
 import sw.study.exception.community.*;
 import sw.study.exception.studyGroup.UnauthorizedException;
 import sw.study.user.service.MemberService;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -28,23 +32,36 @@ public class PostController {
     private final MemberService memberService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createPost(@RequestHeader("Authorization") String accessToken, @RequestBody PostRequest postRequest) {
-        log.info("게시글 생성 요청: postDTO = {}", postRequest.toString());
+    public ResponseEntity<?> createPost(
+            @RequestHeader("Authorization") String accessToken,
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam("category") String category,
+            @RequestParam(value = "area", required = false) List<String> area, // 다중값 받기
+            @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+
+        log.info("게시글 생성 요청: title = {}, content = {}, category = {}, area = {}", title, content, category, area);
+
         try {
             Long memberId = memberService.getMemberIdByToken(accessToken);
+
+            PostRequest postRequest = new PostRequest();
+            postRequest.setTitle(title);
+            postRequest.setContent(content);
+            postRequest.setCategory(category);
+            postRequest.setArea(area);
+            postRequest.setFiles(files);
+
             Long postId = postService.save(postRequest, memberId);
+
             return ResponseEntity.status(HttpStatus.CREATED).body(postId + " : 성공적으로 게시글을 만들었습니다.");
-
-
         } catch (CategoryNotFoundException | UserNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (AreaNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (InvalidTokenException e) {
-            // 잘못된 토큰이면 401 Unauthorized 응답
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않는 토큰입니다.");
         } catch (Exception e) {
-            // 기타 예외 발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
@@ -312,6 +329,7 @@ public class PostController {
         try {
             Long memberId = memberService.getMemberIdByToken(accessToken);
             commentService.deleteReply(postId, commentId, replyId, memberId);
+
             return ResponseEntity.ok("대댓글이 성공적으로 삭제되었습니다.");
 
 
