@@ -46,6 +46,7 @@ public class Post {
     private boolean isDeleted = false;
     private int viewCount = 0;
     private int reportCount = 0;
+    private int commentCount = 0;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -87,12 +88,14 @@ public class Post {
     //== 연관 관계 편의 메서드 ==//
     public void addComment(Comment comment) {
         this.comments.add(comment);
+        commentCount++;
         comment.addPost(this);
     }
 
     // 물리적 삭제
     public void deleteComment(Comment comment) {
         this.comments.remove(comment);
+        commentCount--;
         comment.addPost(null); // 양방향 관계 정리
     }
 

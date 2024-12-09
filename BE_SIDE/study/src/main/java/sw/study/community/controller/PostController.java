@@ -2,6 +2,7 @@ package sw.study.community.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import sw.study.admin.dto.ReportRequest;
 import sw.study.community.dto.CommentRequest;
 import sw.study.community.dto.PostDetailResponse;
 import sw.study.community.dto.PostRequest;
+import sw.study.community.dto.PostResponse;
 import sw.study.community.repository.CommentRepository;
 import sw.study.community.service.CommentService;
 import sw.study.community.service.PostService;
@@ -67,7 +69,7 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public ResponseEntity<?> getPost(@PathVariable Long postId) {
+    public ResponseEntity<?> getPostDetail(@PathVariable Long postId) {
         log.info("게시글 상세 조회 요청: postId = {}", postId);
         try {
             PostDetailResponse postDetailResponse = postService.getPostById(postId);
@@ -367,5 +369,22 @@ public class PostController {
         }
     }
 
+    @GetMapping("")
+    public ResponseEntity<?> getPostsByCategory(@RequestParam String category,
+                                                @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+                                                @RequestParam(value = "searchType", required = false) String searchType,
+                                                @RequestParam(value = "keyword", required = false) String keyword,
+                                                @RequestParam(value = "page", defaultValue = "0") int page) {
 
+        try {
+            Page<PostResponse> posts = postService.getPosts(category, sortBy, searchType, keyword, page);
+            return ResponseEntity.ok(posts);
+
+
+        } catch (PostNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 }

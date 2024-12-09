@@ -2,6 +2,9 @@ package sw.study.community.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +30,7 @@ import sw.study.user.service.MemberService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Transactional(readOnly = true)
@@ -244,5 +248,51 @@ public class PostService {
         Long reportId = reportService.save(report);
         log.info("게시글 신고 요청 완료: targetId = {}, reporterId = {}, targetMemberId = {}", postId, reportId, findTargetMember.getId());
         return reportId;
+    }
+
+    /**
+     * 게시글 리스트 반환
+     */
+    public Page<PostResponse> getPosts(String category, String sortBy, String searchType, String keyword, int page) {
+        // 정렬 기준 분기 처리
+        PageRequest pageRequest = PageRequest.of(page, 6, Sort.by(Sort.Direction.DESC, sortBy));;
+        Page<Post> posts;
+
+        if (searchType == null || keyword == null) {
+            // 검색조건이 없을 경우
+            posts = postRepository.findByCategoryName(category, pageRequest);
+        } else {
+            // 검색 조건이 있을 경우
+            if ("title".equals(searchType)) {
+                posts = postRepository.findByCategoryNameAndTitleContaining(category, keyword, pageRequest);
+            } else if ("author".equals(searchType)) {
+                posts = postRepository.findByCategoryNameAndAuthorContaining(category, keyword, pageRequest);
+            } else if ("title+author".equals(searchType)) {
+                posts = postRepository.findByCategoryNameAndTitleContainingOrAuthorContaining(
+                        category, keyword, pageRequest);
+            } else {
+                throw new IllegalArgumentException("부적절한 searchType: " + searchType);
+            }
+        }
+
+        // Page<Post> -> Page<PostResponse> 변환
+        return posts.map(post -> {
+            PostResponse postResponse = new PostResponse();
+            postResponse.setId(post.getId());
+            postResponse.setTitle(post.getTitle());
+            postResponse.setContent(post.getContent());
+            postResponse.setLikeCount(post.getLikes().size());
+            postResponse.setViewCount(post.getViewCount());
+            postResponse.setCommentCount(post.getComments().size());
+            postResponse.setCreatedAt(post.getCreatedAt());
+
+            // 작성자 정보 설정
+            PostAuthorResponse postAuthorResponse = new PostAuthorResponse();
+            postAuthorResponse.setNickname(post.getMember().getNickname());
+            postAuthorResponse.setProfile(post.getMember().getProfile());
+            postResponse.setPostAuthor(postAuthorResponse);
+
+            return postResponse;
+        });
     }
 }
