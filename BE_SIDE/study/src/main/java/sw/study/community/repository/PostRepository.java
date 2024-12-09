@@ -26,4 +26,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("category") String category,
             @Param("keyword") String keyword,
             Pageable pageable);
+
+    Page<Post> findByMember_Id(Long memberId, Pageable pageable);
 }

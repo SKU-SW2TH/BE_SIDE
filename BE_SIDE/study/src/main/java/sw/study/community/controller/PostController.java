@@ -377,6 +377,7 @@ public class PostController {
                                                 @RequestParam(value = "page", defaultValue = "0") int page) {
 
         try {
+            log.info("게시글 리스트 요청");
             Page<PostResponse> posts = postService.getPosts(category, sortBy, searchType, keyword, page);
             return ResponseEntity.ok(posts);
 
@@ -387,4 +388,21 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyPosts(@RequestHeader("Authorization") String accessToken,
+                                        @RequestParam(value = "page", defaultValue = "0") int page) {
+
+        try {
+            log.info("나의 게시글 리스트 요청");
+            Long memberId = memberService.getMemberIdByToken(accessToken);
+            Page<PostResponse> posts = postService.getMyPosts(memberId, page);
+            return ResponseEntity.ok(posts);
+
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
 }

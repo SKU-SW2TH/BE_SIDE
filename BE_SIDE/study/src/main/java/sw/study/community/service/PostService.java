@@ -295,4 +295,25 @@ public class PostService {
             return postResponse;
         });
     }
+
+    public Page<PostResponse> getMyPosts(Long memberId, int page) {
+        PageRequest pageRequest = PageRequest.of(page, 6, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Post> posts = postRepository.findByMember_Id(memberId, pageRequest);
+
+        return posts.map(post -> {
+            PostResponse postResponse = new PostResponse();
+            postResponse.setId(post.getId());
+            postResponse.setTitle(post.getTitle());
+            postResponse.setContent(post.getContent());
+            postResponse.setLikeCount(post.getLikes().size());
+            postResponse.setViewCount(post.getViewCount());
+
+            PostAuthorResponse postAuthorResponse = new PostAuthorResponse();
+            postAuthorResponse.setNickname(post.getMember().getNickname());
+            postAuthorResponse.setProfile(post.getMember().getProfile());
+            postResponse.setPostAuthor(postAuthorResponse);
+
+            return postResponse;
+        });
+    }
 }
