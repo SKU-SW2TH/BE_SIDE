@@ -92,6 +92,7 @@ public class Comment {
 
     public void addPost(Post post) { this.post = post; }
 
+    //== 비즈니스 로직 ==//
     public void deleteComment() {
         this.isDeleted = true;
     }
@@ -103,5 +104,16 @@ public class Comment {
 
     public void incrementReportCount() {
         this.reportCount++;
+    }
+
+    public void decrementReportCount() {
+        this.reportCount--;
+    }
+
+    public boolean hasParentComment() {
+        return this.parent != null;
+    }
+    public boolean hasChildComment() {
+        return !this.child.isEmpty();
     }
 }

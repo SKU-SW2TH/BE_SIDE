@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.admin.domain.Report;
@@ -63,10 +64,10 @@ public class PostServiceTest {
     void 게시글_저장() throws Exception {
         // given
         Member member = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
-        PostRequest postRequest = createPostRequest(member.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
 
         // when
-        Long postId = postService.save(postRequest);
+        Long postId = postService.save(postRequest, member.getId());
 
         // then
         Post post = postRepository.findById(postId).orElseThrow();
@@ -77,12 +78,12 @@ public class PostServiceTest {
     void 게시글_삭제() throws Exception {
         // given
         Member member = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
-        PostRequest postRequest = createPostRequest(member.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        Long postId = postService.save(postRequest);
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        Long postId = postService.save(postRequest, member.getId());
         em.flush();
 
         // when
-        postService.delete(postId);
+        postService.delete(postId, member.getId());
         em.flush();
 
         // then
@@ -94,8 +95,8 @@ public class PostServiceTest {
         // given
         Member member = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
         Member member2 = createMember("pok@naver.com", "password2", "989898", Role.USER);
-        PostRequest postRequest = createPostRequest(member.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        Long postId = postService.save(postRequest);
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        Long postId = postService.save(postRequest, member.getId());
         em.flush();
 
         // when
@@ -111,8 +112,8 @@ public class PostServiceTest {
         // given
         Member member = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
         Member member2 = createMember("pok@naver.com", "password2", "989898", Role.USER);
-        PostRequest postRequest = createPostRequest(member.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        Long postId = postService.save(postRequest);
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        Long postId = postService.save(postRequest, member.getId());
         postService.addLike(postId, member2.getId());
         em.flush();
 
@@ -129,15 +130,15 @@ public class PostServiceTest {
     @Test
     void 게시글_신고() throws Exception {
         // given
-        Member reporter = createMember("pok@naver.com", "password2", "989898", Role.USER);
         Member postOwner = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
-        PostRequest postRequest = createPostRequest(postOwner.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        Long postId = postService.save(postRequest);
+        Member reporter = createMember("pok@naver.com", "password2", "989898", Role.USER);
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        Long postId = postService.save(postRequest,postOwner.getId());
 
-        ReportRequest reportRequest = createReportRequest(reporter.getId(), "보고싶지않은게시글!!ㅡㅡ", ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.POST);
+        ReportRequest reportRequest = createReportRequest("보고싶지않은게시글!!ㅡㅡ", ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.POST);
 
         // when
-        Long reportId = postService.report(reportRequest, postId);
+        Long reportId = postService.report(reportRequest, postId, reporter.getId());
 
         // then
         Report report = reportRepository.findById(reportId).orElseThrow();
@@ -152,12 +153,12 @@ public class PostServiceTest {
         // given
         Member member = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
         Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
-        PostRequest postRequest = createPostRequest(member.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        Long postId = postService.save(postRequest);
-        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        Long postId = postService.save(postRequest,member.getId());
+        CommentRequest commentRequest = createCommentRequest(1, "좋은 글 감사합니다");
 
         // when
-        Long commentId = commentService.save(commentRequest, postId);
+        Long commentId = commentService.save(commentRequest, postId, commenter.getId());
 
         // then
         Optional<Comment> findComment = commentRepository.findById(commentId);
@@ -170,13 +171,13 @@ public class PostServiceTest {
         //given
         Member member = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
         Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
-        PostRequest postRequest = createPostRequest(member.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        Long postId = postService.save(postRequest);
-        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
-        Long commentId = commentService.save(commentRequest, postId);
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        Long postId = postService.save(postRequest, member.getId());
+        CommentRequest commentRequest = createCommentRequest(1, "좋은 글 감사합니다");
+        Long commentId = commentService.save(commentRequest, postId, commenter.getId());
 
         //when
-        commentService.delete(postId, commentId);
+        commentService.delete(postId, commentId, commenter.getId());
 
         //then
         Comment comment = commentRepository.findById(commentId).orElseThrow();
@@ -189,10 +190,11 @@ public class PostServiceTest {
         Member member = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
         Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
         Member liker = createMember("like@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
-        PostRequest postRequest = createPostRequest(member.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
-        Long postId = postService.save(postRequest);
-        Long commentId = commentService.save(commentRequest, postId);
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(1, "좋은 글 감사합니다");
+
+        Long postId = postService.save(postRequest, member.getId());
+        Long commentId = commentService.save(commentRequest, postId, commenter.getId());
 
         //when
         commentService.addLike(postId, commentId, liker.getId());
@@ -209,10 +211,11 @@ public class PostServiceTest {
         Member member = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
         Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
         Member liker = createMember("like@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
-        PostRequest postRequest = createPostRequest(member.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
-        Long postId = postService.save(postRequest);
-        Long commentId = commentService.save(commentRequest, postId);
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(1, "좋은 글 감사합니다");
+
+        Long postId = postService.save(postRequest, member.getId());
+        Long commentId = commentService.save(commentRequest, postId, commenter.getId());
         commentService.addLike(postId, commentId, liker.getId());
 
         //when
@@ -230,17 +233,17 @@ public class PostServiceTest {
         Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
         Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
         Member reporter = createMember("like@naver.com", "asdasd!!!!", "신고하는사람", Role.USER);
-        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
-        
-        Long postId = postService.save(postRequest);
-        Long commentId = commentService.save(commentRequest, postId);
-        
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(1, "좋은 글 감사합니다");
+
+        Long postId = postService.save(postRequest, poster.getId());
+        Long commentId = commentService.save(commentRequest, postId, commenter.getId());
+
         //when
-        ReportRequest reportRequest = 
-                createReportRequest(reporter.getId(), "보고싶지않은댓글!!ㅡㅡ", 
+        ReportRequest reportRequest =
+                createReportRequest("보고싶지않은댓글!!ㅡㅡ",
                         ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.COMMENT);
-        Long reportId = commentService.report(reportRequest, postId, commentId);
+        Long reportId = commentService.report(reportRequest, postId, commentId, reporter.getId());
 
         //then
         Comment comment = commentRepository.findById(commentId).get();
@@ -249,7 +252,7 @@ public class PostServiceTest {
         assertThat(report.getReportReason()).isEqualTo(ReportReason.INAPPROPRIATE_EXPRESSION);
         assertThat(comment.getReportCount()).isEqualTo(1);
         assertThat(reporter.getReports().size()).isEqualTo(1);
-        
+
     }
 
     @Test
@@ -258,15 +261,15 @@ public class PostServiceTest {
         Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
         Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
         Member replier = createMember("like@naver.com", "asdasd!!!!", "대댓글쓰는사람", Role.USER);
-        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(1, "좋은 글 감사합니다");
 
-        Long postId = postService.save(postRequest);
-        Long commentId = commentService.save(commentRequest, postId);
+        Long postId = postService.save(postRequest, poster.getId());
+        Long commentId = commentService.save(commentRequest, postId, commenter.getId());
 
         //when
-        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
-        commentService.reply(replyRequest, postId, commentId);
+        CommentRequest replyRequest = createCommentRequest(2, "대댓글 단다");
+        commentService.reply(replyRequest, postId, commentId, replier.getId());
 
         //then
         Comment parent = commentRepository.findById(commentId).orElseThrow();
@@ -281,17 +284,17 @@ public class PostServiceTest {
         Member poster = createMember("ksh990408@naver.com", "password1", "감자탕", Role.USER);
         Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
         Member replier = createMember("like@naver.com", "asdasd!!!!", "대댓글쓰는사람", Role.USER);
-        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(1, "좋은 글 감사합니다");
 
-        Long postId = postService.save(postRequest);
-        Long commentId = commentService.save(commentRequest, postId);
+        Long postId = postService.save(postRequest, poster.getId());
+        Long commentId = commentService.save(commentRequest, postId, commenter.getId());
 
-        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
-        Long replyId = commentService.reply(replyRequest, postId, commentId);
+        CommentRequest replyRequest = createCommentRequest(2, "대댓글 단다");
+        Long replyId = commentService.reply(replyRequest, postId, commentId, replier.getId());
 
         //when
-        commentService.deleteReply(postId, commentId, replyId);
+        commentService.deleteReply(postId, commentId, replyId, replier.getId());
 
         //then
         Comment reply = commentRepository.findById(replyId).orElseThrow();
@@ -306,13 +309,14 @@ public class PostServiceTest {
         Member replier = createMember("rerere@naver.com", "reasdasd!!!!", "대댓글쓰는사람", Role.USER);
         Member liker = createMember("like@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
 
-        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
-        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(1, "좋은 글 감사합니다");
+        CommentRequest replyRequest = createCommentRequest(2, "대댓글 단다");
 
-        Long postId = postService.save(postRequest);
-        Long commentId = commentService.save(commentRequest, postId);
-        Long replyId = commentService.reply(replyRequest, postId, commentId);
+        Long postId = postService.save(postRequest, poster.getId());
+        Long commentId = commentService.save(commentRequest, postId, commenter.getId());
+        Long replyId = commentService.reply(replyRequest, postId, commentId, replier.getId());
+
 
         //when
         commentService.addReplyLike(postId, commentId, replyId, liker.getId());
@@ -331,13 +335,13 @@ public class PostServiceTest {
         Member replier = createMember("rerere@naver.com", "reasdasd!!!!", "대댓글쓰는사람", Role.USER);
         Member liker = createMember("like@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
 
-        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
-        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(1, "좋은 글 감사합니다");
+        CommentRequest replyRequest = createCommentRequest(2, "대댓글 단다");
 
-        Long postId = postService.save(postRequest);
-        Long commentId = commentService.save(commentRequest, postId);
-        Long replyId = commentService.reply(replyRequest, postId, commentId);
+        Long postId = postService.save(postRequest, poster.getId());
+        Long commentId = commentService.save(commentRequest, postId, commenter.getId());
+        Long replyId = commentService.reply(replyRequest, postId, commentId, replier.getId());
 
         commentService.addReplyLike(postId, commentId, replyId, liker.getId());
 
@@ -357,25 +361,19 @@ public class PostServiceTest {
         Member commenter = createMember("pok@naver.com", "password2", "989898", Role.USER);
         Member replier = createMember("rere@naver.com", "rereasdasd!!!!", "대댓글다는사람", Role.USER);
         Member reporter = createMember("like@naver.com", "asdasd!!!!", "신고하는사람", Role.USER);
-        Member reporter2 = createMember("1231231@naver.com", "a123sdasd!!!!", "신고하는사람2", Role.USER);
-        PostRequest postRequest = createPostRequest(poster.getId(), "반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
-        CommentRequest commentRequest = createCommentRequest(commenter.getId(), 1, "좋은 글 감사합니다");
-        CommentRequest replyRequest = createCommentRequest(replier.getId(), 2, "대댓글 단다");
+        PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+        CommentRequest commentRequest = createCommentRequest(1, "좋은 글 감사합니다");
+        CommentRequest replyRequest = createCommentRequest(2, "대댓글 단다");
 
-        Long postId = postService.save(postRequest);
-        Long commentId = commentService.save(commentRequest, postId);
-        Long replyId = commentService.reply(replyRequest, postId, commentId);
+        Long postId = postService.save(postRequest, poster.getId());
+        Long commentId = commentService.save(commentRequest, postId, commenter.getId());
+        Long replyId = commentService.reply(replyRequest, postId, commentId, replier.getId());
 
         //when
         ReportRequest reportRequest =
-                createReportRequest(reporter.getId(), "보고싶지않은대댓글!!ㅡㅡ",
+                createReportRequest("보고싶지않은대댓글!!ㅡㅡ",
                         ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.COMMENT);
-        Long reportId = commentService.reportReply(reportRequest, postId, commentId, replyId);
-
-        ReportRequest reportRequest2 =
-                createReportRequest(reporter2.getId(), "보고싶지않은대댓글!!ㅡㅡ",
-                        ReportReason.INAPPROPRIATE_EXPRESSION, ReportTargetType.COMMENT);
-        Long reportId2 = commentService.reportReply(reportRequest2, postId, commentId, replyId);
+        Long reportId = commentService.reportReply(reportRequest, postId, commentId, replyId, reporter.getId());
 
         //then
         Comment reply = commentRepository.findById(replyId).get();
@@ -384,10 +382,8 @@ public class PostServiceTest {
         assertThat(report.getReportTargetType()).isEqualTo(ReportTargetType.COMMENT);
         assertThat(report.getReportReason()).isEqualTo(ReportReason.INAPPROPRIATE_EXPRESSION);
 
-        assertThat(reply.getReportCount()).isEqualTo(2);
+        assertThat(reply.getReportCount()).isEqualTo(1);
         assertThat(reporter.getReports().size()).isEqualTo(1);
-        assertThat(reporter2.getReports().size()).isEqualTo(1);
-
     }
 
 //    @Test
@@ -405,15 +401,6 @@ public class PostServiceTest {
 //
 //    }
 //
-//    @Test
-//    void 게시글_불러오기() throws Exception {
-//        //given
-//
-//        //when
-//
-//        //then
-//
-//    }
 //
 //
 //
@@ -467,12 +454,11 @@ public class PostServiceTest {
         return member;
     }
 
-    private PostRequest createPostRequest(Long memberId, String title, String content, String category, List<String> areas, String filePath) {
+    private PostRequest createPostRequest(String title, String content, String category, List<String> areas, String filePath) {
         PostRequest postRequest = new PostRequest();
         postRequest.setTitle(title);
         postRequest.setContent(content);
         postRequest.setCategory(category);
-        postRequest.setMemberId(memberId);
 
         if (areas != null) {
             postRequest.setArea(new ArrayList<>(areas));
@@ -492,17 +478,15 @@ public class PostServiceTest {
         return postRequest;
     }
 
-    public CommentRequest createCommentRequest(Long memberId, int level, String content) {
+    public CommentRequest createCommentRequest(int level, String content) {
         CommentRequest commentRequest = new CommentRequest();
         commentRequest.setLevel(level);
-        commentRequest.setMemberId(memberId);
         commentRequest.setContent(content);
         return commentRequest;
     }
 
-    private ReportRequest createReportRequest(Long reporterId, String description, ReportReason reason, ReportTargetType targetType) {
+    private ReportRequest createReportRequest(String description, ReportReason reason, ReportTargetType targetType) {
         ReportRequest reportRequest = new ReportRequest();
-        reportRequest.setReporterId(reporterId);
         reportRequest.setDescription(description);
         reportRequest.setReportReason(reason);
         reportRequest.setReportTargetType(targetType);

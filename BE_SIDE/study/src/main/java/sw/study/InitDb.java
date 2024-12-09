@@ -7,15 +7,24 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import sw.study.admin.dto.ReportRequest;
+import sw.study.admin.role.ReportReason;
+import sw.study.admin.role.ReportTargetType;
 import sw.study.community.domain.Category;
+import sw.study.community.dto.CommentRequest;
 import sw.study.community.dto.PostRequest;
+import sw.study.community.repository.CommentRepository;
 import sw.study.community.repository.PostRepository;
+import sw.study.community.service.CommentService;
 import sw.study.community.service.PostService;
 import sw.study.user.domain.Area;
 import sw.study.user.domain.Member;
 import sw.study.user.domain.Notification;
 import sw.study.user.domain.NotificationCategory;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +32,8 @@ import sw.study.user.repository.MemberRepository;
 import sw.study.user.repository.NotificationCategoryRepository;
 import sw.study.user.repository.NotificationRepository;
 import sw.study.user.role.Role;
+import sw.study.user.service.AuthService;
+import sw.study.user.service.MemberService;
 
 @Component
 @RequiredArgsConstructor
@@ -46,7 +57,10 @@ public class InitDb {
     static class InitService {
 
         private final PostService postService;
+        private final CommentService commentService;
         private final NotificationCategoryRepository notificationCategoryRepository;
+        private final AuthService authService;
+        private final MemberService memberService;
         private final EntityManager em;
         private final MemberRepository memberRepository;
         private final NotificationRepository notificationRepository;
@@ -196,41 +210,98 @@ public class InitDb {
             memberRepository.save(member);
 
             for(int i = 1; i < 21; i++){
-                String title = "테스트" + i;
                 String content = "내용" + i;
                 Long id = Long.valueOf(i);
-                Notification notification = Notification.createNotification(notificationCategories.get(0), title, content, id);
+                Notification notification = Notification.createNotification(notificationCategories.get(0), content, id);
                 notification.addMember(member);
+                notificationRepository.save(notification);
+            }
+
+            Member member2 = memberRepository.findByEmail("bj10111@naver.com").orElseThrow();
+
+            for(int i = 1; i < 22; i++){
+                String content = "내용" + i;
+                Long id = Long.valueOf(i);
+                Notification notification = Notification.createNotification(notificationCategories.get(0), content, id);
+                notification.addMember(member2);
                 notificationRepository.save(notification);
             }
 
         }
 
         public void initPost() {
-            List<NotificationCategory> notificationCategories = notificationCategoryRepository.findAll();
+            Member poster = createMember("poster11@naver.com", encoder.encode("password1"), "게시글쓴사람", Role.USER);
+            Member commenter1 = createMember("commenter1@naver.com", encoder.encode("password2"), "댓글쓴사람", Role.USER);
+            Member commenter2 = createMember("commenter2@naver.com", encoder.encode("password3"), "2번째댓글쓴사람", Role.USER);
+            Member replier = createMember("replier@naver.com", encoder.encode("1111"), "1번째 댓글에 대댓글쓰는사람", Role.USER);
+            Member liker1 = createMember("like1@naver.com", "asdasd!!!!", "좋아요를누르는사람", Role.USER);
+            Member liker2 = createMember("like2@naver.com", "asdasd!!!!", "좋아요를누르는사람2", Role.USER);
+            Member liker3 = createMember("like3@naver.com", "asdasd!!!!", "좋아요를누르는사람3", Role.USER);
+            Member liker4 = createMember("like4@naver.com", "asdasd!!!!", "좋아요를누르는사람4", Role.USER);
 
-            Member member = Member.createMember(
-                    "ksh990409@naver.com",
-                    encoder.encode("poket1357!"), // 비밀번호 암호화
-                    "testUser", Role.USER, notificationCategories
-            );
-            em.persist(member);
+            PostRequest postRequest = createPostRequest("반갑습니다", "안녕하세요 으아아아", "FREE", List.of("Java"), null);
+            CommentRequest commentRequest1 = createCommentRequest(1, "좋은 글 감사합니다");
+            CommentRequest commentRequest2 = createCommentRequest(1, "나는 두번째 댓글임");
+            CommentRequest replyRequest = createCommentRequest(2, "대댓글 단다");
 
-            // postDTO
+
+            Long postId = postService.save(postRequest, poster.getId());
+            Long commentId = commentService.save(commentRequest1, postId, commenter1.getId());
+            Long commentId2 = commentService.save(commentRequest2, postId, commenter2.getId());
+            Long replyId = commentService.reply(replyRequest, postId, commentId, replier.getId());
+
+            // 게시글의 좋아요 수는 1개다.
+            postService.addLike(postId, liker1.getId());
+
+            // 댓글의 좋아요 수는 2개다.
+            commentService.addLike(postId, commentId, liker1.getId());
+            commentService.addLike(postId, commentId, liker2.getId());
+
+
+            // 대댓글의 좋아요 수는 4개다.
+            commentService.addReplyLike(postId, commentId, replyId, liker1.getId());
+            commentService.addReplyLike(postId, commentId, replyId, liker2.getId());
+            commentService.addReplyLike(postId, commentId, replyId, liker3.getId());
+            commentService.addReplyLike(postId, commentId, replyId, liker4.getId());
+        }
+
+        // 객체
+        private Member createMember(String email, String password, String nickname, Role role) {
+            List<NotificationCategory> categories = notificationCategoryRepository.findAll();
+            Member member = Member.createMember(email, password, nickname, role, categories);
+            memberRepository.save(member);
+            return member;
+        }
+
+        private PostRequest createPostRequest(String title, String content, String category, List<String> areas, String filePath) {
             PostRequest postRequest = new PostRequest();
-            postRequest.setTitle("반갑습니다");
-            postRequest.setContent("안녕하세요 으아아아");
-            postRequest.setCategory("FREE");
-            postRequest.setMemberId(member.getId());
+            postRequest.setTitle(title);
+            postRequest.setContent(content);
+            postRequest.setCategory(category);
 
-            List<String> interestAreas = new ArrayList<>();
-            interestAreas.add("Java");
-            postRequest.setArea(interestAreas);
+            if (areas != null) {
+                postRequest.setArea(new ArrayList<>(areas));
+            }
 
             List<MultipartFile> files = new ArrayList<>();
             postRequest.setFiles(files);
 
-            Long postId = postService.save(postRequest);
+            return postRequest;
+        }
+
+        public CommentRequest createCommentRequest(int level, String content) {
+            CommentRequest commentRequest = new CommentRequest();
+            commentRequest.setLevel(level);
+            commentRequest.setContent(content);
+            return commentRequest;
+        }
+
+        private ReportRequest createReportRequest(String description, ReportReason reason, ReportTargetType targetType) {
+            ReportRequest reportRequest = new ReportRequest();
+            reportRequest.setDescription(description);
+            reportRequest.setReportReason(reason);
+            reportRequest.setReportTargetType(targetType);
+            return reportRequest;
         }
     }
 }
