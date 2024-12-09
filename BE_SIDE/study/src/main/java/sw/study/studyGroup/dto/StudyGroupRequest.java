@@ -1,11 +1,13 @@
 package sw.study.studyGroup.dto;
 
 import lombok.Data;
-import sw.study.studyGroup.domain.Participant;
 
 import java.util.List;
 
 @Data
-public class InviteNewMember {
+public class StudyGroupRequest {
+    private String groupName;
+    private String description;
     private List<String> selectedNicknames;
+    private String leaderNickname;
 }

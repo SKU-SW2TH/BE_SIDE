@@ -6,7 +6,7 @@ import sw.study.studyGroup.domain.DailyLog;
 import java.time.LocalDateTime;
 
 @Data
-public class DailyLogResponseDto {
+public class DailyLogResponse {
 
     private Long logId;
     private String title;
@@ -15,7 +15,7 @@ public class DailyLogResponseDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public DailyLogResponseDto(DailyLog dailyLog) {
+    public DailyLogResponse(DailyLog dailyLog) {
         this.logId = dailyLog.getId();
         this.title = dailyLog.getTitle();
         this.content = dailyLog.getContent();

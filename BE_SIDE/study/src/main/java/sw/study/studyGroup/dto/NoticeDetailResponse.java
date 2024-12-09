@@ -6,43 +6,42 @@ import sw.study.studyGroup.domain.Notice;
 import java.time.LocalDateTime;
 
 @Data
-public class NoticeResponseDto {
+public class NoticeDetailResponse {
 
     private Long id;
     private String nickname;
     private String title;
     private String content;
+    private boolean isChecked;
+    private int numOfChecks;
+    private int viewCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public NoticeResponseDto(Long id, String nickname, String title, String content, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public NoticeDetailResponse(
+            Long id, String nickname, String title, String content,
+            boolean isChecked, int numOfChecks, int viewCount,
+            LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.nickname = nickname;
         this.title = title;
         this.content = content;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.isChecked = isChecked;
+        this.numOfChecks = numOfChecks;
+        this.viewCount = viewCount;
     }
 
-    // 목록 조회용 생성 메서드
-    public static NoticeResponseDto fromList(Notice notice) {
-        return new NoticeResponseDto(
-                notice.getId(),
-                notice.getAuthor().getNickname(),
-                notice.getTitle(),
-                null, // 목록 조회이기에 본문은 제외
-                notice.getCreatedAt(),
-                notice.getUpdatedAt()
-        );
-    }
-
-    // 게시글 상세
-    public static NoticeResponseDto fromDetail(Notice notice) {
-        return new NoticeResponseDto(
+    public static NoticeDetailResponse createNoticeDetail(Notice notice, boolean isChecked, int numOfChecks) {
+        return new NoticeDetailResponse(
                 notice.getId(),
                 notice.getAuthor().getNickname(),
                 notice.getTitle(),
                 notice.getContent(),
+                isChecked,
+                numOfChecks,
+                notice.getViewCount(),
                 notice.getCreatedAt(),
                 notice.getUpdatedAt()
         );
