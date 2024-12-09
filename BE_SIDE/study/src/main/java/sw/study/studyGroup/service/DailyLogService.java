@@ -11,13 +11,10 @@ import sw.study.config.jwt.JWTService;
 import sw.study.exception.BaseException;
 import sw.study.exception.ErrorCode;
 import sw.study.exception.UserNotFoundException;
-import sw.study.exception.studyGroup.DailyLogNotFoundException;
-import sw.study.exception.studyGroup.StudyGroupNotFoundException;
-import sw.study.exception.studyGroup.UnauthorizedException;
 import sw.study.studyGroup.domain.DailyLog;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.StudyGroup;
-import sw.study.studyGroup.dto.DailyLogResponseDto;
+import sw.study.studyGroup.dto.DailyLogResponse;
 import sw.study.studyGroup.repository.DailyLogRepository;
 import sw.study.studyGroup.repository.ParticipantRepository;
 import sw.study.studyGroup.repository.StudyGroupRepository;
@@ -28,8 +25,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 @Service
@@ -46,14 +41,7 @@ public class DailyLogService {
 
     // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
     private Member currentLogginedInfo(String accessToken) {
-        // accessToken 유효성 검사
-        if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다.");
-        }
-
-        // "Bearer " 부분 제거 후 실제 토큰만 추출
-        String token = accessToken.substring(7);
-
+        String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
 
         return memberRepository.findByEmail(email)
@@ -78,7 +66,7 @@ public class DailyLogService {
 
     // 데일리 로그 조회
     @Transactional(readOnly = true)
-    public List<DailyLogResponseDto> listOfDailyLog(String accessToken, int page, int size, long groupId, String dateStr){
+    public List<DailyLogResponse> listOfDailyLog(String accessToken, int page, int size, long groupId, String dateStr){
 
         Pageable pageable = PageRequest.of(page, size);
 
@@ -94,7 +82,7 @@ public class DailyLogService {
 
         Page<DailyLog> logs = dailyLogRepository.findAllByStudyGroup_IdAndCreatedAtBetween(groupId, startOfDay, endOfDay, pageable);
 
-        return logs.stream().map(DailyLogResponseDto::new).toList();
+        return logs.stream().map(DailyLogResponse::new).toList();
     }
 
     // 데일리 로그 수정

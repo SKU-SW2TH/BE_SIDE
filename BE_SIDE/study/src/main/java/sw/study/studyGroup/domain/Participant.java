@@ -51,7 +51,7 @@ public class Participant {
         if(this.role==Role.MANAGER) this.role = Role.MEMBER;
     }
 
-    public void changedNickname(String nickname){
+    public void updateNickname(String nickname){
         this.nickname = nickname;
         this.updatedAt = LocalDateTime.now();
     }

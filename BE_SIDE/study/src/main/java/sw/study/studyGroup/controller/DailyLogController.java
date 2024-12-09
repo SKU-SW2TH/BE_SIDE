@@ -5,12 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sw.study.exception.studyGroup.DailyLogNotFoundException;
-import sw.study.exception.studyGroup.StudyGroupNotFoundException;
-import sw.study.exception.studyGroup.UnauthorizedException;
 import sw.study.studyGroup.apiDoc.DailyLogApiDocumentation;
-import sw.study.studyGroup.dto.DailyLogRequestDto;
-import sw.study.studyGroup.dto.DailyLogResponseDto;
+import sw.study.studyGroup.dto.DailyLogRequest;
+import sw.study.studyGroup.dto.DailyLogResponse;
 import sw.study.studyGroup.service.DailyLogService;
 
 import java.util.List;
@@ -29,7 +26,7 @@ public class DailyLogController implements DailyLogApiDocumentation {
     public ResponseEntity<?> createDailyLog(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody DailyLogRequestDto requestDto) {
+            @RequestBody DailyLogRequest requestDto) {
 
         dailyLogService.createDailyLog(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
         return ResponseEntity.status(HttpStatus.CREATED).body("데일리 로그가 성공적으로 작성되었습니다.");
@@ -45,7 +42,7 @@ public class DailyLogController implements DailyLogApiDocumentation {
             @PathVariable("groupId") Long groupId,
             @RequestParam(name = "date") String date) {
 
-        List<DailyLogResponseDto> logs = dailyLogService.listOfDailyLog(accessToken, page, size, groupId, date);
+        List<DailyLogResponse> logs = dailyLogService.listOfDailyLog(accessToken, page, size, groupId, date);
         return ResponseEntity.ok().body(logs); // 리스트 반환
     }
 
@@ -56,7 +53,7 @@ public class DailyLogController implements DailyLogApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("logId") Long logId,
-            @RequestBody DailyLogRequestDto requestDto) {
+            @RequestBody DailyLogRequest requestDto) {
 
         dailyLogService.updateDailyLog(accessToken, groupId, logId, requestDto.getTitle(), requestDto.getContent());
         return ResponseEntity.status(HttpStatus.OK).body("데일리 로그가 성공적으로 수정되었습니다.");

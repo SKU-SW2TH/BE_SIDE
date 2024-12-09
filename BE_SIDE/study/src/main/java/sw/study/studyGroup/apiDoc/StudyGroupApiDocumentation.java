@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.studyGroup.dto.*;
+
+import java.util.List;
 import java.util.Map;
 
 public interface StudyGroupApiDocumentation {
@@ -54,7 +56,7 @@ public interface StudyGroupApiDocumentation {
     })
     ResponseEntity<Map<String,Object>> createStudyGroup(
             @RequestHeader("Authorization") String accessToken,
-            @RequestBody CreateStudyGroup requestDto);
+            @RequestBody StudyGroupRequest requestDto);
     
     // 받은 초대 확인
     @Operation(summary = "받은 초대 내역 확인", description = "받은 초대 리스트를 확인")
@@ -97,12 +99,13 @@ public interface StudyGroupApiDocumentation {
     ResponseEntity<?> acceptInvitation(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId,
-            @RequestBody nicknameDto searchByNickname);
+            @RequestBody NicknameRequest nicknameRequest);
 
     // 초대 거절
     @Operation(summary = "받은 초대 거절", description = "받은 초대를 거절할 때 사용")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "초대를 거절하였습니다."),
+            @ApiResponse(responseCode = "404", description = "해당하는 그룹에 초대를 받은 상태가 아닙니다."),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.")
     })
     @Parameters(value = {
@@ -224,7 +227,7 @@ public interface StudyGroupApiDocumentation {
     ResponseEntity<?> changeNickname(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId,
-            @RequestBody nicknameDto nicknameDto);
+            @RequestBody NicknameRequest nicknameRequest);
 
     // 그룹 내 신규 초대
     @Operation(summary = "그룹 내 새로운 멤버 초대",
@@ -238,13 +241,13 @@ public interface StudyGroupApiDocumentation {
     @Parameters(value = {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
             @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1"),
-            @Parameter(name = "selectedNicknames", description = "초대할 사용자들의 닉네임 리스트",
+            @Parameter(name = "nicknames", description = "초대할 사용자들의 닉네임 리스트",
                     example = "[\"스폰지밥\", \"뚱이\", \"집게사장\"]")
     })
     ResponseEntity<?> inviteNewMember(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId,
-            @RequestBody InviteNewMember listOfMembers);
+            @RequestBody List<NicknameRequest> nicknameRequest);
 
 
     // 그룹 내 사용자 추방
@@ -253,6 +256,7 @@ public interface StudyGroupApiDocumentation {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "[닉네임] 님을 추방하였습니다."),
             @ApiResponse(responseCode = "403", description = "비정상적인 접근 (그룹에 참여 중이지 않거나 권한이 없음)"),
+            @ApiResponse(responseCode = "404", description = "그롭 내 해당하는 참가자가 존재하지 않습니다."),
             @ApiResponse(responseCode = "500", description = "서버 오류가 발생했습니다.")
     })
     @Parameters(value = {

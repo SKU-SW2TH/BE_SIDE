@@ -1,16 +1,15 @@
 package sw.study.studyGroup.dto;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-public class DailyLogRequestDto {
-
+@NoArgsConstructor
+public class NoticeRequest {
     private String title;
     private String content;
 
-    public DailyLogRequestDto() {}
-
-    public DailyLogRequestDto(String title, String content) {
+    public NoticeRequest(String title, String content) {
         this.title = title;
         this.content = content;
     }

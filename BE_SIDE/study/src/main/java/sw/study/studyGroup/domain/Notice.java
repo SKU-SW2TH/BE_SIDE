@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -40,6 +39,8 @@ public class Notice {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt; // 삭제일
 
+    private int viewCount; // 조회수
+
     // 공지사항 생성 메서드
     public static Notice createNotice(StudyGroup group, Participant author, String title, String content) {
         Notice notice = new Notice();
@@ -49,6 +50,7 @@ public class Notice {
         notice.content = content;
         notice.createdAt = LocalDateTime.now();
         notice.updatedAt = LocalDateTime.now();
+        notice.viewCount = 0;
         return notice;
     }
 
@@ -56,5 +58,9 @@ public class Notice {
         this.title = title;
         this.content = content;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void IncreaseViewCount(){
+        this.viewCount++;
     }
 }

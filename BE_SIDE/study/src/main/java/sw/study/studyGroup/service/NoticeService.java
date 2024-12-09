@@ -11,13 +11,12 @@ import sw.study.config.jwt.JWTService;
 import sw.study.exception.BaseException;
 import sw.study.exception.ErrorCode;
 import sw.study.exception.UserNotFoundException;
-import sw.study.exception.studyGroup.NoticeNotFoundException;
-import sw.study.exception.studyGroup.StudyGroupNotFoundException;
-import sw.study.exception.studyGroup.UnauthorizedException;
 import sw.study.studyGroup.domain.Notice;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.StudyGroup;
-import sw.study.studyGroup.dto.NoticeResponseDto;
+import sw.study.studyGroup.dto.NoticeDetailResponse;
+import sw.study.studyGroup.dto.NoticeListResponse;
+import sw.study.studyGroup.repository.NoticeCheckRepository;
 import sw.study.studyGroup.repository.NoticeRepository;
 import sw.study.studyGroup.repository.ParticipantRepository;
 import sw.study.studyGroup.repository.StudyGroupRepository;
@@ -35,16 +34,13 @@ public class NoticeService {
     private final ParticipantRepository participantRepository;
     private final StudyGroupRepository studyGroupRepository;
     private final NoticeRepository noticeRepository;
+    private final NoticeCheckRepository noticeCheckRepository;
 
     private final JWTService jwtService;
 
     // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
     private Member currentLogginedInfo(String accessToken) {
-        if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("[ERROR] 유효하지 않는 토큰 형식입니다.");
-        }
-        String token = accessToken.substring(7);
-
+        String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
 
         return memberRepository.findByEmail(email)
@@ -79,7 +75,7 @@ public class NoticeService {
 
     // 공지사항 조회 ( 목록 )
     @Transactional(readOnly = true)
-    public List<NoticeResponseDto> listOfNotice(String accessToken, long groupId, int page, int size){
+    public List<NoticeListResponse> listOfNotice(String accessToken, long groupId, int page, int size){
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -92,21 +88,27 @@ public class NoticeService {
         if(noticePage.isEmpty())
             throw new BaseException(ErrorCode.NOTICE_NOT_FOUND);
 
-        return noticePage.stream().map(NoticeResponseDto::fromList).toList();
+        return noticePage.stream().map(NoticeListResponse::createNoticeList).toList();
     }
 
     // 공지사항 조회 ( 상세 )
-    @Transactional(readOnly = true)
-    public NoticeResponseDto noticeDetail(String accessToken, long groupId, long noticeId){
+    @Transactional
+    public NoticeDetailResponse noticeDetail(String accessToken, long groupId, long noticeId){
 
         Member member = currentLogginedInfo(accessToken);
 
-        checkGroupParticipant(groupId, member);
+        Participant participant = checkGroupParticipant(groupId, member);
 
         Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
                 .orElseThrow(()-> new BaseException(ErrorCode.NOTICE_NOT_FOUND));
 
-        return NoticeResponseDto.fromDetail(notice);
+        notice.IncreaseViewCount();
+        noticeRepository.save(notice);
+
+        boolean isChecked = noticeCheckRepository.existsByNoticeIdAndParticipantId(noticeId, participant.getId());
+        int numOfChecks = noticeCheckRepository.countByNoticeId(noticeId);
+
+        return NoticeDetailResponse.createNoticeDetail(notice, isChecked, numOfChecks);
     }
 
     // 공지사항 수정
@@ -137,7 +139,6 @@ public class NoticeService {
 
         Notice notice = noticeRepository.findByIdAndStudyGroup_Id(noticeId, groupId)
                 .orElseThrow(()->new BaseException(ErrorCode.NOTICE_NOT_FOUND));
-
 
         if(participant.getRole()== Participant.Role.MEMBER){
             // 리더 혹은 운영진만 가능
