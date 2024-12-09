@@ -53,4 +53,9 @@ public class RedisUtil {
         return redisTemplate.expire(key, timeout, unit);
     }
 
+    public void flushAll(){
+        redisBlackListTemplate.getConnectionFactory().getConnection().flushDb();
+        redisTemplate.getConnectionFactory().getConnection().flushDb();
+    }
+
 }

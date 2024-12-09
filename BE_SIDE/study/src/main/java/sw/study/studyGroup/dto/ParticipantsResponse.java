@@ -4,18 +4,18 @@ import lombok.Data;
 import sw.study.studyGroup.domain.Participant;
 
 @Data
-public class GroupParticipants {
+public class ParticipantsResponse {
 
     // 프로필 사진 이후 추가 필요
     private String nickname;
     private Participant.Role role;
 
-    private GroupParticipants(String nickname, Participant.Role role){
+    private ParticipantsResponse(String nickname, Participant.Role role){
         this.nickname = nickname;
         this.role = role;
     }
 
-    public static GroupParticipants createGroupParticipants(String nickname, Participant.Role role){
-        return new GroupParticipants(nickname,role);
+    public static ParticipantsResponse createGroupParticipants(String nickname, Participant.Role role){
+        return new ParticipantsResponse(nickname,role);
     }
 }

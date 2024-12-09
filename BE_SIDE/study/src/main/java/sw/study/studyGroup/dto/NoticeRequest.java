@@ -1,15 +1,15 @@
 package sw.study.studyGroup.dto;
 
 import lombok.Data;
-import sw.study.studyGroup.domain.DailyLog;
+import lombok.NoArgsConstructor;
 
 @Data
-public class DailyLogRequestDto {
-
+@NoArgsConstructor
+public class NoticeRequest {
     private String title;
     private String content;
 
-    public DailyLogRequestDto(String title, String content) {
+    public NoticeRequest(String title, String content) {
         this.title = title;
         this.content = content;
     }

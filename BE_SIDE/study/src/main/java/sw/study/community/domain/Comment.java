@@ -57,7 +57,7 @@ public class Comment {
     //== 생성 메서드 ==//
     public static Comment createComment(Post post, Member member, String content, int level) {
         Comment comment = new Comment();
-        comment.post = post;
+        post.addComment(comment);
         comment.member = member;
         comment.content = content;
         comment.level = level;
@@ -65,9 +65,25 @@ public class Comment {
         return comment;
     }
 
+    public static Comment createReply(Comment parent, Member member, String content, int level) {
+        Comment comment = new Comment();
+        parent.addChildComment(comment);
+        comment.member = member;
+        comment.content = content;
+        comment.level = level;
+
+        return comment;
+    }
+
+    //== 연관 관계 편의 메서드 ==//
     public void addChildComment(Comment child) {
         this.child.add(child);
         child.addParentComment(this);
+    }
+
+    public void addCommentLike(CommentLike commentLike) {
+        this.commentLikes.add(commentLike);
+        commentLike.addComment(this);
     }
 
     public void addParentComment(Comment parent) {
@@ -75,4 +91,29 @@ public class Comment {
     }
 
     public void addPost(Post post) { this.post = post; }
+
+    //== 비즈니스 로직 ==//
+    public void deleteComment() {
+        this.isDeleted = true;
+    }
+
+    public void deletedCommentLike(CommentLike commentLike) {
+        this.commentLikes.remove(commentLike);
+        commentLike.addComment(null);
+    }
+
+    public void incrementReportCount() {
+        this.reportCount++;
+    }
+
+    public void decrementReportCount() {
+        this.reportCount--;
+    }
+
+    public boolean hasParentComment() {
+        return this.parent != null;
+    }
+    public boolean hasChildComment() {
+        return !this.child.isEmpty();
+    }
 }

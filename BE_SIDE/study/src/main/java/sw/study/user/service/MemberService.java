@@ -4,6 +4,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,6 +98,22 @@ public class MemberService {
         }
     }
 
+    public Long getMemberIdByToken(String token) {
+        // 토큰 유효성 검사
+        token = jwtService.extractToken(token);
+
+        if (!tokenProvider.validateToken(token)) {
+            throw new InvalidTokenException("유효하지 않은 토큰입니다.");
+        }
+
+        String email = jwtService.extractEmail(token);
+
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        return member.getId();
+    }
+
     public MemberDto getMemberByToken(String token) {
         // 토큰 유효성 검사
         token = jwtService.extractToken(token);
@@ -156,14 +174,18 @@ public class MemberService {
     }
 
     @Transactional
-    public UpdateProfileResponse updateMemberProfile(String accessToken, UpdateProfileRequest updateProfileRequest, MultipartFile profilePicture) throws IOException{
+    public UpdateProfileResponse updateMemberProfile(String accessToken, String nickName, String introduction, MultipartFile profilePicture) throws IOException{
         String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        if (updateProfileRequest.getNickname() != null && !updateProfileRequest.getNickname().isEmpty() && !member.getNickname().equals(updateProfileRequest.getNickname())) {
-            checkNicknameDuplication(updateProfileRequest.getNickname());
-            member.updateNickname(updateProfileRequest.getNickname());
+        if (introduction == null) {
+            introduction = "";
+        }
+
+        if (!nickName.isEmpty() && !member.getNickname().equals(nickName)) {
+            checkNicknameDuplication(nickName);
+            member.updateNickname(nickName);
         }
 
         // 프로필 사진 업데이트
@@ -172,15 +194,33 @@ public class MemberService {
             member.updateProfilePicture(profilePictureUrl);
         }
 
+        if (profilePicture != null && profilePicture.isEmpty()) {
+            // 빈 파일일 경우 (파일은 존재하지만 내용이 없는 경우)
+            member.updateProfilePicture("");  // 빈 문자열로 기본 사진 처리
+        }
+
         // 자기소개 업데이트
-        if (updateProfileRequest.getIntroduction() != null && !updateProfileRequest.getIntroduction().isEmpty() && !member.getIntroduce().equals(updateProfileRequest.getIntroduction())) {
-            member.updateIntroduction(updateProfileRequest.getIntroduction());
+        if (!member.getIntroduce().equals(introduction)) {
+            member.updateIntroduction(introduction);
         }
 
         memberRepository.save(member);
 
-        return  new UpdateProfileResponse(member.getNickname(), member.getIntroduce(), member.getProfile());
+        return new UpdateProfileResponse(member.getNickname(), member.getIntroduce(), member.getProfile());
     }
+
+    @Transactional
+    public String resetMemberProfile(String accessToken) {
+        String token = jwtService.extractToken(accessToken);
+        String email = jwtService.extractEmail(token);
+        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        member.updateProfilePicture("");
+        memberRepository.save(member);
+
+        return member.getProfile();
+    }
+
 
     @Transactional
     public void changePassword(String accessToken, String oldPassword, String newPassword) {
@@ -308,6 +348,12 @@ public class MemberService {
             MemberArea newInterest = MemberArea.CreateMemberArea(area);
             member.addMemberArea(newInterest);
             memberAreaRepository.save(newInterest);
+
+            //MemberAreaDTO dto = new MemberAreaDTO();
+            //dto.setId(newInterest.getId());
+            //dto.setInterestId(newInterest.getArea().getId());
+            //dto.setName(newInterest.getArea().getAreaName());
+            //dtos.add(dto);
         }
 
         // 관심사 삭제
@@ -316,7 +362,7 @@ public class MemberService {
                     .orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
             member.removeInterest(existingInterest);
             memberAreaRepository.delete(existingInterest);
-        }
+       }
 
         // 업데이트된 관심사 목록 DTO 생성
         List<MemberArea> updatedInterests = memberAreaRepository.findByMemberId(member.getId());
@@ -329,6 +375,39 @@ public class MemberService {
         }
 
         return dtos;
+    }
+
+    @Transactional
+    public void deleteInterest(String accessToken, AreaRequest areaRequest) {
+
+        // 토큰에서 이메일 추출
+        String token = jwtService.extractToken(accessToken);
+        String email = jwtService.extractEmail(token);
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 요청에서 관심사 ID 목록 가져오기 (null 방지)
+        List<Long> interestIds = Optional.ofNullable(areaRequest.getIds()).orElse(new ArrayList<>());
+
+        // 기존의 관심사를 조회하여 ID 목록으로 변환
+        List<MemberArea> existingInterests = memberAreaRepository.findByMemberId(member.getId());
+        Set<Long> existingInterestIds = existingInterests.stream()
+                .map(memberArea -> memberArea.getArea().getId())
+                .collect(Collectors.toSet());
+
+        // 삭제할 관심사: 기존 관심사 중 새로운 요청에 없는 ID들
+        Set<Long> interestsToRemove = existingInterestIds.stream()
+                .filter(id -> interestIds.contains(id))
+                .collect(Collectors.toSet());
+
+        // 관심사 삭제
+        for (Long interestId : interestsToRemove) {
+            MemberArea existingInterest = memberAreaRepository.findByMemberIdAndAreaId(member.getId(), interestId)
+                    .orElseThrow(() -> new InterestNotFoundException("관심 분야를 찾지 못했습니다."));
+            member.removeInterest(existingInterest);
+            memberAreaRepository.delete(existingInterest);
+        }
+
     }
 
     @Transactional
@@ -350,49 +429,39 @@ public class MemberService {
         notificationRepository.saveAll(notifications);
     }
 
-    public List<NotificationDTO> getNotifications(String accessToken) {
+    public Page<NotificationDTO> getNotifications(String accessToken, Pageable pageable) {
         String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        List<NotificationDTO> notificationDTOS = member.getNotifications().stream()
-                .sorted(Comparator.comparing(Notification::getCreatedAt).reversed()) // createdAt 기준 내림차순 정렬
-                .map(notification -> {
-                    NotificationDTO dto = new NotificationDTO();
-                    dto.setId(notification.getId());
-                    dto.setTitle(notification.getTitle());
-                    dto.setContent(notification.getContent());
-                    dto.setRead(notification.isRead());
-                    dto.setName(notification.getCategory().getCategoryName());
-                    dto.setCreatedAt(notification.getCreatedAt());
-                    return dto;
-                }).collect(Collectors.toList());
+        // 페이지네이션을 고려하여 Notification 엔티티를 페이지 단위로 가져옴
+        Page<Notification> notificationsPage = notificationRepository.findByMember(member, pageable);
+
+        // 가져온 Notification 엔티티들을 NotificationDTO로 변환
+        Page<NotificationDTO> notificationDTOS = notificationsPage.map(notification -> {
+            NotificationDTO dto = new NotificationDTO();
+            dto.setId(notification.getId());
+            dto.setContent(notification.getContent());
+            dto.setRead(notification.isRead());
+            dto.setType(notification.getCategory().getCategoryName());
+            dto.setCreatedAt(notification.getCreatedAt());
+            dto.setTargetId(notification.getTargetId() != null ? notification.getTargetId() : 0);
+            return dto;
+        });
 
         return notificationDTOS;
     }
 
-    public List<NotificationDTO> unReadNotification(String accessToken) {
+    public long unReadNotification(String accessToken) {
         String token = jwtService.extractToken(accessToken);
         String email = jwtService.extractEmail(token);
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         List<Notification> notifications = notificationRepository.findByMemberAndIsReadFalse(member);
-        List<NotificationDTO> dtos = new ArrayList<>();
 
-        for (Notification notification : notifications) {
-            NotificationDTO dto = new NotificationDTO();
-            dto.setId(notification.getId());
-            dto.setTitle(notification.getTitle());
-            dto.setContent(notification.getContent());
-            dto.setName(notification.getCategory().getCategoryName());
-            dto.setRead(notification.isRead());
-            dto.setCreatedAt(notification.getCreatedAt());
-            dtos.add(dto);
-        }
-
-        return dtos;
+        return notifications.size();
     }
 
     private void checkNicknameDuplication(String nickname) {

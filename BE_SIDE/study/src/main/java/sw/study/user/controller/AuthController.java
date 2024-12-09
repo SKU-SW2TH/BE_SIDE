@@ -20,7 +20,7 @@ import sw.study.user.service.AuthService;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Tag(name = "Auth", description = "Auth API")
+@Tag(name = "Auth", description = "계정 인증 관련 API")
 public class AuthController implements AuthApiDocumentation {
     private final AuthService authService;
     private final TokenProvider tokenProvider;
@@ -35,6 +35,10 @@ public class AuthController implements AuthApiDocumentation {
         String email = emailDto.getEmail();
 
         try {
+
+            // 이메일 중복 확인
+            memberService.verifyEmail(emailDto.getEmail());
+
             // 인증 코드 생성
             String verificationCode = memberService.createCode();
 
@@ -48,6 +52,9 @@ public class AuthController implements AuthApiDocumentation {
             return ResponseEntity.ok("인증 코드가 전송되었습니다.");
 
 
+        } catch (DuplicateEmailException e) {
+            // 이메일 중복
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage()); // 409
         } catch (VerificationCodeGenerationException e) {
             // 인증 코드 생성 중 오류발생
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500

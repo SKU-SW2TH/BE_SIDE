@@ -26,7 +26,7 @@ public class Participant {
     @JoinColumn(name = "group_id") // JoinColumn : FK -> 참조할 테이블 설정
     private StudyGroup studyGroup;  // FK (스터디그룹 테이블 참조)
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String nickname;
 
     @Enumerated(EnumType.STRING)
@@ -51,16 +51,17 @@ public class Participant {
         if(this.role==Role.MANAGER) this.role = Role.MEMBER;
     }
 
-    public void changedNickname(String nickname){
+    public void updateNickname(String nickname){
         this.nickname = nickname;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public static Participant createParticipant(String nickname, Member member, Role role) {
+    public static Participant createParticipant(String nickname, Member member, Role role, StudyGroup studyGroup) {
         Participant participant = new Participant();
         participant.member = member;
         participant.nickname = nickname;
         participant.role = role;
+        participant.studyGroup = studyGroup;
         participant.joinedAt = LocalDateTime.now();
         participant.updatedAt = LocalDateTime.now();
         return participant;
