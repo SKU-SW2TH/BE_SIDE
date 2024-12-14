@@ -60,7 +60,7 @@ public class StudyGroupService {
         List<String> participants = new ArrayList<>(); // 방 생성 이후 (groupId 존재)
 
         if (groupId != null) {
-            participants = participantRepository.findAllByStudyGroupId(groupId)
+            participants = participantRepository.findAllByStudyGroupId(groupId, pageable)
                     .stream()
                     .map(participant -> participant.getMember().getNickname())
                     .toList();
@@ -210,14 +210,15 @@ public class StudyGroupService {
     }
 
     //참가자 전체 리스트 확인
-    public List<ParticipantsResponse> listOfEveryone(String accessToken, Long groupId) {
+    public List<ParticipantsResponse> listOfEveryone(String accessToken, Long groupId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
 
         Member member = currentLogginedInfo(accessToken);
 
         participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new BaseException(ErrorCode.UNAUTHORIZED));
 
-        List<Participant> participants = participantRepository.findAllByStudyGroupId(groupId);
+        Page<Participant> participants = participantRepository.findAllByStudyGroupId(groupId, pageable);
 
         List<ParticipantsResponse> result = new ArrayList<>();
 
@@ -230,14 +231,14 @@ public class StudyGroupService {
     }
 
     // 운영진 리스트 확인 (방장 포함)
-    public List<ParticipantsResponse> listOfManagers(String accessToken, Long groupId) {
-
+    public List<ParticipantsResponse> listOfManagers(String accessToken, Long groupId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
         Member member = currentLogginedInfo(accessToken);
 
         participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new BaseException(ErrorCode.UNAUTHORIZED));
 
-        List<Participant> participants = participantRepository.findAllByStudyGroupIdAndRole(groupId, Role.MANAGER);
+        Page<Participant> participants = participantRepository.findAllByStudyGroupIdAndRole(groupId, Role.MANAGER, pageable);
 
         List<ParticipantsResponse> result = new ArrayList<>();
         for (Participant p : participants) {
@@ -248,14 +249,14 @@ public class StudyGroupService {
     }
 
     // 팀원 리스트 확인
-    public List<ParticipantsResponse> listOfMembers(String accessToken, Long groupId) {
-
+    public List<ParticipantsResponse> listOfMembers(String accessToken, Long groupId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
         Member member = currentLogginedInfo(accessToken);
 
         participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
                 .orElseThrow(() -> new BaseException(ErrorCode.UNAUTHORIZED));
 
-        List<Participant> participants = participantRepository.findAllByStudyGroupIdAndRole(groupId, Role.MEMBER);
+        Page<Participant> participants = participantRepository.findAllByStudyGroupIdAndRole(groupId, Role.MEMBER, pageable);
 
         List<ParticipantsResponse> result = new ArrayList<>();
         for (Participant p : participants) {
@@ -266,8 +267,8 @@ public class StudyGroupService {
     }
 
     // 그룹 내에서 초대된 리스트 확인
-    public List<String> listOfWaiting(String accessToken, Long groupId) {
-
+    public List<String> listOfWaiting(String accessToken, Long groupId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
@@ -279,7 +280,7 @@ public class StudyGroupService {
             throw new BaseException(ErrorCode.PERMISSION_DENIED);
         }
 
-        List<WaitingPeople> waitingList = waitingPeopleRepository.findByStudyGroup_Id(groupId);
+        Page<WaitingPeople> waitingList = waitingPeopleRepository.findByStudyGroup_Id(groupId, pageable);
         List<String> result = new ArrayList<>();
 
         for (WaitingPeople target : waitingList) {

@@ -125,11 +125,15 @@ public interface StudyGroupApiDocumentation {
     })
     @Parameters(value = {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
-            @Parameter(name = "groupId", description = "그룹 Id", example = "1")
+            @Parameter(name = "groupId", description = "그룹 Id", example = "1"),
+            @Parameter(name = "page", description = "현재 페이지 (주의! 첫 페이지는 1부터가 아닌 0부터 시작)", example = "0"),
+            @Parameter(name = "size", description = "페이지 당 보여질 항목의 수", example = "5")
     })
     ResponseEntity<?> listOfAll(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable Long groupId);
+            @PathVariable Long groupId,
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size);
 
     // 그룹 내 운영진 확인
     @Operation(summary = "스터디 그룹 내 운영진 확인", description = "그룹 내 모든 운영진 확인 ( 방장 제외 )")
@@ -140,13 +144,17 @@ public interface StudyGroupApiDocumentation {
     })
     @Parameters(value = {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
-            @Parameter(name = "groupId", description = "그룹 Id", example = "1")
+            @Parameter(name = "groupId", description = "그룹 Id", example = "1"),
+            @Parameter(name = "page", description = "현재 페이지 (주의! 첫 페이지는 1부터가 아닌 0부터 시작)", example = "0"),
+            @Parameter(name = "size", description = "페이지 당 보여질 항목의 수", example = "5")
     })
     ResponseEntity<?> listOfManagers(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable Long groupId);
+            @PathVariable Long groupId,
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size);
 
-    // 그룹 내 참가자 확인
+    // 그룹 내 일반 멤버 확인
     @Operation(summary = "스터디 그룹 내 일반 멤버 확인", description = "일반 멤버 리스트 반환")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "성공시 일반 멤버 리스트 응답"),
@@ -155,11 +163,15 @@ public interface StudyGroupApiDocumentation {
     })
     @Parameters(value = {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
-            @Parameter(name = "groupId", description = "그룹 Id", example = "1")
+            @Parameter(name = "groupId", description = "그룹 Id", example = "1"),
+            @Parameter(name = "page", description = "현재 페이지 (주의! 첫 페이지는 1부터가 아닌 0부터 시작)", example = "0"),
+            @Parameter(name = "size", description = "페이지 당 보여질 항목의 수", example = "5")
     })
     ResponseEntity<?> listOfMembers(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable Long groupId);
+            @PathVariable Long groupId,
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size);
 
     // 그룹 내 특정 참가자 신분 변경
     @Operation(summary = "스터디 그룹 내 신분 변경 ( 승격 / 강등 ) ", description = "단일 API 로 구성 : 운영진 <-> 멤버 간")
@@ -188,10 +200,14 @@ public interface StudyGroupApiDocumentation {
     @Parameters(value = {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
             @Parameter(name = "groupId", description = "그룹 Id", example = "1"),
+            @Parameter(name = "page", description = "현재 페이지 (주의! 첫 페이지는 1부터가 아닌 0부터 시작)", example = "0"),
+            @Parameter(name = "size", description = "페이지 당 보여질 항목의 수", example = "5")
     })
     ResponseEntity<?> checkWaiting(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable Long groupId);
+            @PathVariable Long groupId,
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size);
 
     // 기존에 발송된 초대 취소
     @Operation(summary = "기존에 발송된 초대 취소", description = "수락/거절 대기중인 특정 사용자의 초대를 강제로 취소한다. ( 방장, 운영진만 가능 )")
