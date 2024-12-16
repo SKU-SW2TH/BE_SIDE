@@ -49,34 +49,36 @@ public class StudyGroupService {
 
     // 닉네임을 통한 사용자 검색 ( 그룹 생성 시 / 생성 이후 신규 초대 모두 핸들링 )
     public List<String> searchByNickname(String accessToken, String nickname, int page, int size, Long groupId) {
+
         Pageable pageable = PageRequest.of(page, size);
 
+        // 커뮤니티 사이드에서 닉네임 전체 검색
         Page<Member> members = memberRepository.findMembersByNicknameStartingWith(nickname, pageable);
-        List<String> nicknames = new ArrayList<>();
 
         Member loggedUser = currentLogginedInfo(accessToken);
-        String loggedUserNickname = loggedUser.getNickname();
+        Long loggedUserId = loggedUser.getId(); // 로그인 된 사용자 id(pk)
 
-        List<String> participants = new ArrayList<>(); // 방 생성 이후 (groupId 존재)
+        // groupId 가 있는 경우 ( 스터디 그룹 내에서 신규 초대를 위한 검색 )
+        if(groupId != null) {
+            Page<Participant> participants = participantRepository.findAllByStudyGroupId(groupId, pageable);
 
-        if (groupId != null) {
-            participants = participantRepository.findAllByStudyGroupId(groupId, pageable)
-                    .stream()
-                    .map(participant -> participant.getMember().getNickname())
+            // 그룹 내 사용자들의 정보를 기준으로 사용자 Id 를 조회 ( member.id )
+            List<Long> participantMemberId = participants.getContent().stream()
+                    .map(participant -> participant.getMember().getId())
+                    .toList();
+
+            // 이후 본인 Id 와 참여자 Id 를 기준으로 필터링하여 리턴
+            return members.stream()
+                    .filter(member -> !member.getId().equals(loggedUserId)) // 본인을 제외하고
+                    .filter(member-> !participantMemberId.contains(member.getId()))
+                    .map(Member::getNickname)
                     .toList();
         }
-
-        if (members.isEmpty()) {
-            return Collections.emptyList();
-            // 비어있는 리스트 반환 ( 검색된 결과가 없을 경우에 )
-        }
-        for (Member member : members) {
-            // 로그인된 사용자  / 기존 참가자는 제외
-            if (!loggedUserNickname.equals(member.getNickname())
-                    && !participants.contains(member.getNickname()))
-                nicknames.add(member.getNickname());
-        }
-        return nicknames;
+        // groupId 가 없으면 본인만 제외하고 바로 리턴
+        return members.stream()
+                .filter(member-> !member.getId().equals(loggedUserId))
+                .map(Member::getNickname)
+                .toList();
     }
 
     // 스터디 그룹 생성 ( + 사용자 초대 )
