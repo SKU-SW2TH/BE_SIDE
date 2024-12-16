@@ -49,6 +49,8 @@ public class InitDb {
         initService.initMember();
         initService.initNotification();
         initService.initPost();
+        initService.initFREEPosts();
+        initService.initQUESTIONPosts();
     }
 
     @Component
@@ -263,6 +265,21 @@ public class InitDb {
             commentService.addReplyLike(postId, commentId, replyId, liker2.getId());
             commentService.addReplyLike(postId, commentId, replyId, liker3.getId());
             commentService.addReplyLike(postId, commentId, replyId, liker4.getId());
+        }
+
+        public void initFREEPosts() {
+            Member poster = createMember("poster99@naver.com", encoder.encode("password1"), "FREE게시글쓴사람", Role.USER);
+            for (int i = 1; i <= 100; i++) {
+                PostRequest postRequest = createPostRequest(i+"번째 FREE 게시글", "안녕하세요!! " + i, "FREE", List.of("Java"), null);
+                postService.save(postRequest, poster.getId());
+            }
+        }
+        public void initQUESTIONPosts() {
+            Member poster = createMember("poster999@naver.com", encoder.encode("password1"), "QUESTION게시글쓴사람", Role.USER);
+            for (int i = 1; i <= 100; i++) {
+                PostRequest postRequest = createPostRequest(i+"번째 QUESTION 게시글", "안녕하세요!! " + i, "QUESTION", List.of("Java"), null);
+                postService.save(postRequest, poster.getId());
+            }
         }
 
         // 객체
