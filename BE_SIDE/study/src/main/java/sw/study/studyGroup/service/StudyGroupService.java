@@ -1,5 +1,6 @@
 package sw.study.studyGroup.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -14,18 +15,24 @@ import sw.study.exception.*;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.Participant.Role;
 import sw.study.studyGroup.domain.StudyGroup;
+import sw.study.studyGroup.domain.StudyGroupArea;
 import sw.study.studyGroup.domain.WaitingPeople;
 import sw.study.studyGroup.dto.NicknameRequest;
 import sw.study.studyGroup.dto.ParticipantsResponse;
 import sw.study.studyGroup.dto.StudyGroupResponse;
 import sw.study.studyGroup.repository.*;
+import sw.study.user.domain.Area;
 import sw.study.user.domain.Member;
+import sw.study.user.dto.AreaDTO;
+import sw.study.user.dto.AreaRequest;
+import sw.study.user.repository.AreaRepository;
 import sw.study.user.repository.MemberRepository;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -36,6 +43,8 @@ public class StudyGroupService {
     private final StudyGroupRepository studyGroupRepository;
     private final ParticipantRepository participantRepository;
     private final WaitingPeopleRepository waitingPeopleRepository;
+    private final StudyGroupAreaRepository studyGroupAreaRepository;
+    private final AreaRepository areaRepository;
     private final JWTService jwtService;
 
     // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
@@ -84,7 +93,7 @@ public class StudyGroupService {
     // 스터디 그룹 생성 ( + 사용자 초대 )
     @Transactional
     public StudyGroup createStudyGroup(
-            String accessToken, String groupName, String description, List<String> selectedNicknames, String leaderNickname) {
+            String accessToken, String groupName, String description, List<String> selectedNicknames, String leaderNickname, List<Long> areaIds) {
 
         // 스터디 그룹 생성 
         StudyGroup studyGroup = StudyGroup.createStudyGroup(groupName, description);
@@ -110,7 +119,34 @@ public class StudyGroupService {
 
         studyGroup.whoEverInvited(waitingPeople.size());
         waitingPeopleRepository.saveAll(waitingPeople);
+
+        // 스터디 그룹의 관심분야 설정
+        if (areaIds != null && !areaIds.isEmpty()) {
+            for (Long areaId : areaIds) {
+                Area area = areaRepository.findById(areaId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.INTEREST_NOT_FOUND));
+
+                // StudyGroup과 Area를 연결하는 StudyGroupArea 생성
+                StudyGroupArea studyGroupArea = StudyGroupArea.createStudyGroupArea(studyGroup, area);
+                studyGroupAreaRepository.save(studyGroupArea); // 관계 저장
+            }
+        }
         return studyGroup;
+    }
+
+    // 복합 키 기반으로 특정 스터디그룹의 관심 분야 조회
+    public List<String> getStudyGroupAreas(Long studyGroupId) {
+        // 복합 키 기반으로 StudyGroupArea 조회
+        // 순회하며 처리하는데, 각 객체의 복합키 중 하나인 AreaId 로 조회해서 이름만 프론트한테 반환
+        // 우선 InitDb를 통해 설정된 Area의 Id는 30 번 까지.
+
+        List<Long> areaIds = studyGroupAreaRepository.findByIdGroupId(studyGroupId).stream()
+                .map(studyGroupArea -> studyGroupArea.getId().getAreaId())
+                .toList();
+
+        return areaRepository.findAllById(areaIds).stream()
+                .map(Area::getAreaName)
+                .toList();
     }
 
     // 초대를 받은 스터디그룹 확인하기
@@ -118,24 +154,21 @@ public class StudyGroupService {
 
         Member user = currentLogginedInfo(accessToken);
 
-        // 대기 명단에서 로그인된 사용자의 정보만 따로 뺀 후에
+        // 대기 명단에서 로그인된 사용자의 정보 조회
         List<WaitingPeople> waitingPeople = waitingPeopleRepository.findByMemberId(user.getId());
 
-        List<StudyGroupResponse> studyGroups = new ArrayList<>();
-
-        // waitingPeople 의 StudyGroup 으로 초대받은 그룹 탐색
-        for (WaitingPeople waitingPerson : waitingPeople) {
-
-            StudyGroup studyGroup = waitingPerson.getStudyGroup(); // Exception 핸들링 불필요
-            StudyGroupResponse groupInfo = StudyGroupResponse.createStudyGroupResponse(
-                    studyGroup.getId(),
-                    studyGroup.getName(),
-                    studyGroup.getDescription(),
-                    studyGroup.getMemberCount()
-            );
-            studyGroups.add(groupInfo);
-        }
-        return studyGroups;
+        return waitingPeople.stream()
+                .map(waitingPerson->{
+                    StudyGroup studyGroup = waitingPerson.getStudyGroup();
+                    return StudyGroupResponse.createStudyGroupResponse(
+                            studyGroup.getId(),
+                            studyGroup.getName(),
+                            studyGroup.getDescription(),
+                            studyGroup.getMemberCount(),
+                            getStudyGroupAreas(studyGroup.getId())
+                    );
+                })
+                .toList();
     }
 
     // 참여중인 스터디 그룹 확인
@@ -144,24 +177,20 @@ public class StudyGroupService {
         Member user = currentLogginedInfo(accessToken);
 
         // 얻은 user 객체로 Participant 테이블 확인
-        List<Participant> Participants = participantRepository.findByMemberId(user.getId());
+        List<Participant> participants = participantRepository.findByMemberId(user.getId());
 
-        List<StudyGroupResponse> studyGroups = new ArrayList<>();
-
-        // participants 의 StudyGroup 으로 초대받은 그룹 탐색
-        for (Participant participants : Participants) {
-            StudyGroup studyGroup = participants.getStudyGroup(); // Exception 핸들링 불필요
-
-            StudyGroupResponse groupInfo = StudyGroupResponse.createStudyGroupResponse(
-                    studyGroup.getId(),
-                    studyGroup.getName(),
-                    studyGroup.getDescription(),
-                    studyGroup.getMemberCount()
-            );
-
-            studyGroups.add(groupInfo);
-        }
-        return studyGroups;
+        return participants.stream()
+                .map(participant->{
+                    StudyGroup studyGroup = participant.getStudyGroup();
+                    return StudyGroupResponse.createStudyGroupResponse(
+                            studyGroup.getId(),
+                            studyGroup.getName(),
+                            studyGroup.getDescription(),
+                            studyGroup.getMemberCount(),
+                            getStudyGroupAreas(studyGroup.getId())
+                    );
+                })
+                .toList();
     }
 
     //초대 수락

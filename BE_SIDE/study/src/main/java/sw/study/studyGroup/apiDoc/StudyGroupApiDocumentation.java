@@ -44,7 +44,8 @@ public interface StudyGroupApiDocumentation {
     // 그룹 생성
     @Operation(summary = "스터디그룹 생성", description = "검색 결과를 통해 선택된 닉네임(유저)들을 대상으로 함")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "성공시 생성한 그룹 객체 리턴"),
+            @ApiResponse(responseCode = "201", description = "성공시 생성한 그룹 객체 리턴 ( 관심분야 제외 ) "),
+            @ApiResponse(responseCode = "404", description = "해당 관심분야가 존재하지 않습니다."),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.")
     })
     @Parameters(value = {
@@ -52,7 +53,8 @@ public interface StudyGroupApiDocumentation {
             @Parameter(name = "groupName", description = "그룹 이름", example = "리액트 초보방"),
             @Parameter(name = "description", description = "그룹 소개", example = "진짜 처음 하시는 분들만 오시면 좋겠어요. 고수 사절.."),
             @Parameter(name = "selectedNicknames", description = "검색 이후 선택한 닉네임들 (배열의 형태)", example = "[\"스폰지밥\", \"뚱이\", \"집게사장\"]"),
-            @Parameter(name = "leaderNickname", description = "그룹 내 사용할 방장의 닉네임", example = "코난123")
+            @Parameter(name = "leaderNickname", description = "그룹 내 사용할 방장의 닉네임", example = "코난123"),
+            @Parameter(name = "areaIds", description = "그룹 관심 분야 ID 목록", example = "[1, 2, 3]")
     })
     ResponseEntity<Map<String,Object>> createStudyGroup(
             @RequestHeader("Authorization") String accessToken,

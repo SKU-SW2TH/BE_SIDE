@@ -27,7 +27,8 @@ public enum ErrorCode {
     // 그 외
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 에러가 발생했습니다."),
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT,"DUPLICATE_NICKNAME","이미 사용중인 닉네임입니다."),
-    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND,"MEMBER_NOT_FOUND","해당 사용자가 존재하지 않습니다.");
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND,"MEMBER_NOT_FOUND","해당 사용자가 존재하지 않습니다."),
+    INTEREST_NOT_FOUND(HttpStatus.NOT_FOUND,"INTEREST_NOT_FOUND","해당 관심 분야가 존재하지 않습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

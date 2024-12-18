@@ -49,7 +49,8 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
                 requestDto.getGroupName(),
                 requestDto.getDescription(),
                 requestDto.getSelectedNicknames(),
-                requestDto.getLeaderNickname()
+                requestDto.getLeaderNickname(),
+                requestDto.getAreaIds()
         );
 
         Map<String, Object> apiResponse = new HashMap<>();
