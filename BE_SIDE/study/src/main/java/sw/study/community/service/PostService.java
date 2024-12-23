@@ -307,6 +307,7 @@ public class PostService {
             postResponse.setContent(post.getContent());
             postResponse.setLikeCount(post.getLikes().size());
             postResponse.setViewCount(post.getViewCount());
+            postResponse.setCreatedAt(post.getCreatedAt());
 
             PostAuthorResponse postAuthorResponse = new PostAuthorResponse();
             postAuthorResponse.setNickname(post.getMember().getNickname());
