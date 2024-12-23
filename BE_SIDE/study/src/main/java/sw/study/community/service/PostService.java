@@ -260,15 +260,15 @@ public class PostService {
 
         if (searchType == null || keyword == null) {
             // 검색조건이 없을 경우
-            posts = postRepository.findByCategoryName(category, pageRequest);
+            posts = postRepository.findByCategoryNameAndIsDeletedFalse(category, pageRequest);
         } else {
             // 검색 조건이 있을 경우
             if ("title".equals(searchType)) {
-                posts = postRepository.findByCategoryNameAndTitleContaining(category, keyword, pageRequest);
+                posts = postRepository.findByCategoryNameAndTitleContainingAndIsDeletedFalse(category, keyword, pageRequest);
             } else if ("author".equals(searchType)) {
-                posts = postRepository.findByCategoryNameAndAuthorContaining(category, keyword, pageRequest);
+                posts = postRepository.findByCategoryNameAndAuthorContainingAndIsDeletedFalse(category, keyword, pageRequest);
             } else if ("title+author".equals(searchType)) {
-                posts = postRepository.findByCategoryNameAndTitleContainingOrAuthorContaining(
+                posts = postRepository.findByCategoryNameAndTitleContainingOrAuthorContainingAndIsDeletedFalse(
                         category, keyword, pageRequest);
             } else {
                 throw new IllegalArgumentException("부적절한 searchType: " + searchType);
