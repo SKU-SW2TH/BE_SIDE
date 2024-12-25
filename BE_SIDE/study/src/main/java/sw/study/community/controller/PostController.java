@@ -2,15 +2,18 @@ package sw.study.community.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.admin.dto.ReportRequest;
+import sw.study.community.apiDoc.PostApiDocumentation;
 import sw.study.community.dto.CommentRequest;
 import sw.study.community.dto.PostDetailResponse;
 import sw.study.community.dto.PostRequest;
+import sw.study.community.dto.PostResponse;
 import sw.study.community.repository.CommentRepository;
 import sw.study.community.service.CommentService;
 import sw.study.community.service.PostService;
@@ -26,11 +29,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/post")
 @RequiredArgsConstructor
-public class PostController {
+public class PostController implements PostApiDocumentation {
     private final PostService postService;
     private final CommentService commentService;
     private final MemberService memberService;
 
+    @Override
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createPost(
             @RequestHeader("Authorization") String accessToken,
@@ -54,7 +58,7 @@ public class PostController {
 
             Long postId = postService.save(postRequest, memberId);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(postId + " : 성공적으로 게시글을 만들었습니다.");
+            return ResponseEntity.status(HttpStatus.CREATED).body(postId);
         } catch (CategoryNotFoundException | UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (AreaNotFoundException e) {
@@ -66,8 +70,9 @@ public class PostController {
         }
     }
 
+    @Override
     @GetMapping("/{postId}")
-    public ResponseEntity<?> getPost(@PathVariable Long postId) {
+    public ResponseEntity<?> getPostDetail(@PathVariable Long postId) {
         log.info("게시글 상세 조회 요청: postId = {}", postId);
         try {
             PostDetailResponse postDetailResponse = postService.getPostById(postId);
@@ -83,6 +88,7 @@ public class PostController {
         }
     }
 
+    @Override
     @DeleteMapping("/{postId}")
     public ResponseEntity<?> deletePost(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId) {
         log.info("게시글 삭제 요청: postId = {}", postId);
@@ -104,6 +110,7 @@ public class PostController {
         }
     }
 
+    @Override
     @PostMapping("/{postId}/like")
     public ResponseEntity<?> likePost(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId) {
         try{
@@ -125,6 +132,7 @@ public class PostController {
         }
     }
 
+    @Override
     @DeleteMapping("/{postId}/like")
     public ResponseEntity<?> cancelLikePost(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId) {
         try {
@@ -144,6 +152,7 @@ public class PostController {
         }
     }
 
+    @Override
     @PostMapping("/{postId}/report")
     public ResponseEntity<?> reportPost(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId, @RequestBody ReportRequest reportRequest) {
         try {
@@ -163,6 +172,7 @@ public class PostController {
         }
     }
 
+    @Override
     @PostMapping("/{postId}/comment")
     public ResponseEntity<?> createComment(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId, @RequestBody CommentRequest commentRequest) {
         try {
@@ -180,6 +190,7 @@ public class PostController {
         }
     }
 
+    @Override
     @DeleteMapping("/{postId}/comment/{commentId}")
     public ResponseEntity<?> deleteComment(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId, @PathVariable Long commentId) {
         log.info("게시글 댓글 삭제 요청: postId = {}, commentId = {}", postId, commentId);
@@ -203,6 +214,7 @@ public class PostController {
         }
     }
 
+    @Override
     @PostMapping("/{postId}/comment/{commentId}/like")
     public ResponseEntity<?> likeComment(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId, @PathVariable Long commentId) {
         log.info("댓글 좋아요 요청: postId = {}, commentId = {}", postId, commentId);
@@ -223,6 +235,7 @@ public class PostController {
         }
     }
 
+    @Override
     @DeleteMapping("/{postId}/comment/{commentId}/like")
     public ResponseEntity<?> cancelLikeComment(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId, @PathVariable Long commentId) {
         log.info("댓글 좋아요 취소 요청: postId = {}, commentId = {}", postId, commentId);
@@ -243,7 +256,8 @@ public class PostController {
         }
     }
 
-    @PostMapping("/{postId}/comment /{commentId}/report")
+    @Override
+    @PostMapping("/{postId}/comment/{commentId}/report")
     public ResponseEntity<?> reportComment(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId, @PathVariable Long commentId, @RequestBody ReportRequest reportRequest) {
         try {
             Long reporterId = memberService.getMemberIdByToken(accessToken);
@@ -360,12 +374,51 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (CommentNotBelongToPostException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }  catch (InvalidTokenException e) {
+        } catch (InvalidTokenException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않는 토큰입니다."); // 잘못된 토큰이면 401 Unauthorized 응답
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
+    @Override
+    @GetMapping("")
+    public ResponseEntity<?> getPostsByCategory(@RequestParam String category,
+                                                @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy,
+                                                @RequestParam(value = "searchType", required = false) String searchType,
+                                                @RequestParam(value = "keyword", required = false) String keyword,
+                                                @RequestParam(value = "page", defaultValue = "0") int page) {
+
+        try {
+            log.info("게시글 리스트 요청");
+            Page<PostResponse> posts = postService.getPosts(category, sortBy, searchType, keyword, page);
+            return ResponseEntity.ok(posts);
+
+
+        } catch (PostNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @Override
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyPosts(@RequestHeader("Authorization") String accessToken,
+                                        @RequestParam(value = "page", defaultValue = "0") int page) {
+
+        try {
+            log.info("나의 게시글 리스트 요청");
+            Long memberId = memberService.getMemberIdByToken(accessToken);
+            Page<PostResponse> posts = postService.getMyPosts(memberId, page);
+            return ResponseEntity.ok(posts);
+
+
+        } catch (InvalidTokenException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않는 토큰입니다."); // 잘못된 토큰이면 401 Unauthorized 응답
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 
 }
