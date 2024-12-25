@@ -49,7 +49,7 @@ public class Notice {
         notice.title = title;
         notice.content = content;
         notice.createdAt = LocalDateTime.now();
-        notice.updatedAt = LocalDateTime.now();
+        notice.updatedAt = null;
         notice.viewCount = 0;
         return notice;
     }

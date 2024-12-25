@@ -10,4 +10,5 @@ public class StudyGroupRequest {
     private String description;
     private List<String> selectedNicknames;
     private String leaderNickname;
+    private List<Long> areaIds;
 }

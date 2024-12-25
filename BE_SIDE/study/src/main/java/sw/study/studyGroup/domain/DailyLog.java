@@ -49,7 +49,7 @@ public class DailyLog {
         log.title = title;
         log.content = content;
         log.createdAt = LocalDateTime.now();
-        log.updatedAt = LocalDateTime.now();
+        log.updatedAt = null;
         return log;
     }
 

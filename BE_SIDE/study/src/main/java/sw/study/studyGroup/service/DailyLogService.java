@@ -50,7 +50,7 @@ public class DailyLogService {
 
     // 데일리 로그 작성
     @Transactional
-    public void createDailyLog(String accessToken, long groupId, String title, String content){
+    public void createDailyLog(String accessToken, Long groupId, String title, String content){
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -66,7 +66,7 @@ public class DailyLogService {
 
     // 데일리 로그 조회
     @Transactional(readOnly = true)
-    public List<DailyLogResponse> listOfDailyLog(String accessToken, int page, int size, long groupId, String dateStr){
+    public List<DailyLogResponse> listOfDailyLog(String accessToken, int page, int size, Long groupId, String dateStr){
 
         Pageable pageable = PageRequest.of(page, size);
 
@@ -87,7 +87,7 @@ public class DailyLogService {
 
     // 데일리 로그 수정
     @Transactional
-    public void updateDailyLog(String accessToken, long groupId, long logId, String title,String content){
+    public void updateDailyLog(String accessToken, Long groupId, Long logId, String title,String content){
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
@@ -104,7 +104,7 @@ public class DailyLogService {
 
     // 데일리 로그 삭제
     @Transactional
-    public void deleteDailyLog(String accessToken, long groupId, long logId){
+    public void deleteDailyLog(String accessToken, Long groupId, Long logId){
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)

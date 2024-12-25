@@ -42,30 +42,18 @@ public class WebConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // HTTP 기본 인증 비활성화
-        http.cors(withDefaults()); // cors 설정 적용
-        http.httpBasic(AbstractHttpConfigurer::disable)
-                // CSRF 보호 비활성화 (REST API의 경우 일반적으로 비활성화)
-                .csrf(AbstractHttpConfigurer::disable)
-                // 요청에 대한 권한 설정
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource())) // 수정: CORS 설정 명시적으로 연결
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable) // CSRF 보호 비활성화
                 .authorizeHttpRequests(authorize -> authorize
-                        // 특정 경로에 대한 접근 허용
-                        .requestMatchers("/api/auth/**", "/api/member/**").permitAll()
-                        // 인증이 필요한 API 경로
-                        .requestMatchers("/api/studyGroup/**").authenticated()
-                        // 나머지 모든 요청을 허용 (이 부분은 필요에 따라 수정 가능)
-                        .anyRequest().permitAll()
+                        .requestMatchers("/api/auth/**", "/api/member/**").permitAll() // 특정 경로 허용
+                        .requestMatchers("/api/studyGroup/**").authenticated() // 인증 필요
+                        .anyRequest().permitAll() // 나머지 요청 허용
                 )
-                // 세션 관리 설정 (무상태 세션)
-                .sessionManagement(configurer -> configurer
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 상태를 유지하지 않는 세션 정책
-                // 기본 로그인 비활성화
-                .formLogin(AbstractHttpConfigurer::disable)
-                // 로그아웃 비활성화
-                .logout(AbstractHttpConfigurer::disable);
-        // .logout(logout -> logout // 로그아웃 설정
-        //         .logoutSuccessUrl("/login") // 로그아웃 성공 후 리다이렉트할 URL
-        //         .invalidateHttpSession(true) // 세션 무효화
-        // );
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 무상태 세션
+                .formLogin(AbstractHttpConfigurer::disable) // 기본 로그인 비활성화
+                .logout(AbstractHttpConfigurer::disable); // 로그아웃 비활성화
 
         // JwtFilter를 UsernamePasswordAuthenticationFilter 앞에 추가
         http.addFilterBefore(new JwtFilter(tokenProvider, redisUtil, jwtService), UsernamePasswordAuthenticationFilter.class);
@@ -93,6 +81,9 @@ public class WebConfig {
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
+
+        // 수정: Preflight 요청 처리
+        configuration.setExposedHeaders(List.of("Authorization", "Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

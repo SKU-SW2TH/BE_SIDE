@@ -49,7 +49,8 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
                 requestDto.getGroupName(),
                 requestDto.getDescription(),
                 requestDto.getSelectedNicknames(),
-                requestDto.getLeaderNickname()
+                requestDto.getLeaderNickname(),
+                requestDto.getAreaIds()
         );
 
         Map<String, Object> apiResponse = new HashMap<>();
@@ -109,9 +110,11 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @GetMapping("/{groupId}/list/all")
     public ResponseEntity<?> listOfAll(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable("groupId") Long groupId) {
+            @PathVariable("groupId") Long groupId,
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size) {
 
-        List<ParticipantsResponse> participants = studyGroupService.listOfEveryone(accessToken,groupId);
+        List<ParticipantsResponse> participants = studyGroupService.listOfEveryone(accessToken,groupId, page, size);
         return ResponseEntity.ok(participants);
     }
 
@@ -119,9 +122,11 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @GetMapping("/{groupId}/list/managers")
     public ResponseEntity<?> listOfManagers(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable("groupId") Long groupId) {
+            @PathVariable("groupId") Long groupId,
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size) {
 
-        List<ParticipantsResponse> managers = studyGroupService.listOfManagers(accessToken,groupId);
+        List<ParticipantsResponse> managers = studyGroupService.listOfManagers(accessToken,groupId, page, size);
         return ResponseEntity.ok(managers);
     }
 
@@ -129,9 +134,11 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @GetMapping("/{groupId}/list/members")
     public ResponseEntity<?> listOfMembers(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable("groupId") Long groupId) {
+            @PathVariable("groupId") Long groupId,
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size) {
 
-        List<ParticipantsResponse> members = studyGroupService.listOfMembers(accessToken,groupId);
+        List<ParticipantsResponse> members = studyGroupService.listOfMembers(accessToken,groupId, page, size);
         return ResponseEntity.ok(members);
     }
 
@@ -150,9 +157,11 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     @GetMapping("/{groupId}/list/waiting")
     public ResponseEntity<?> checkWaiting(
             @RequestHeader("Authorization") String accessToken,
-            @PathVariable("groupId") Long groupId){
+            @PathVariable("groupId") Long groupId,
+            @RequestParam(name = "page") int page,
+            @RequestParam(name = "size") int size){
 
-        List<String> nicknames = studyGroupService.listOfWaiting(accessToken,groupId);
+        List<String> nicknames = studyGroupService.listOfWaiting(accessToken, groupId, page, size);
         return ResponseEntity.ok(nicknames);
     }
 

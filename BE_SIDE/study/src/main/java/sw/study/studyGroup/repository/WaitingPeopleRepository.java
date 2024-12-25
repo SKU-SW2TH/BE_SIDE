@@ -1,5 +1,7 @@
 package sw.study.studyGroup.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import sw.study.studyGroup.domain.WaitingPeople;
@@ -16,5 +18,5 @@ public interface WaitingPeopleRepository extends JpaRepository<WaitingPeople,Lon
 
     Optional<WaitingPeople> findByMemberIdAndStudyGroup_Id(Long memberId, Long studyGroupId); // 특정 사용자의 대기명단 확인
 
-    List<WaitingPeople> findByStudyGroup_Id(Long studyGroupId); // 특정 그룹 내 초대 명단 확인
+    Page<WaitingPeople> findByStudyGroup_Id(Long studyGroupId, Pageable pageable); // 특정 그룹 내 초대 명단 확인
 }

@@ -37,7 +37,7 @@ public class Participant {
     private LocalDateTime joinedAt; // 가입일
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt; // 수정일(?)
+    private LocalDateTime updatedAt; // 수정일
 
     public enum Role {
         LEADER, MANAGER, MEMBER, MENTOR
@@ -63,7 +63,7 @@ public class Participant {
         participant.role = role;
         participant.studyGroup = studyGroup;
         participant.joinedAt = LocalDateTime.now();
-        participant.updatedAt = LocalDateTime.now();
+        participant.updatedAt = null;
         return participant;
     }
 }

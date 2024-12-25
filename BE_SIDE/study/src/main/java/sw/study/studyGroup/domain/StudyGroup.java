@@ -77,7 +77,7 @@ public class StudyGroup {
         group.waitingCount = 0;
         group.isDeleted = false;
         group.createdAt = LocalDateTime.now();
-        group.updatedAt = LocalDateTime.now();
+        group.updatedAt = null;
         return group;
     }
 }
