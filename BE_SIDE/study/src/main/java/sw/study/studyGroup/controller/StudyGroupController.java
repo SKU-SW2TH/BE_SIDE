@@ -222,4 +222,15 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
         studyGroupService.quitGroup(accessToken, groupId);
         return ResponseEntity.ok("해당 스터디그룹을 탈퇴하였습니다.");
     }
+
+    @Override
+    @PatchMapping("/{groupId}/participants/changeLeader")
+    public ResponseEntity<?> changeLeader(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId,
+            @RequestBody NicknameRequest nicknameRequest){
+
+        studyGroupService.changeLeader(accessToken, groupId, nicknameRequest.getNickname());
+        return ResponseEntity.ok("스터디장 위임에 성공하였습니다.");
+    }
 }

@@ -16,7 +16,7 @@ public enum ErrorCode {
     DAILYLOG_NOT_FOUND(HttpStatus.NOT_FOUND,"DAILYLOG_NOT_FOUND","해당하는 데일리로그가 존재하지 않습니다."),
     SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "SCHEDULE_NOT_FOUND", "해당하는 일정이 존재하지 않습니다."),
     WAITING_NOT_FOUND(HttpStatus.NOT_FOUND, "WAITING_NOT_FOUND", "해당하는 그룹에 초대를 받은 상태가 아닙니다."),
-    PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND, "WAITING_NOT_FOUND", "그룹 내 해당하는 참가자가 존재하지 않습니다."),
+    PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND, "PARTICIPANT_NOT_FOUND", "그룹 내 해당하는 참가자가 존재하지 않습니다."),
 
     MAX_STUDYGROUP(HttpStatus.FORBIDDEN,"MAX_STUDYGROUP","더 이상 스터디그룹에 참가할 수 없습니다."),
     UNAUTHORIZED(HttpStatus.FORBIDDEN,"UNAUTHORIZED","해당 스터디그룹에 참여중이지 않습니다."),

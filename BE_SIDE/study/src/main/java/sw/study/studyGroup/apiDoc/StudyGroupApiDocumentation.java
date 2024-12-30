@@ -302,5 +302,22 @@ public interface StudyGroupApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId);
 
+    // 스터디장 위임
+    @Operation(summary = "스터디장 위임", description = "스터디장을 위임할 때 사용 ( 스터디장은 그룹 탈퇴 불가능 ) ")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "스터디장 위임에 성공하였습니다."),
+            @ApiResponse(responseCode = "403", description = "운영진 권한을 보유하고 있지 않습니다. / 해당 그룹에 참여중이지 않습니다."),
+            @ApiResponse(responseCode = "404", description = "그룹 내 해당 참가자가 존재하지 않습니다."),
+            @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.")
+    })
+    @Parameters(value = {
+            @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
+            @Parameter(name = "groupId", description = "그룹 Id", example = "1"),
+            @Parameter(name = "nickname", description = "스터장을 위임할 대상 유저의 닉네임", example = "코난123")
+    })
+    ResponseEntity<?> changeLeader(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable Long groupId,
+            @RequestBody NicknameRequest nicknameRequest);
 }
 

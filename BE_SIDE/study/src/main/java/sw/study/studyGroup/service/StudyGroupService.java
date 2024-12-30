@@ -471,4 +471,28 @@ public class StudyGroupService {
         studyGroup.getParticipants().remove(target);
         studyGroup.whoEverKicked();
     }
+
+    // 스터디 장 위임
+    @Transactional
+    public void changeLeader(String accessToken, Long groupId, String nickname){
+
+        Member member = currentLogginedInfo(accessToken);
+
+        Participant leader = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new BaseException(ErrorCode.UNAUTHORIZED));
+
+        // 스터디그룹이 존재하지 않는 경우의 핸들링 ?
+        // 해당 서비스 로직은 방장만 호출하는 로직. 방장이 그룹 삭제를 사전에 수행한 뒤에 위임하는건 말이 안됨.
+        /* StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                .orElseThrow(()->new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND)); */
+
+        if (leader.getRole() != Role.LEADER) {
+            throw new BaseException(ErrorCode.PERMISSION_DENIED);
+        }
+
+        Participant target = participantRepository.findByStudyGroupIdAndNickname(groupId, nickname)
+                .orElseThrow(()->new BaseException(ErrorCode.PARTICIPANT_NOT_FOUND));
+
+        leader.changeLeader(target);
+    }
 }
