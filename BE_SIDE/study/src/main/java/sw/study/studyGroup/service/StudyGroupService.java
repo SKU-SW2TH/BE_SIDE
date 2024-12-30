@@ -95,12 +95,18 @@ public class StudyGroupService {
     public StudyGroup createStudyGroup(
             String accessToken, String groupName, String description, List<String> selectedNicknames, String leaderNickname, List<Long> areaIds) {
 
+        // 로그인 되어있는 사용자 정보를 가져오기
+        Member leader = currentLogginedInfo(accessToken);
+
+
+        if (participantRepository.countByMemberId(leader.getId()) >= 8) {
+            throw new BaseException(ErrorCode.MAX_STUDYGROUP);
+        }
+
         // 스터디 그룹 생성 
         StudyGroup studyGroup = StudyGroup.createStudyGroup(groupName, description);
         studyGroupRepository.save(studyGroup);
 
-        // 로그인 되어있는 사용자 정보를 가져오기
-        Member leader = currentLogginedInfo(accessToken);
 
         // 방장은 바로 Participant에 추가해준다.
         Participant leaderParticipant = Participant.createParticipant(leaderNickname, leader, Role.LEADER, studyGroup);
@@ -200,6 +206,12 @@ public class StudyGroupService {
         Member member = currentLogginedInfo(accessToken);
         waitingPeopleRepository.deleteByMemberId(member.getId());
 
+
+        // 사용자가 이미 허용된 수 만큼의 그룹에 참가중이라면
+        if (participantRepository.countByMemberId(member.getId()) >= 8) {
+            throw new BaseException(ErrorCode.MAX_STUDYGROUP);
+        }
+
         // 중복 확인
         if (participantRepository.findByNickname(nickname).isPresent()) {
             throw new BaseException(ErrorCode.DUPLICATE_NICKNAME);
@@ -210,14 +222,10 @@ public class StudyGroupService {
                 .orElseThrow(() -> new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
 
         // 스터디 그룹의 인원이 꽉 찬 경우
-        if (studyGroup.getMemberCount() == 50) {
+        if (studyGroup.getMemberCount() >= 50) {
             throw new BaseException(ErrorCode.STUDYGROUP_FULL);
         }
 
-        // 사용자가 이미 허용된 수 만큼의 그룹에 참가중이라면
-        if (participantRepository.countByMemberId(member.getId()) == 20) {
-            throw new BaseException(ErrorCode.MAX_STUDYGROUP);
-        }
 
         Participant participant = Participant.createParticipant(nickname, member, Role.MEMBER, studyGroup);
         studyGroup.whoEverAccepted(participant);
