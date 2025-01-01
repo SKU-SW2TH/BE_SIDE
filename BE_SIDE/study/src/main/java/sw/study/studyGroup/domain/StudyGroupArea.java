@@ -1,8 +1,6 @@
 package sw.study.studyGroup.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import sw.study.user.domain.Area;
@@ -19,6 +17,10 @@ public class StudyGroupArea {
     @EmbeddedId
     private StudyGroupAreaId id;
 
+    @ManyToOne
+    @JoinColumn(name = "group_id", insertable = false, updatable = false)
+    private StudyGroup studyGroup;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt; // 생성날짜
 
@@ -32,6 +34,8 @@ public class StudyGroupArea {
 
         studyGroupArea.createdAt = LocalDateTime.now(); // 생성날짜
         studyGroupArea.updatedAt = null;
+
+        studyGroup.getAreas().add(studyGroupArea);
         return studyGroupArea;
     }
 

@@ -233,4 +233,31 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
         studyGroupService.changeLeader(accessToken, groupId, nicknameRequest.getNickname());
         return ResponseEntity.ok("스터디장 위임에 성공하였습니다.");
     }
+
+    @Override
+    @GetMapping("/{groupId}/detail")
+    public ResponseEntity<?> getGroupDetail(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId){
+
+        StudyGroupDetail groupDetail = studyGroupService.groupDetail(accessToken, groupId);
+        return ResponseEntity.ok(groupDetail);
+    }
+
+    @Override
+    @PatchMapping("/{groupId}/update")
+    public ResponseEntity<?> groupDetailUpdate(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId,
+            @RequestBody StudyGroupUpdate updateDto){
+
+        studyGroupService.updateGroupDetail(
+                accessToken,
+                groupId,
+                updateDto.getGroupName(),
+                updateDto.getDescription(),
+                updateDto.getAreaIds());
+
+        return ResponseEntity.ok("그룹 내 세부 정보가 수정되었습니다.");
+    }
 }

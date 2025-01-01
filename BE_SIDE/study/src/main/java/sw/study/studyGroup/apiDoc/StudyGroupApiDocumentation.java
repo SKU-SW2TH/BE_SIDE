@@ -319,5 +319,41 @@ public interface StudyGroupApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId,
             @RequestBody NicknameRequest nicknameRequest);
-}
+
+    // 특정 스터디 그룹 상세 정보 반환
+    @Operation(summary = "스터디 그룹 상세 정보", description = "특정 스터디 그룹 상세 정보 반환")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정보 객체 반환 (제목, 설명, 참가자 수, 관심 분야, 그룹 내 스터디장 닉네임까지 추가된 형태)"),
+            @ApiResponse(responseCode = "403", description = "해당 그룹에 참여중이지 않습니다."),
+            @ApiResponse(responseCode = "404", description = "해당 그룹이 존재하지 않습니다."),
+            @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.")
+    })
+    @Parameters(value = {
+            @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
+            @Parameter(name = "groupId", description = "그룹 Id", example = "1")
+    })
+    ResponseEntity<?> getGroupDetail(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId);
+
+    // 특정 스터디 그룹 상세 정보 수정
+    @Operation(summary = "스터디 그룹 상세 정보 수정", description = "특정 스터디 그룹 상세 정보 수정 ( 그룹장 및 운영진 사용 가능 ) ")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "그룹 내 세부 정보가 수정되었습니다."),
+            @ApiResponse(responseCode = "403", description = "해당 그룹에 참여중이지 않습니다. / 운영진 권한을 가지고 있지 않습니다."),
+            @ApiResponse(responseCode = "404", description = "해당 그룹 / 관심분야가 존재하지 않습니다."),
+            @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.")
+    })
+    @Parameters(value = {
+            @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
+            @Parameter(name = "groupId", description = "그룹 Id", example = "1"),
+            @Parameter(name = "groupName", description = "변경할 그룹 이름", example = "변경한 그룹 이름"),
+            @Parameter(name = "description", description = "변경할 그룹 소개", example = "그룹 내 설명을 변경하였습니다."),
+            @Parameter(name = "areaIds", description = "변경할 관심 분야 ID 목록", example = "[1, 2, 3]")
+    })
+    ResponseEntity<?> groupDetailUpdate(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId,
+            @RequestBody StudyGroupUpdate updateDto);
+    }
 

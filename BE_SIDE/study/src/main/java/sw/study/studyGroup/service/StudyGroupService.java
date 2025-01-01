@@ -19,6 +19,7 @@ import sw.study.studyGroup.domain.StudyGroupArea;
 import sw.study.studyGroup.domain.WaitingPeople;
 import sw.study.studyGroup.dto.NicknameRequest;
 import sw.study.studyGroup.dto.ParticipantsResponse;
+import sw.study.studyGroup.dto.StudyGroupDetail;
 import sw.study.studyGroup.dto.StudyGroupResponse;
 import sw.study.studyGroup.repository.*;
 import sw.study.user.domain.Area;
@@ -494,5 +495,60 @@ public class StudyGroupService {
                 .orElseThrow(()->new BaseException(ErrorCode.PARTICIPANT_NOT_FOUND));
 
         leader.changeLeader(target);
+    }
+
+    // 특정 스터디 그룹 정보 상세 확인
+    public StudyGroupDetail groupDetail(String accessToken, Long groupId){
+        
+        Member member = currentLogginedInfo(accessToken);
+
+        // 로그인된 사용자가 방에 참가하지 않은 경우
+        participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
+                .orElseThrow(()-> new BaseException(ErrorCode.UNAUTHORIZED));
+
+        StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                .orElseThrow(()->new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
+
+        // 스터디 그룹 정보 확인 시, 방장 닉네임도 함께 리턴되는 형태
+        // 방장이 존재하지 않을수가 있을까? 우선 404 리턴
+        Participant leader = participantRepository.findByStudyGroupIdAndRole(groupId, Role.LEADER)
+                .orElseThrow(()->new BaseException(ErrorCode.PARTICIPANT_NOT_FOUND));
+
+        return new StudyGroupDetail(
+                studyGroup.getName(),
+                studyGroup.getDescription(),
+                studyGroup.getMemberCount(),
+                getStudyGroupAreas(groupId),
+                leader.getNickname()
+        );
+    }
+
+    // 특정 스터디 그룹 정보 수정
+    @Transactional
+    public void updateGroupDetail(String accessToken, Long groupId, String groupName, String description, List<Long> areaIds){
+
+        Member member = currentLogginedInfo(accessToken);
+
+        // 참여 여부 확인
+        Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
+                .orElseThrow(()->new BaseException(ErrorCode.UNAUTHORIZED));
+
+        // 권한 확인
+        if(participant.getRole()== Role.MEMBER)
+            throw new BaseException(ErrorCode.PERMISSION_DENIED);
+
+        StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                .orElseThrow(()->new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
+
+        studyGroup.updateStudyGroupDetail(groupName, description);
+
+        // 새 관심 분야 Area 조회 ( 없으면 404 리턴 )
+        List<Area> newAreas = areaIds.stream()
+                .map(areaId -> areaRepository.findById(areaId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.INTEREST_NOT_FOUND)))
+                .toList();
+
+        studyGroup.updateStudyGroupAreas(newAreas);
+        studyGroupRepository.save(studyGroup);
     }
 }
