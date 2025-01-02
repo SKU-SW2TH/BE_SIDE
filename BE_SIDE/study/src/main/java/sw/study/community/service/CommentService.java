@@ -23,6 +23,7 @@ import sw.study.exception.community.PostNotFoundException;
 import sw.study.exception.studyGroup.UnauthorizedException;
 import sw.study.user.domain.Member;
 import sw.study.user.repository.MemberRepository;
+import sw.study.user.service.NotificationService;
 
 @Slf4j
 @Service
@@ -34,6 +35,7 @@ public class CommentService {
     private final MemberRepository memberRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final ReportService reportService;
+    private final NotificationService notificationService;
 
     /**
      * 댓글 생성
@@ -49,6 +51,10 @@ public class CommentService {
                 commentRequest.getContent(), commentRequest.getLevel());
         commentRepository.save(comment);
         log.info("댓글이 성공적으로 반영: commentId={}, postId={}", comment.getId(), postId);
+
+        // 알림 생성
+        notificationService.sendNotification(findPost.getMember(), "게시글에 댓글이 달렸습니다.", "POST", postId);
+
         return comment.getId();
     }
 
@@ -72,6 +78,11 @@ public class CommentService {
         Comment reply = Comment.createReply(comment, member, replyRequest.getContent(), replyRequest.getLevel());
         commentRepository.save(reply);
         log.info("대댓글이 성공적으로 반영: postId={}, commentId={}, replyId={}", postId, comment.getId(), reply.getId());
+
+        // 알림 생성
+        notificationService.sendNotification(comment.getMember(), "댓글에 대댓글이 달렸습니다.", "POST", postId);
+
+
         return reply.getId();
     }
 
@@ -122,6 +133,10 @@ public class CommentService {
         // 댓글 좋아요
         CommentLike commentLike = CommentLike.createCommentLike(comment, member);
         commentLikeRepository.save(commentLike);
+
+        // 알림 생성
+        notificationService.sendNotification(comment.getMember(), "댓글에 좋아요가 달렸습니다.", "POST", postId);
+
         log.info("댓글에 성공적으로 좋아요: commentId={}, postId={}, memberId={}", commentId, postId, memberId);
     }
 
@@ -264,6 +279,10 @@ public class CommentService {
         // 대댓글 좋아요
         CommentLike commentLike = CommentLike.createCommentLike(reply, member);
         commentLikeRepository.save(commentLike);
+
+        // 알림 생성
+        notificationService.sendNotification(reply.getMember(), "대댓글에 좋아요가 달렸습니다.", "POST", postId);
+
         log.info("대댓글에 성공적으로 좋아요: replyId={}, commentId={}, postId={}, memberId={}", replyId, commentId, postId, likerId);
     }
 

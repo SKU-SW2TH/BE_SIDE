@@ -27,6 +27,7 @@ import sw.study.user.domain.Member;
 import sw.study.user.repository.AreaRepository;
 import sw.study.user.repository.MemberRepository;
 import sw.study.user.service.MemberService;
+import sw.study.user.service.NotificationService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,7 @@ public class PostService {
     private final PostLikeRepository postLikeRepository;
     private final ReportService reportService;
     private final MemberService memberService;
+    private final NotificationService notificationService;
 
     /**
      * 게시글 생성
@@ -202,6 +204,10 @@ public class PostService {
 
         PostLike postLike = PostLike.createPostLike(post, liker);
         postLikeRepository.save(postLike);
+
+        // 알림 생성
+        notificationService.sendNotification(post.getMember(), "게시글에 좋아요가 달렸습니다.", "POST", postId);
+
         log.info("게시글 좋아요 요청 완료: postId = {}, memberId = {}", postId, likerId);
     }
 
