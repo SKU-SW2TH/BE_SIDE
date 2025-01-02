@@ -183,8 +183,8 @@ public class InitDb {
         }
 
         public void initNotificationCategory() {
-            NotificationCategory category1 = NotificationCategory.createNotificationCategory("게시판");
-            NotificationCategory category2 = NotificationCategory.createNotificationCategory("스터디");
+            NotificationCategory category1 = NotificationCategory.createNotificationCategory("POST");
+            NotificationCategory category2 = NotificationCategory.createNotificationCategory("STUDY");
             em.persist(category1);
             em.persist(category2);
 
