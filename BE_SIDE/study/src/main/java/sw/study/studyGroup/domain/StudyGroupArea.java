@@ -31,11 +31,8 @@ public class StudyGroupArea {
     public static StudyGroupArea createStudyGroupArea(StudyGroup studyGroup, Area area) {
         StudyGroupArea studyGroupArea = new StudyGroupArea();
         studyGroupArea.id = new StudyGroupAreaId(studyGroup.getId(), area.getId()); // 복합키 설정
-
-        studyGroupArea.createdAt = LocalDateTime.now(); // 생성날짜
+        studyGroupArea.createdAt = LocalDateTime.now();
         studyGroupArea.updatedAt = null;
-
-        studyGroup.getAreas().add(studyGroupArea);
         return studyGroupArea;
     }
 

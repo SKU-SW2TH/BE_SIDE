@@ -44,10 +44,6 @@ public class StudyGroup {
     @OneToMany(mappedBy = "studyGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Participant> participants = new ArrayList<>();
 
-    // 그룹 별 관심분야 양방향 관계 설정
-    @OneToMany(mappedBy = "studyGroup", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<StudyGroupArea> areas = new ArrayList<>();
-
     //초대를 했을 때
     public void whoEverInvited(int size){
         waitingCount += size;
@@ -78,16 +74,6 @@ public class StudyGroup {
     public void updateStudyGroupDetail(String groupName, String description){
         this.name = groupName;
         this.description = description;
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // 그룹 내 관심 분야 수정
-    public void updateStudyGroupAreas(List<Area> newAreas) {
-        this.areas.clear(); // 기존 항목 제거
-
-        for (Area area : newAreas) {
-            this.areas.add(StudyGroupArea.createStudyGroupArea(this, area));
-        }
         this.updatedAt = LocalDateTime.now();
     }
 

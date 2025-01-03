@@ -12,11 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sw.study.config.jwt.JWTService;
 import sw.study.exception.*;
-import sw.study.studyGroup.domain.Participant;
+import sw.study.studyGroup.domain.*;
 import sw.study.studyGroup.domain.Participant.Role;
-import sw.study.studyGroup.domain.StudyGroup;
-import sw.study.studyGroup.domain.StudyGroupArea;
-import sw.study.studyGroup.domain.WaitingPeople;
 import sw.study.studyGroup.dto.NicknameRequest;
 import sw.study.studyGroup.dto.ParticipantsResponse;
 import sw.study.studyGroup.dto.StudyGroupDetail;
@@ -127,15 +124,21 @@ public class StudyGroupService {
         studyGroup.whoEverInvited(waitingPeople.size());
         waitingPeopleRepository.saveAll(waitingPeople);
 
-        // 스터디 그룹의 관심분야 설정
         if (areaIds != null && !areaIds.isEmpty()) {
             for (Long areaId : areaIds) {
+
                 Area area = areaRepository.findById(areaId)
                         .orElseThrow(() -> new BaseException(ErrorCode.INTEREST_NOT_FOUND));
+                // 해당 id를 가지는 관심분야 없으면 404 리턴
 
-                // StudyGroup과 Area를 연결하는 StudyGroupArea 생성
-                StudyGroupArea studyGroupArea = StudyGroupArea.createStudyGroupArea(studyGroup, area);
-                studyGroupAreaRepository.save(studyGroupArea); // 관계 저장
+                StudyGroupAreaId studyGroupAreaId = new StudyGroupAreaId(studyGroup.getId(), area.getId());
+                // 양방향 관계 제거 -> 관심분야 추가는 studyGroupArea 에서만 동작
+                studyGroupAreaRepository.findById(studyGroupAreaId)
+                        .orElseGet(() -> {
+                            StudyGroupArea newStudyGroupArea = StudyGroupArea.createStudyGroupArea(studyGroup, area);
+                            studyGroupAreaRepository.save(newStudyGroupArea);
+                            return newStudyGroupArea;
+                        });
             }
         }
         return studyGroup;
@@ -548,7 +551,13 @@ public class StudyGroupService {
                         .orElseThrow(() -> new BaseException(ErrorCode.INTEREST_NOT_FOUND)))
                 .toList();
 
-        studyGroup.updateStudyGroupAreas(newAreas);
-        studyGroupRepository.save(studyGroup);
+        // 기존 StudyGroupArea 삭제
+        studyGroupAreaRepository.deleteByStudyGroup_Id(groupId);
+
+        // 새로운 StudyGroupArea 추가
+        List<StudyGroupArea> studyGroupAreas = newAreas.stream()
+                .map(area -> StudyGroupArea.createStudyGroupArea(studyGroup, area))
+                .toList();
+        studyGroupAreaRepository.saveAll(studyGroupAreas);
     }
 }
