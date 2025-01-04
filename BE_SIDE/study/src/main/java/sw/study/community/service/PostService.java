@@ -180,7 +180,7 @@ public class PostService {
 
         // 작성자가 아닐 경우
         if(!post.getMember().getId().equals(memberId)) {
-            throw new UnauthorizedException("작성자만 삭제할 수 있습니다");
+            throw new UnauthorizedException("작성자만 수정할 수 있습니다");
         }
 
         post.updateTitle(postUpdateRequest.getTitle());

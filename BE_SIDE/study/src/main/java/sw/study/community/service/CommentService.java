@@ -87,6 +87,59 @@ public class CommentService {
     }
 
     /**
+     * 댓글 수정
+     */
+    @Transactional
+    public void updateComment(Long postId, Long commentId, Long memberId, String content) {
+        // 게시글과 댓글 조회
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException("해당 게시글을 찾을 수 없습니다."));
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("해당 댓글을 찾을 수 없습니다."));
+
+        // 댓글이 해당 게시글에 속하는지 검증
+        if (!post.getComments().contains(comment)) {
+            throw new CommentNotBelongToPostException("댓글이 해당 게시글에 속하지 않습니다.");
+        }
+
+        // 본인이 작성한 댓글인지 확인
+        if (!comment.getMember().getId().equals(memberId)) {
+            throw new UnauthorizedException("작성자만 수정할 수 있습니다");
+        }
+
+        comment.updateContent(content);
+        log.info("댓글이 성공적으로 수정됨: commentId={}, postId={}", comment.getId(), postId);
+    }
+
+    /**
+     * 대댓글 수정
+     */
+    @Transactional
+    public void updateReply(Long postId, Long commentId, Long replyId, Long memberId, String content) {
+        // 게시글, 댓글, 대댓글 조회
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException("해당 게시글을 찾을 수 없습니다."));
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("해당 댓글을 찾을 수 없습니다."));
+        Comment reply = commentRepository.findById(replyId)
+                .orElseThrow(() -> new CommentNotFoundException("해당 대댓글을 찾을 수 없습니다."));
+
+        // 댓글이 해당 게시글에 속하는지 검증
+        if (!post.getComments().contains(comment) || !comment.getChild().contains(reply)) {
+            throw new CommentNotBelongToPostException("대댓글이 해당 게시글에 속하지 않거나, 댓글에 속하지 않습니다.");
+        }
+
+        // 본인이 작성한 대댓글인지 확인
+        if (!reply.getMember().getId().equals(memberId)) {
+            throw new UnauthorizedException("작성자만 수정할 수 있습니다");
+        }
+
+        reply.updateContent(content);
+        log.info("대댓글이 성공적으로 수정: replyId={}, commentId={}, postId={}", replyId, commentId, postId);
+    }
+
+
+    /**
      * 댓글 삭제
      */
     @Transactional

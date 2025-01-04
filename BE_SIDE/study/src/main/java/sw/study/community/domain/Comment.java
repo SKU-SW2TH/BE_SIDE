@@ -116,4 +116,8 @@ public class Comment {
     public boolean hasChildComment() {
         return !this.child.isEmpty();
     }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
 }
