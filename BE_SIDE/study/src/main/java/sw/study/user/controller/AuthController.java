@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sw.study.config.Constant;
+import sw.study.config.jwt.JWTService;
 import sw.study.exception.*;
 import sw.study.exception.email.*;
 import sw.study.user.apiDoc.AuthApiDocumentation;
@@ -28,6 +29,7 @@ public class AuthController implements AuthApiDocumentation {
     private final EmailVerificationService emailVerificationService;
     private final MailService mailService;
     private final MemberService memberService;
+    private final JWTService jwtService;
 
     @Override
     @PostMapping("/send-verification-email")
@@ -310,4 +312,14 @@ public class AuthController implements AuthApiDocumentation {
         }
     }
 
+    @Override
+    @GetMapping("/send-email")
+    public ResponseEntity<?> sendEmail(@RequestHeader("Authorization") String accessToken) {
+        try {
+            String email = jwtService.extractToken(accessToken);
+            return ResponseEntity.ok(email);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+    }
 }

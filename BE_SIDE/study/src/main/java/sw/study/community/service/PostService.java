@@ -103,6 +103,7 @@ public class PostService {
 
         Member author = post.getMember();
         PostAuthorResponse postAuthorResponse = new PostAuthorResponse();
+        postAuthorResponse.setEmail(author.getEmail());
         postAuthorResponse.setNickname(author.getNickname());
         postAuthorResponse.setDeleted(author.isDeleted());
         postDetailResponse.setPostAuthorResponse(postAuthorResponse);
@@ -167,6 +168,24 @@ public class PostService {
 
         log.info("게시글 DTO 전송 완료: postId = {}", post.getId());
         return postDetailResponse;
+    }
+
+    /**
+     * 게시글 수정
+     */
+    @Transactional
+    public void update(Long postId, Long memberId, PostUpdateRequest postUpdateRequest) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
+
+        // 작성자가 아닐 경우
+        if(!post.getMember().getId().equals(memberId)) {
+            throw new UnauthorizedException("작성자만 수정할 수 있습니다");
+        }
+
+        post.updateTitle(postUpdateRequest.getTitle());
+        post.updateContent(postUpdateRequest.getContent());
+        log.info("게시글 수정 완료: postId = {}", postId);
     }
 
     /**
