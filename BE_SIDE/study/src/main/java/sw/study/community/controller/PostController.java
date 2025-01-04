@@ -381,7 +381,7 @@ public class PostController implements PostApiDocumentation {
         log.info("대댓글 수정 요청: postId = {}, commentId = {}", postId, commentId);
         try {
             Long memberId = memberService.getMemberIdByToken(accessToken);
-            commentService.updateReply(postId, commentId, memberId, replyId, content);
+            commentService.updateReply(postId, commentId, replyId, memberId, content);
             return ResponseEntity.ok("정상적으로 대댓글이 수정되었습니다.");
 
 
