@@ -155,6 +155,7 @@ public class PostService {
 
                     CommentAuthorResponse replyAuthorResponse = new CommentAuthorResponse(); // 대댓글 작성자
                     Member replyAuthor = reply.getMember();
+                    replyAuthorResponse.setEmail(replyAuthor.getEmail());
                     replyAuthorResponse.setNickname(replyAuthor.getNickname());
                     replyAuthorResponse.setProfile(replyAuthor.getProfile());
                     replyAuthorResponse.setDeleted(replyAuthor.isDeleted());
