@@ -10,13 +10,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.admin.dto.ReportRequest;
 import sw.study.community.apiDoc.PostApiDocumentation;
-import sw.study.community.dto.CommentRequest;
-import sw.study.community.dto.PostDetailResponse;
-import sw.study.community.dto.PostRequest;
-import sw.study.community.dto.PostResponse;
+import sw.study.community.dto.*;
 import sw.study.community.repository.CommentRepository;
 import sw.study.community.service.CommentService;
 import sw.study.community.service.PostService;
+import sw.study.config.jwt.JWTService;
 import sw.study.exception.InvalidTokenException;
 import sw.study.exception.UserNotFoundException;
 import sw.study.exception.community.*;
@@ -33,6 +31,7 @@ public class PostController implements PostApiDocumentation {
     private final PostService postService;
     private final CommentService commentService;
     private final MemberService memberService;
+    private final JWTService jwtService;
 
     @Override
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -87,6 +86,25 @@ public class PostController implements PostApiDocumentation {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
+    @PatchMapping("/{postId}/edit")
+    public ResponseEntity<?> updatePost(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId, @RequestBody PostUpdateRequest updateRequest) {
+        log.info("게시글 수정 요청: postId = {}", postId);
+        try {
+            Long memberId = memberService.getMemberIdByToken(accessToken);
+            postService.update(postId, memberId, updateRequest);
+
+            return ResponseEntity.ok("게시글이 정상적으로 수정되었습니다");
+        } catch (PostNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        }
+    }
+
 
     @Override
     @DeleteMapping("/{postId}")

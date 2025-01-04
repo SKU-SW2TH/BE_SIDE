@@ -156,4 +156,12 @@ public interface AuthApiDocumentation {
             @Parameter(name = "newPassword", description = "새로운 비밀번호 ※전송 시 큰 따옴표는 제거하고 보내야함", example = "pok123!!")
     })
     public ResponseEntity<String> changePassword(@RequestHeader("Authorization") String token, @RequestBody String newPassword);
+
+
+    @Operation(summary = "사용자의 이메일을 반환", description = "사용자의 이메일을 반환")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "해당 사용자의 이메일 반환"),
+            @ApiResponse(responseCode = "401", description = "[ERROR] 유효하지 않은 토큰 형식입니다."),
+    })
+    public ResponseEntity<?> sendEmail(@RequestHeader("Authorization") String accessToken);
 }
