@@ -40,6 +40,9 @@ public class StudyGroup {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // 배경 이미지 필드 추가
+    private String backgroundImgUrl;
+
     // 양방향 관계 설정을 위한 참가자 리스트
     @OneToMany(mappedBy = "studyGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Participant> participants = new ArrayList<>();
@@ -77,7 +80,7 @@ public class StudyGroup {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public static StudyGroup createStudyGroup(String name, String description){
+    public static StudyGroup createStudyGroup(String name, String description, String backgroundImgUrl){
         StudyGroup group = new StudyGroup();
         group.name = name;
         group.description = description;
@@ -86,6 +89,7 @@ public class StudyGroup {
         group.isDeleted = false;
         group.createdAt = LocalDateTime.now();
         group.updatedAt = null;
+        group.backgroundImgUrl = backgroundImgUrl;
         return group;
     }
 }

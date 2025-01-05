@@ -10,8 +10,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import sw.study.community.service.S3Service;
 import sw.study.config.jwt.JWTService;
 import sw.study.exception.*;
+import sw.study.exception.s3.FileUploadException;
+import sw.study.exception.s3.S3UploadException;
 import sw.study.studyGroup.domain.*;
 import sw.study.studyGroup.domain.Participant.Role;
 import sw.study.studyGroup.dto.NicknameRequest;
@@ -44,6 +48,7 @@ public class StudyGroupService {
     private final StudyGroupAreaRepository studyGroupAreaRepository;
     private final AreaRepository areaRepository;
     private final JWTService jwtService;
+    private final S3Service s3Service;
 
     // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
     private Member currentLogginedInfo(String accessToken) {
@@ -91,7 +96,8 @@ public class StudyGroupService {
     // 스터디 그룹 생성 ( + 사용자 초대 )
     @Transactional
     public StudyGroup createStudyGroup(
-            String accessToken, String groupName, String description, List<String> selectedNicknames, String leaderNickname, List<Long> areaIds) {
+            String accessToken, String groupName, String description,
+            List<String> selectedNicknames, String leaderNickname, List<Long> areaIds, MultipartFile backgroundImg) {
 
         // 로그인 되어있는 사용자 정보를 가져오기
         Member leader = currentLogginedInfo(accessToken);
@@ -101,8 +107,20 @@ public class StudyGroupService {
             throw new BaseException(ErrorCode.MAX_STUDYGROUP);
         }
 
+        // S3에 이미지 업로드 기능 추가
+        String backgroundImageUrl = null;
+        if (backgroundImg != null && !backgroundImg.isEmpty()) {
+            try {
+                backgroundImageUrl = s3Service.upload(backgroundImg, "study-group/");
+            } catch (FileUploadException e) {
+                throw new BaseException(ErrorCode.FILE_UPLOAD_ERROR);
+            } catch (S3UploadException e) {
+                throw new BaseException(ErrorCode.S3_UPLOAD_ERROR);
+            }
+        }
+
         // 스터디 그룹 생성 
-        StudyGroup studyGroup = StudyGroup.createStudyGroup(groupName, description);
+        StudyGroup studyGroup = StudyGroup.createStudyGroup(groupName, description, backgroundImageUrl);
         studyGroupRepository.save(studyGroup);
 
 
@@ -175,7 +193,8 @@ public class StudyGroupService {
                             studyGroup.getName(),
                             studyGroup.getDescription(),
                             studyGroup.getMemberCount(),
-                            getStudyGroupAreas(studyGroup.getId())
+                            getStudyGroupAreas(studyGroup.getId()),
+                            studyGroup.getBackgroundImgUrl()
                     );
                 })
                 .toList();
@@ -197,7 +216,8 @@ public class StudyGroupService {
                             studyGroup.getName(),
                             studyGroup.getDescription(),
                             studyGroup.getMemberCount(),
-                            getStudyGroupAreas(studyGroup.getId())
+                            getStudyGroupAreas(studyGroup.getId()),
+                            studyGroup.getBackgroundImgUrl()
                     );
                 })
                 .toList();
@@ -522,13 +542,15 @@ public class StudyGroupService {
                 studyGroup.getDescription(),
                 studyGroup.getMemberCount(),
                 getStudyGroupAreas(groupId),
-                leader.getNickname()
+                leader.getNickname(),
+                studyGroup.getBackgroundImgUrl()
         );
     }
 
     // 특정 스터디 그룹 정보 수정
     @Transactional
-    public void updateGroupDetail(String accessToken, Long groupId, String groupName, String description, List<Long> areaIds){
+    public void updateGroupDetail(String accessToken, Long groupId, String groupName,
+                                  String description, List<Long> areaIds, MultipartFile backgroundImg){
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -544,6 +566,18 @@ public class StudyGroupService {
                 .orElseThrow(()->new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
 
         studyGroup.updateStudyGroupDetail(groupName, description);
+
+        // S3에 이미지 업로드 기능 추가
+        String backgroundImageUrl = null;
+        if (backgroundImg != null && !backgroundImg.isEmpty()) {
+            try {
+                backgroundImageUrl = s3Service.upload(backgroundImg, "study-group/");
+            } catch (FileUploadException e) {
+                throw new BaseException(ErrorCode.FILE_UPLOAD_ERROR);
+            } catch (S3UploadException e) {
+                throw new BaseException(ErrorCode.S3_UPLOAD_ERROR);
+            }
+        }
 
         // 새 관심 분야 Area 조회 ( 없으면 404 리턴 )
         List<Area> newAreas = areaIds.stream()

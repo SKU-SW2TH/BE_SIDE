@@ -13,4 +13,5 @@ public class StudyGroupDetail {
     private int memberCount;
     private List<String> areas;
     private String leaderNickname;
+    private String backgroundImg;
 }

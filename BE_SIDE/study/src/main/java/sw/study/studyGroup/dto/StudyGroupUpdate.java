@@ -3,6 +3,7 @@ package sw.study.studyGroup.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -14,4 +15,5 @@ public class StudyGroupUpdate {
     private String groupName;
     private String description;
     private List<Long> areaIds;
+    private MultipartFile backgroundImg;
 }

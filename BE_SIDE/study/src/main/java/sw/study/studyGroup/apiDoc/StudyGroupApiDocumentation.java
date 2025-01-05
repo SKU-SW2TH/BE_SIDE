@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sw.study.studyGroup.dto.*;
 
 import java.util.List;
@@ -54,11 +55,17 @@ public interface StudyGroupApiDocumentation {
             @Parameter(name = "description", description = "그룹 소개", example = "진짜 처음 하시는 분들만 오시면 좋겠어요. 고수 사절.."),
             @Parameter(name = "selectedNicknames", description = "검색 이후 선택한 닉네임들 (배열의 형태)", example = "[\"스폰지밥\", \"뚱이\", \"집게사장\"]"),
             @Parameter(name = "leaderNickname", description = "그룹 내 사용할 방장의 닉네임", example = "코난123"),
-            @Parameter(name = "areaIds", description = "그룹 관심 분야 ID 목록", example = "[1, 2, 3]")
+            @Parameter(name = "areaIds", description = "그룹 관심 분야 ID 목록", example = "[1, 2, 3]"),
+            @Parameter(name = "backgroundImg", description = "그룹 이미지 ( 카드 컴포넌트의 배경 )", example = "사진 파일")
     })
     ResponseEntity<Map<String,Object>> createStudyGroup(
             @RequestHeader("Authorization") String accessToken,
-            @RequestBody StudyGroupRequest requestDto);
+            @RequestParam("groupName") String groupName,
+            @RequestParam("description") String description,
+            @RequestParam("selectedNicknames") List<String> selectedNicknames,
+            @RequestParam("leaderNickname") String leaderNickname,
+            @RequestParam(value = "areaIds", required = false) List<Long> areaIds,
+            @RequestParam(value = "backgroundImg", required = false) MultipartFile backgroundImg);
     
     // 받은 초대 확인
     @Operation(summary = "받은 초대 내역 확인", description = "받은 초대 리스트를 확인")
@@ -349,11 +356,15 @@ public interface StudyGroupApiDocumentation {
             @Parameter(name = "groupId", description = "그룹 Id", example = "1"),
             @Parameter(name = "groupName", description = "변경할 그룹 이름", example = "변경한 그룹 이름"),
             @Parameter(name = "description", description = "변경할 그룹 소개", example = "그룹 내 설명을 변경하였습니다."),
-            @Parameter(name = "areaIds", description = "변경할 관심 분야 ID 목록", example = "[1, 2, 3]")
+            @Parameter(name = "areaIds", description = "변경할 관심 분야 ID 목록", example = "[1, 2, 3]"),
+            @Parameter(name = "backgroundImg", description = "그룹 이미지 ( 카드 컴포넌트의 배경 )", example = "사진 파일")
     })
     ResponseEntity<?> groupDetailUpdate(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody StudyGroupUpdate updateDto);
+            @RequestParam("groupName") String groupName,
+            @RequestParam("description") String description,
+            @RequestParam(value = "areaIds", required = false) List<Long> areaIds,
+            @RequestParam(value = "backgroundImg", required = false) MultipartFile backgroundImg);
     }
 

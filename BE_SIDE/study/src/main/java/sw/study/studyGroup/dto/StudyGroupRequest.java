@@ -1,6 +1,7 @@
 package sw.study.studyGroup.dto;
 
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -11,4 +12,5 @@ public class StudyGroupRequest {
     private List<String> selectedNicknames;
     private String leaderNickname;
     private List<Long> areaIds;
+    private MultipartFile backgroundImage;
 }
