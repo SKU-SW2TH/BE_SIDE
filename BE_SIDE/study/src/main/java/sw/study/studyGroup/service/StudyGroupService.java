@@ -288,7 +288,7 @@ public class StudyGroupService {
         // 응답 DTO ( 닉네임, 신분 )
         for (Participant p : participants) {
             result.add(ParticipantsResponse.createGroupParticipants(
-                    p.getNickname(), p.getRole()));
+                    p.getNickname(), p.getRole(),p.getMember().getProfile()));
         }
         return result;
     }
@@ -305,7 +305,7 @@ public class StudyGroupService {
 
         List<ParticipantsResponse> result = new ArrayList<>();
         for (Participant p : participants) {
-            result.add(ParticipantsResponse.createGroupParticipants(p.getNickname(), p.getRole()));
+            result.add(ParticipantsResponse.createGroupParticipants(p.getNickname(), p.getRole(),p.getMember().getProfile()));
         }
 
         return result;
@@ -323,7 +323,7 @@ public class StudyGroupService {
 
         List<ParticipantsResponse> result = new ArrayList<>();
         for (Participant p : participants) {
-            result.add(ParticipantsResponse.createGroupParticipants(p.getNickname(), p.getRole()));
+            result.add(ParticipantsResponse.createGroupParticipants(p.getNickname(), p.getRole(), p.getMember().getProfile()));
         }
 
         return result;
