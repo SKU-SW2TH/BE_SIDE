@@ -46,7 +46,7 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
             @RequestHeader("Authorization") String accessToken,
             @RequestParam("groupName") String groupName,
             @RequestParam("description") String description,
-            @RequestParam("selectedNicknames") List<String> selectedNicknames,
+            @RequestParam(value = "selectedNicknames", required = false) List<String> selectedNicknames,
             @RequestParam("leaderNickname") String leaderNickname,
             @RequestParam(value = "areaIds", required = false) List<Long> areaIds,
             @RequestParam(value = "backgroundImage", required = false) MultipartFile backgroundImage) {
