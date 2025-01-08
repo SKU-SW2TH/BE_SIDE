@@ -8,7 +8,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sw.study.studyGroup.dto.DailyLogRequest;
+
+import java.util.List;
 
 public interface DailyLogApiDocumentation {
 
@@ -25,12 +28,15 @@ public interface DailyLogApiDocumentation {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
             @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1"),
             @Parameter(name = "title", description = "데일리 로그 제목", example = "제목 예시"),
-            @Parameter(name = "content", description = "데일리 로그 본문", example = "본문 예시입니다. 본문 내용이니까..")
+            @Parameter(name = "content", description = "데일리 로그 본문", example = "본문 예시입니다. 본문 내용이니까.."),
+            @Parameter(name = "fileUrls", description = "게시글에 포함될 파일", example = "파일 첨부(사진)")
     })
     ResponseEntity<?> createDailyLog(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody DailyLogRequest requestDto);
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "fileUrls", required = false) List<MultipartFile> fileUrls);
     
     // 데일리 로그 조회
     @Operation(summary = "데일리 로그 조회",
@@ -69,13 +75,16 @@ public interface DailyLogApiDocumentation {
             @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1"),
             @Parameter(name = "logId", description = "데일리 로그 ID", example = "1"),
             @Parameter(name = "title", description = "로그 제목", example = "제목 예시"),
-            @Parameter(name = "content", description = "로그 본문", example = "본문 예시입니다. 본문 내용이니까..")
+            @Parameter(name = "content", description = "로그 본문", example = "본문 예시입니다. 본문 내용이니까.."),
+            @Parameter(name = "fileUrls", description = "게시글에 포함될 파일", example = "파일 첨부(사진)")
     })
     ResponseEntity<?> updateDailyLog(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("logId") Long logId,
-            @RequestBody DailyLogRequest requestDto);
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "fileUrls", required = false) List<MultipartFile> fileUrls);
 
 
     // 데일리 로그 삭제
