@@ -3,8 +3,10 @@ package sw.study.studyGroup.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sw.study.studyGroup.apiDoc.NoticeApiDocumentation;
 import sw.study.studyGroup.dto.NoticeListResponse;
 import sw.study.studyGroup.dto.NoticeRequest;
@@ -27,13 +29,15 @@ public class NoticeController implements NoticeApiDocumentation {
 
     // 공지사항 작성
     @Override
-    @PostMapping("/create")
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createNotice(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody NoticeRequest requestDto) {
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files) {
 
-        noticeService.createNotice(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
+        noticeService.createNotice(accessToken, groupId, title, content, files);
         return ResponseEntity.status(HttpStatus.CREATED).body("공지사항이 성공적으로 작성되었습니다.");
     }
 
@@ -74,14 +78,16 @@ public class NoticeController implements NoticeApiDocumentation {
 
     // 공지사항 수정
     @Override
-    @PutMapping("/update/{noticeId}")
+    @PutMapping(value = "/update/{noticeId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateNotice(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("noticeId") Long noticeId,
-            @RequestBody NoticeRequest noticeRequest) {
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files) {
 
-        noticeService.updateNotice(accessToken,groupId, noticeId, noticeRequest.getTitle(), noticeRequest.getContent());
+        noticeService.updateNotice(accessToken,groupId, noticeId, title, content, files);
         return ResponseEntity.status(HttpStatus.OK).body("공지사항이 성공적으로 수정되었습니다.");
     }
 

@@ -7,10 +7,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import sw.study.community.service.S3Service;
 import sw.study.config.jwt.JWTService;
 import sw.study.exception.BaseException;
 import sw.study.exception.ErrorCode;
 import sw.study.exception.UserNotFoundException;
+import sw.study.exception.s3.FileUploadException;
+import sw.study.exception.s3.S3UploadException;
 import sw.study.studyGroup.domain.Notice;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.StudyGroup;
@@ -23,6 +27,7 @@ import sw.study.studyGroup.repository.StudyGroupRepository;
 import sw.study.user.domain.Member;
 import sw.study.user.repository.MemberRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -37,6 +42,7 @@ public class NoticeService {
     private final NoticeCheckRepository noticeCheckRepository;
 
     private final JWTService jwtService;
+    private final S3Service s3Service;
 
     // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
     private Member currentLogginedInfo(String accessToken) {
@@ -55,7 +61,7 @@ public class NoticeService {
 
     // 공지사항 작성
     @Transactional
-    public void createNotice(String accessToken, long groupId, String title, String content){
+    public void createNotice(String accessToken, long groupId, String title, String content, List<MultipartFile> files){
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -69,7 +75,22 @@ public class NoticeService {
             throw new BaseException(ErrorCode.PERMISSION_DENIED);
         }
 
-        Notice notice = Notice.createNotice(studyGroup,participant,title,content);
+        List<String> fileUrls = new ArrayList<>();
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                try {
+                    // 공지사항에 맞는 디렉토리 경로로 파일 업로드
+                    String fileUrl = s3Service.upload(file, "notice/");
+                    fileUrls.add(fileUrl);
+                } catch (FileUploadException e) {
+                    throw new BaseException(ErrorCode.FILE_UPLOAD_ERROR);
+                } catch (S3UploadException e) {
+                    throw new BaseException(ErrorCode.S3_UPLOAD_ERROR);
+                }
+            }
+        }
+
+        Notice notice = Notice.createNotice(studyGroup,participant,title,content, fileUrls);
         noticeRepository.save(notice);
     }
 
@@ -113,7 +134,7 @@ public class NoticeService {
 
     // 공지사항 수정
     @Transactional
-    public void updateNotice(String accessToken, long groupId, long noticeId, String title, String content){
+    public void updateNotice(String accessToken, long groupId, long noticeId, String title, String content, List<MultipartFile> files){
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -127,7 +148,23 @@ public class NoticeService {
             throw new BaseException(ErrorCode.PERMISSION_DENIED);
         }
 
-        notice.updateContent(title, content);
+        List<String> fileUrls = new ArrayList<>();
+
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                try {
+                    // 공지사항에 맞는 디렉토리 경로로 파일 업로드
+                    String fileUrl = s3Service.upload(file, "notice/");
+                    fileUrls.add(fileUrl);
+                } catch (FileUploadException e) {
+                    throw new BaseException(ErrorCode.FILE_UPLOAD_ERROR);
+                } catch (S3UploadException e) {
+                    throw new BaseException(ErrorCode.S3_UPLOAD_ERROR);
+                }
+            }
+        }
+
+        notice.updateContent(title, content, fileUrls);
     }
 
     // 공지사항 삭제

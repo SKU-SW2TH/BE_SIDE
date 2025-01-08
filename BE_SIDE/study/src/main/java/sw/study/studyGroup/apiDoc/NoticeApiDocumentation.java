@@ -8,8 +8,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sw.study.studyGroup.dto.NoticeRequest;
-
+import java.util.List;
 
 public interface NoticeApiDocumentation {
 
@@ -25,12 +26,15 @@ public interface NoticeApiDocumentation {
             @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
             @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1"),
             @Parameter(name = "title", description = "게시글 제목", example = "공지사항 제목 예시"),
-            @Parameter(name = "content", description = "게시글 본문", example = "본문 예시입니다. 본문 내용이니까..")
+            @Parameter(name = "content", description = "게시글 본문", example = "본문 예시입니다. 본문 내용이니까.."),
+            @Parameter(name = "files", description = "게시글에 포함될 파일", example = "파일 첨부(사진)")
     })
     ResponseEntity<?> createNotice(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody NoticeRequest requestDto);
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files);
 
     // 공지사항 목록 조회
     @Operation(summary = "공지사항 리스트 조회",
@@ -86,13 +90,16 @@ public interface NoticeApiDocumentation {
             @Parameter(name = "groupId", description = "스터디 그룹의 ID", example = "1"),
             @Parameter(name = "noticeId", description = "게시글 ID", example = "1"),
             @Parameter(name = "title", description = "게시글 제목", example = "공지사항 제목 예시"),
-            @Parameter(name = "content", description = "게시글 본문", example = "본문 예시입니다. 본문 내용이니까..")
+            @Parameter(name = "content", description = "게시글 본문", example = "본문 예시입니다. 본문 내용이니까.."),
+            @Parameter(name = "files", description = "게시글에 포함될 파일", example = "파일 첨부(사진)")
     })
     ResponseEntity<?> updateNotice(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId")Long groupId,
             @PathVariable("noticeId") Long noticeId,
-            @RequestBody NoticeRequest noticeRequest);
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files);
 
     // 공지사항 삭제
     @Operation(summary = "공지사항 삭제",
