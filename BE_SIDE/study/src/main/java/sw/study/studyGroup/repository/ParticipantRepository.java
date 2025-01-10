@@ -25,5 +25,7 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
     Page<Participant> findAllByStudyGroupId(Long studyGroupId, Pageable pageable); // 전체 사용자 조회
     Page<Participant> findAllByStudyGroupIdAndRole(Long studyGroupId, Participant.Role role, Pageable pageable); // 신분에 따른 조회
 
+    Optional<Participant> findByStudyGroupIdAndRole(Long studyGroupId, Participant.Role role); // 특정 그룹 내 그룹 장 닉네임 조회 용도
+
     Optional<Participant> findByStudyGroupIdAndNickname(Long studyGroupId, String nickname); // 추방 시 or 그룹 내부에서 닉네임 변경시
 }

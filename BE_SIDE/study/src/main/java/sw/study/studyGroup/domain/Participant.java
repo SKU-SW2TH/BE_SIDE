@@ -43,12 +43,19 @@ public class Participant {
         LEADER, MANAGER, MEMBER, MENTOR
     }
 
+    // promote 와 demote 권한 변경 단일 API 를 위한 메소드
     public void promote(){
         if(this.role==Role.MEMBER) this.role=Role.MANAGER;
     }
 
     public void demote(){
         if(this.role==Role.MANAGER) this.role = Role.MEMBER;
+    }
+
+    // 스터디장 권한 위임용 메소드
+    public void changeLeader(Participant target){
+        this.role = Role.MANAGER;
+        target.role = Role.LEADER;
     }
 
     public void updateNickname(String nickname){

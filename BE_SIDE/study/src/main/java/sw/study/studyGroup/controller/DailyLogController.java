@@ -3,8 +3,10 @@ package sw.study.studyGroup.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sw.study.studyGroup.apiDoc.DailyLogApiDocumentation;
 import sw.study.studyGroup.dto.DailyLogRequest;
 import sw.study.studyGroup.dto.DailyLogResponse;
@@ -22,13 +24,15 @@ public class DailyLogController implements DailyLogApiDocumentation {
 
     // 데일리 로그 작성
     @Override
-    @PostMapping("/create")
+    @PostMapping(value="/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createDailyLog(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
-            @RequestBody DailyLogRequest requestDto) {
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "fileUrls", required = false) List<MultipartFile> fileUrls) {
 
-        dailyLogService.createDailyLog(accessToken, groupId, requestDto.getTitle(), requestDto.getContent());
+        dailyLogService.createDailyLog(accessToken, groupId,title, content, fileUrls);
         return ResponseEntity.status(HttpStatus.CREATED).body("데일리 로그가 성공적으로 작성되었습니다.");
     }
 
@@ -48,14 +52,16 @@ public class DailyLogController implements DailyLogApiDocumentation {
 
     // 데일리 로그 수정
     @Override
-    @PutMapping("/update/{logId}")
+    @PutMapping(value="/update/{logId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateDailyLog(
             @RequestHeader("Authorization") String accessToken,
             @PathVariable("groupId") Long groupId,
             @PathVariable("logId") Long logId,
-            @RequestBody DailyLogRequest requestDto) {
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam(value = "fileUrls", required = false) List<MultipartFile> fileUrls) {
 
-        dailyLogService.updateDailyLog(accessToken, groupId, logId, requestDto.getTitle(), requestDto.getContent());
+        dailyLogService.updateDailyLog(accessToken, groupId, logId, title, content, fileUrls);
         return ResponseEntity.status(HttpStatus.OK).body("데일리 로그가 성공적으로 수정되었습니다.");
 
     }

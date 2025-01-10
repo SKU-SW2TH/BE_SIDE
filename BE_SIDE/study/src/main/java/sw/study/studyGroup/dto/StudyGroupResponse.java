@@ -14,8 +14,9 @@ public class StudyGroupResponse {
     private String description;
     private int memberCount;
     private List<String> areas;
+    private String backgroundImg;
 
-    public static StudyGroupResponse createStudyGroupResponse(Long groupId, String groupName, String description, int memberCount, List<String> areas) {
-        return new StudyGroupResponse(groupId, groupName, description, memberCount, areas);
+    public static StudyGroupResponse createStudyGroupResponse(Long groupId, String groupName, String description, int memberCount, List<String> areas, String backgroundImg) {
+        return new StudyGroupResponse(groupId, groupName, description, memberCount, areas, backgroundImg);
     }
 }

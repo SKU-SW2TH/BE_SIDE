@@ -3,8 +3,10 @@ package sw.study.studyGroup.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sw.study.studyGroup.apiDoc.StudyGroupApiDocumentation;
 import sw.study.studyGroup.domain.StudyGroup;
 import sw.study.studyGroup.dto.*;
@@ -39,19 +41,25 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
     }
 
     @Override
-    @PostMapping("/create")
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String,Object>> createStudyGroup(
             @RequestHeader("Authorization") String accessToken,
-            @RequestBody StudyGroupRequest requestDto) {
+            @RequestParam("groupName") String groupName,
+            @RequestParam("description") String description,
+            @RequestParam(value = "selectedNicknames", required = false) List<String> selectedNicknames,
+            @RequestParam("leaderNickname") String leaderNickname,
+            @RequestParam(value = "areaIds", required = false) List<Long> areaIds,
+            @RequestParam(value = "backgroundImage", required = false) MultipartFile backgroundImage) {
 
         StudyGroup createdGroup = studyGroupService.createStudyGroup(
                 accessToken,
-                requestDto.getGroupName(),
-                requestDto.getDescription(),
-                requestDto.getSelectedNicknames(),
-                requestDto.getLeaderNickname(),
-                requestDto.getAreaIds()
-        );
+                groupName,
+                description,
+                selectedNicknames,
+                leaderNickname,
+                areaIds,
+                backgroundImage
+            );
 
         Map<String, Object> apiResponse = new HashMap<>();
         apiResponse.put("message","스터디 그룹이 성공적으로 생성되었습니다.");
@@ -221,5 +229,47 @@ public class StudyGroupController implements StudyGroupApiDocumentation{
 
         studyGroupService.quitGroup(accessToken, groupId);
         return ResponseEntity.ok("해당 스터디그룹을 탈퇴하였습니다.");
+    }
+
+    @Override
+    @PatchMapping("/{groupId}/participants/changeLeader")
+    public ResponseEntity<?> changeLeader(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId,
+            @RequestBody NicknameRequest nicknameRequest){
+
+        studyGroupService.changeLeader(accessToken, groupId, nicknameRequest.getNickname());
+        return ResponseEntity.ok("스터디장 위임에 성공하였습니다.");
+    }
+
+    @Override
+    @GetMapping("/{groupId}/detail")
+    public ResponseEntity<?> getGroupDetail(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId){
+
+        StudyGroupDetail groupDetail = studyGroupService.groupDetail(accessToken, groupId);
+        return ResponseEntity.ok(groupDetail);
+    }
+
+    @Override
+    @PatchMapping(value = "/{groupId}/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> groupDetailUpdate(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId,
+            @RequestParam("groupName") String groupName,
+            @RequestParam("description") String description,
+            @RequestParam(value = "areaIds", required = false) List<Long> areaIds,
+            @RequestParam(value = "backgroundImg", required = false) MultipartFile backgroundImg){
+
+        studyGroupService.updateGroupDetail(
+                accessToken,
+                groupId,
+                groupName,
+                description,
+                areaIds,
+                backgroundImg);
+
+        return ResponseEntity.ok("그룹 내 세부 정보가 수정되었습니다.");
     }
 }

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sw.study.studyGroup.dto.*;
 
 import java.util.List;
@@ -54,11 +55,17 @@ public interface StudyGroupApiDocumentation {
             @Parameter(name = "description", description = "그룹 소개", example = "진짜 처음 하시는 분들만 오시면 좋겠어요. 고수 사절.."),
             @Parameter(name = "selectedNicknames", description = "검색 이후 선택한 닉네임들 (배열의 형태)", example = "[\"스폰지밥\", \"뚱이\", \"집게사장\"]"),
             @Parameter(name = "leaderNickname", description = "그룹 내 사용할 방장의 닉네임", example = "코난123"),
-            @Parameter(name = "areaIds", description = "그룹 관심 분야 ID 목록", example = "[1, 2, 3]")
+            @Parameter(name = "areaIds", description = "그룹 관심 분야 ID 목록", example = "[1, 2, 3]"),
+            @Parameter(name = "backgroundImg", description = "그룹 이미지 ( 카드 컴포넌트의 배경 )", example = "사진 파일")
     })
     ResponseEntity<Map<String,Object>> createStudyGroup(
             @RequestHeader("Authorization") String accessToken,
-            @RequestBody StudyGroupRequest requestDto);
+            @RequestParam("groupName") String groupName,
+            @RequestParam("description") String description,
+            @RequestParam(value = "selectedNicknames", required = false) List<String> selectedNicknames,
+            @RequestParam("leaderNickname") String leaderNickname,
+            @RequestParam(value = "areaIds", required = false) List<Long> areaIds,
+            @RequestParam(value = "backgroundImg", required = false) MultipartFile backgroundImg);
     
     // 받은 초대 확인
     @Operation(summary = "받은 초대 내역 확인", description = "받은 초대 리스트를 확인")
@@ -302,5 +309,62 @@ public interface StudyGroupApiDocumentation {
             @RequestHeader("Authorization") String accessToken,
             @PathVariable Long groupId);
 
-}
+    // 스터디장 위임
+    @Operation(summary = "스터디장 위임", description = "스터디장을 위임할 때 사용 ( 스터디장은 그룹 탈퇴 불가능 ) ")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "스터디장 위임에 성공하였습니다."),
+            @ApiResponse(responseCode = "403", description = "운영진 권한을 보유하고 있지 않습니다. / 해당 그룹에 참여중이지 않습니다."),
+            @ApiResponse(responseCode = "404", description = "그룹 내 해당 참가자가 존재하지 않습니다."),
+            @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.")
+    })
+    @Parameters(value = {
+            @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
+            @Parameter(name = "groupId", description = "그룹 Id", example = "1"),
+            @Parameter(name = "nickname", description = "스터장을 위임할 대상 유저의 닉네임", example = "코난123")
+    })
+    ResponseEntity<?> changeLeader(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable Long groupId,
+            @RequestBody NicknameRequest nicknameRequest);
+
+    // 특정 스터디 그룹 상세 정보 반환
+    @Operation(summary = "스터디 그룹 상세 정보", description = "특정 스터디 그룹 상세 정보 반환")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정보 객체 반환 (제목, 설명, 참가자 수, 관심 분야, 그룹 내 스터디장 닉네임까지 추가된 형태)"),
+            @ApiResponse(responseCode = "403", description = "해당 그룹에 참여중이지 않습니다."),
+            @ApiResponse(responseCode = "404", description = "해당 그룹이 존재하지 않습니다."),
+            @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.")
+    })
+    @Parameters(value = {
+            @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
+            @Parameter(name = "groupId", description = "그룹 Id", example = "1")
+    })
+    ResponseEntity<?> getGroupDetail(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId);
+
+    // 특정 스터디 그룹 상세 정보 수정
+    @Operation(summary = "스터디 그룹 상세 정보 수정", description = "특정 스터디 그룹 상세 정보 수정 ( 그룹장 및 운영진 사용 가능 ) ")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "그룹 내 세부 정보가 수정되었습니다."),
+            @ApiResponse(responseCode = "403", description = "해당 그룹에 참여중이지 않습니다. / 운영진 권한을 가지고 있지 않습니다."),
+            @ApiResponse(responseCode = "404", description = "해당 그룹 / 관심분야가 존재하지 않습니다."),
+            @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.")
+    })
+    @Parameters(value = {
+            @Parameter(name = "Authorization", description = "사용자 인증 토큰", example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."),
+            @Parameter(name = "groupId", description = "그룹 Id", example = "1"),
+            @Parameter(name = "groupName", description = "변경할 그룹 이름", example = "변경한 그룹 이름"),
+            @Parameter(name = "description", description = "변경할 그룹 소개", example = "그룹 내 설명을 변경하였습니다."),
+            @Parameter(name = "areaIds", description = "변경할 관심 분야 ID 목록", example = "[1, 2, 3]"),
+            @Parameter(name = "backgroundImg", description = "그룹 이미지 ( 카드 컴포넌트의 배경 )", example = "사진 파일")
+    })
+    ResponseEntity<?> groupDetailUpdate(
+            @RequestHeader("Authorization") String accessToken,
+            @PathVariable("groupId") Long groupId,
+            @RequestParam("groupName") String groupName,
+            @RequestParam("description") String description,
+            @RequestParam(value = "areaIds", required = false) List<Long> areaIds,
+            @RequestParam(value = "backgroundImg", required = false) MultipartFile backgroundImg);
+    }
 

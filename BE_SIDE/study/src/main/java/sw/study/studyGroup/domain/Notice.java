@@ -4,7 +4,11 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import sw.study.community.domain.PostFile;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -41,8 +45,12 @@ public class Notice {
 
     private int viewCount; // 조회수
 
+    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<NoticeFile> fileUrls = new ArrayList<>();
+
+
     // 공지사항 생성 메서드
-    public static Notice createNotice(StudyGroup group, Participant author, String title, String content) {
+    public static Notice createNotice(StudyGroup group, Participant author, String title, String content, List<String> fileUrls) {
         Notice notice = new Notice();
         notice.studyGroup = group;
         notice.author = author;
@@ -51,13 +59,30 @@ public class Notice {
         notice.createdAt = LocalDateTime.now();
         notice.updatedAt = null;
         notice.viewCount = 0;
+
+        if (fileUrls != null) {
+            for (String fileUrl : fileUrls) {
+                NoticeFile noticeFile = NoticeFile.createNoticeFile(notice, fileUrl);
+                notice.fileUrls.add(noticeFile);
+            }
+        }
         return notice;
     }
 
-    public void updateContent(String title, String content) {
+    public void updateContent(String title, String content, List<String> fileUrls) {
         this.title = title;
         this.content = content;
         this.updatedAt = LocalDateTime.now();
+
+        // 게시글 수정 시, 추가된 기존의 File 들 대체 ( 추가되는 방식이 아님 )
+        if (fileUrls != null && !fileUrls.isEmpty()) {
+            this.fileUrls.clear();
+
+            for (String fileUrl : fileUrls) {
+                NoticeFile noticeFile = NoticeFile.createNoticeFile(this, fileUrl);
+                this.fileUrls.add(noticeFile);
+            }
+        }
     }
 
     public void IncreaseViewCount(){

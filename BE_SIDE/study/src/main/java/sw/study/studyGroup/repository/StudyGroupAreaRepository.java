@@ -11,4 +11,7 @@ public interface StudyGroupAreaRepository extends JpaRepository<StudyGroupArea, 
     List<StudyGroupArea> findByIdGroupId(Long groupId);
     // 복합키의 구성인 id 필드의 groupId 로 조회
     // studyGroupAreaId.id.groupId 라는 의미
+
+    void deleteByStudyGroup_Id(Long groupId);
+    // 스터디그룹 관심분야 수정시, 삭제 이후에 재등록
 }

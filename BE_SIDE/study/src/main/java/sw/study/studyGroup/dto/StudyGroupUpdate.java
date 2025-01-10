@@ -1,16 +1,19 @@
 package sw.study.studyGroup.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+// 스터디그룹 정보 수정 Dto
 @Data
-public class StudyGroupRequest {
+@AllArgsConstructor
+@NoArgsConstructor
+public class StudyGroupUpdate {
     private String groupName;
     private String description;
-    private List<String> selectedNicknames;
-    private String leaderNickname;
     private List<Long> areaIds;
-    private MultipartFile backgroundImage;
+    private MultipartFile backgroundImg;
 }

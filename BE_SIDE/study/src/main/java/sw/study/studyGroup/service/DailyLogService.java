@@ -7,10 +7,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import sw.study.community.service.S3Service;
 import sw.study.config.jwt.JWTService;
 import sw.study.exception.BaseException;
 import sw.study.exception.ErrorCode;
 import sw.study.exception.UserNotFoundException;
+import sw.study.exception.s3.FileUploadException;
+import sw.study.exception.s3.S3UploadException;
 import sw.study.studyGroup.domain.DailyLog;
 import sw.study.studyGroup.domain.Participant;
 import sw.study.studyGroup.domain.StudyGroup;
@@ -24,6 +28,7 @@ import sw.study.user.repository.MemberRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -38,6 +43,7 @@ public class DailyLogService {
     private final DailyLogRepository dailyLogRepository;
 
     private final JWTService jwtService;
+    private final S3Service s3Service;
 
     // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
     private Member currentLogginedInfo(String accessToken) {
@@ -50,7 +56,7 @@ public class DailyLogService {
 
     // 데일리 로그 작성
     @Transactional
-    public void createDailyLog(String accessToken, Long groupId, String title, String content){
+    public void createDailyLog(String accessToken, Long groupId, String title, String content, List<MultipartFile> files){
 
         Member member = currentLogginedInfo(accessToken);
 
@@ -60,7 +66,22 @@ public class DailyLogService {
         StudyGroup studyGroup = studyGroupRepository.findById(groupId)
                 .orElseThrow(() -> new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
 
-        DailyLog dailyLog = DailyLog.createDailyLog(studyGroup, participant, title, content);
+        List<String> fileUrls = new ArrayList<>();
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                try {
+                    // 공지사항에 맞는 디렉토리 경로로 파일 업로드
+                    String fileUrl = s3Service.upload(file, "dailyLog/");
+                    fileUrls.add(fileUrl);
+                } catch (FileUploadException e) {
+                    throw new BaseException(ErrorCode.FILE_UPLOAD_ERROR);
+                } catch (S3UploadException e) {
+                    throw new BaseException(ErrorCode.S3_UPLOAD_ERROR);
+                }
+            }
+        }
+
+        DailyLog dailyLog = DailyLog.createDailyLog(studyGroup, participant, title, content, fileUrls);
         dailyLogRepository.save(dailyLog);
     }
 
@@ -82,12 +103,12 @@ public class DailyLogService {
 
         Page<DailyLog> logs = dailyLogRepository.findAllByStudyGroup_IdAndCreatedAtBetween(groupId, startOfDay, endOfDay, pageable);
 
-        return logs.stream().map(DailyLogResponse::new).toList();
+        return logs.stream().map(DailyLogResponse::createDailyLogResponse).toList();
     }
 
     // 데일리 로그 수정
     @Transactional
-    public void updateDailyLog(String accessToken, Long groupId, Long logId, String title,String content){
+    public void updateDailyLog(String accessToken, Long groupId, Long logId, String title, String content, List<MultipartFile> files){
         Member member = currentLogginedInfo(accessToken);
 
         Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
@@ -99,7 +120,23 @@ public class DailyLogService {
         if(!dailyLog.getAuthor().getId().equals(participant.getId()))
             throw new BaseException(ErrorCode.PERMISSION_DENIED);
 
-        dailyLog.updateLog(title, content);
+        List<String> fileUrls = new ArrayList<>();
+
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                try {
+                    // 공지사항에 맞는 디렉토리 경로로 파일 업로드
+                    String fileUrl = s3Service.upload(file, "dailyLog/");
+                    fileUrls.add(fileUrl);
+                } catch (FileUploadException e) {
+                    throw new BaseException(ErrorCode.FILE_UPLOAD_ERROR);
+                } catch (S3UploadException e) {
+                    throw new BaseException(ErrorCode.S3_UPLOAD_ERROR);
+                }
+            }
+        }
+
+        dailyLog.updateLog(title, content, fileUrls);
     }
 
     // 데일리 로그 삭제

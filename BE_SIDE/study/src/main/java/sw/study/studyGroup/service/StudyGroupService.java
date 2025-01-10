@@ -10,15 +10,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import sw.study.community.service.S3Service;
 import sw.study.config.jwt.JWTService;
 import sw.study.exception.*;
-import sw.study.studyGroup.domain.Participant;
+import sw.study.exception.s3.FileUploadException;
+import sw.study.exception.s3.S3UploadException;
+import sw.study.studyGroup.domain.*;
 import sw.study.studyGroup.domain.Participant.Role;
-import sw.study.studyGroup.domain.StudyGroup;
-import sw.study.studyGroup.domain.StudyGroupArea;
-import sw.study.studyGroup.domain.WaitingPeople;
 import sw.study.studyGroup.dto.NicknameRequest;
 import sw.study.studyGroup.dto.ParticipantsResponse;
+import sw.study.studyGroup.dto.StudyGroupDetail;
 import sw.study.studyGroup.dto.StudyGroupResponse;
 import sw.study.studyGroup.repository.*;
 import sw.study.user.domain.Area;
@@ -46,6 +48,7 @@ public class StudyGroupService {
     private final StudyGroupAreaRepository studyGroupAreaRepository;
     private final AreaRepository areaRepository;
     private final JWTService jwtService;
+    private final S3Service s3Service;
 
     // 토큰에서 사용자 이메일 정보 얻어서 Member 객체 가져오기
     private Member currentLogginedInfo(String accessToken) {
@@ -93,14 +96,33 @@ public class StudyGroupService {
     // 스터디 그룹 생성 ( + 사용자 초대 )
     @Transactional
     public StudyGroup createStudyGroup(
-            String accessToken, String groupName, String description, List<String> selectedNicknames, String leaderNickname, List<Long> areaIds) {
-
-        // 스터디 그룹 생성 
-        StudyGroup studyGroup = StudyGroup.createStudyGroup(groupName, description);
-        studyGroupRepository.save(studyGroup);
+            String accessToken, String groupName, String description,
+            List<String> selectedNicknames, String leaderNickname, List<Long> areaIds, MultipartFile backgroundImg) {
 
         // 로그인 되어있는 사용자 정보를 가져오기
         Member leader = currentLogginedInfo(accessToken);
+
+
+        if (participantRepository.countByMemberId(leader.getId()) >= 8) {
+            throw new BaseException(ErrorCode.MAX_STUDYGROUP);
+        }
+
+        // S3에 이미지 업로드 기능 추가
+        String backgroundImageUrl = null;
+        if (backgroundImg != null && !backgroundImg.isEmpty()) {
+            try {
+                backgroundImageUrl = s3Service.upload(backgroundImg, "study-group/");
+            } catch (FileUploadException e) {
+                throw new BaseException(ErrorCode.FILE_UPLOAD_ERROR);
+            } catch (S3UploadException e) {
+                throw new BaseException(ErrorCode.S3_UPLOAD_ERROR);
+            }
+        }
+
+        // 스터디 그룹 생성 
+        StudyGroup studyGroup = StudyGroup.createStudyGroup(groupName, description, backgroundImageUrl);
+        studyGroupRepository.save(studyGroup);
+
 
         // 방장은 바로 Participant에 추가해준다.
         Participant leaderParticipant = Participant.createParticipant(leaderNickname, leader, Role.LEADER, studyGroup);
@@ -120,15 +142,21 @@ public class StudyGroupService {
         studyGroup.whoEverInvited(waitingPeople.size());
         waitingPeopleRepository.saveAll(waitingPeople);
 
-        // 스터디 그룹의 관심분야 설정
         if (areaIds != null && !areaIds.isEmpty()) {
             for (Long areaId : areaIds) {
+
                 Area area = areaRepository.findById(areaId)
                         .orElseThrow(() -> new BaseException(ErrorCode.INTEREST_NOT_FOUND));
+                // 해당 id를 가지는 관심분야 없으면 404 리턴
 
-                // StudyGroup과 Area를 연결하는 StudyGroupArea 생성
-                StudyGroupArea studyGroupArea = StudyGroupArea.createStudyGroupArea(studyGroup, area);
-                studyGroupAreaRepository.save(studyGroupArea); // 관계 저장
+                StudyGroupAreaId studyGroupAreaId = new StudyGroupAreaId(studyGroup.getId(), area.getId());
+                // 양방향 관계 제거 -> 관심분야 추가는 studyGroupArea 에서만 동작
+                studyGroupAreaRepository.findById(studyGroupAreaId)
+                        .orElseGet(() -> {
+                            StudyGroupArea newStudyGroupArea = StudyGroupArea.createStudyGroupArea(studyGroup, area);
+                            studyGroupAreaRepository.save(newStudyGroupArea);
+                            return newStudyGroupArea;
+                        });
             }
         }
         return studyGroup;
@@ -165,7 +193,8 @@ public class StudyGroupService {
                             studyGroup.getName(),
                             studyGroup.getDescription(),
                             studyGroup.getMemberCount(),
-                            getStudyGroupAreas(studyGroup.getId())
+                            getStudyGroupAreas(studyGroup.getId()),
+                            studyGroup.getBackgroundImgUrl()
                     );
                 })
                 .toList();
@@ -187,7 +216,8 @@ public class StudyGroupService {
                             studyGroup.getName(),
                             studyGroup.getDescription(),
                             studyGroup.getMemberCount(),
-                            getStudyGroupAreas(studyGroup.getId())
+                            getStudyGroupAreas(studyGroup.getId()),
+                            studyGroup.getBackgroundImgUrl()
                     );
                 })
                 .toList();
@@ -200,6 +230,12 @@ public class StudyGroupService {
         Member member = currentLogginedInfo(accessToken);
         waitingPeopleRepository.deleteByMemberId(member.getId());
 
+
+        // 사용자가 이미 허용된 수 만큼의 그룹에 참가중이라면
+        if (participantRepository.countByMemberId(member.getId()) >= 8) {
+            throw new BaseException(ErrorCode.MAX_STUDYGROUP);
+        }
+
         // 중복 확인
         if (participantRepository.findByNickname(nickname).isPresent()) {
             throw new BaseException(ErrorCode.DUPLICATE_NICKNAME);
@@ -210,14 +246,10 @@ public class StudyGroupService {
                 .orElseThrow(() -> new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
 
         // 스터디 그룹의 인원이 꽉 찬 경우
-        if (studyGroup.getMemberCount() == 50) {
+        if (studyGroup.getMemberCount() >= 50) {
             throw new BaseException(ErrorCode.STUDYGROUP_FULL);
         }
 
-        // 사용자가 이미 허용된 수 만큼의 그룹에 참가중이라면
-        if (participantRepository.countByMemberId(member.getId()) == 20) {
-            throw new BaseException(ErrorCode.MAX_STUDYGROUP);
-        }
 
         Participant participant = Participant.createParticipant(nickname, member, Role.MEMBER, studyGroup);
         studyGroup.whoEverAccepted(participant);
@@ -256,7 +288,7 @@ public class StudyGroupService {
         // 응답 DTO ( 닉네임, 신분 )
         for (Participant p : participants) {
             result.add(ParticipantsResponse.createGroupParticipants(
-                    p.getNickname(), p.getRole()));
+                    p.getNickname(), p.getRole(),p.getMember().getProfile()));
         }
         return result;
     }
@@ -273,7 +305,7 @@ public class StudyGroupService {
 
         List<ParticipantsResponse> result = new ArrayList<>();
         for (Participant p : participants) {
-            result.add(ParticipantsResponse.createGroupParticipants(p.getNickname(), p.getRole()));
+            result.add(ParticipantsResponse.createGroupParticipants(p.getNickname(), p.getRole(),p.getMember().getProfile()));
         }
 
         return result;
@@ -291,7 +323,7 @@ public class StudyGroupService {
 
         List<ParticipantsResponse> result = new ArrayList<>();
         for (Participant p : participants) {
-            result.add(ParticipantsResponse.createGroupParticipants(p.getNickname(), p.getRole()));
+            result.add(ParticipantsResponse.createGroupParticipants(p.getNickname(), p.getRole(), p.getMember().getProfile()));
         }
 
         return result;
@@ -462,5 +494,104 @@ public class StudyGroupService {
 
         studyGroup.getParticipants().remove(target);
         studyGroup.whoEverKicked();
+    }
+
+    // 스터디 장 위임
+    @Transactional
+    public void changeLeader(String accessToken, Long groupId, String nickname){
+
+        Member member = currentLogginedInfo(accessToken);
+
+        Participant leader = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
+                .orElseThrow(() -> new BaseException(ErrorCode.UNAUTHORIZED));
+
+        // 스터디그룹이 존재하지 않는 경우의 핸들링 ?
+        // 해당 서비스 로직은 방장만 호출하는 로직. 방장이 그룹 삭제를 사전에 수행한 뒤에 위임하는건 말이 안됨.
+        /* StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                .orElseThrow(()->new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND)); */
+
+        if (leader.getRole() != Role.LEADER) {
+            throw new BaseException(ErrorCode.PERMISSION_DENIED);
+        }
+
+        Participant target = participantRepository.findByStudyGroupIdAndNickname(groupId, nickname)
+                .orElseThrow(()->new BaseException(ErrorCode.PARTICIPANT_NOT_FOUND));
+
+        leader.changeLeader(target);
+    }
+
+    // 특정 스터디 그룹 정보 상세 확인
+    public StudyGroupDetail groupDetail(String accessToken, Long groupId){
+        
+        Member member = currentLogginedInfo(accessToken);
+
+        // 로그인된 사용자가 방에 참가하지 않은 경우
+        participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
+                .orElseThrow(()-> new BaseException(ErrorCode.UNAUTHORIZED));
+
+        StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                .orElseThrow(()->new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
+
+        // 스터디 그룹 정보 확인 시, 방장 닉네임도 함께 리턴되는 형태
+        // 방장이 존재하지 않을수가 있을까? 우선 404 리턴
+        Participant leader = participantRepository.findByStudyGroupIdAndRole(groupId, Role.LEADER)
+                .orElseThrow(()->new BaseException(ErrorCode.PARTICIPANT_NOT_FOUND));
+
+        return new StudyGroupDetail(
+                studyGroup.getName(),
+                studyGroup.getDescription(),
+                studyGroup.getMemberCount(),
+                getStudyGroupAreas(groupId),
+                leader.getNickname(),
+                studyGroup.getBackgroundImgUrl()
+        );
+    }
+
+    // 특정 스터디 그룹 정보 수정
+    @Transactional
+    public void updateGroupDetail(String accessToken, Long groupId, String groupName,
+                                  String description, List<Long> areaIds, MultipartFile backgroundImg){
+
+        Member member = currentLogginedInfo(accessToken);
+
+        // 참여 여부 확인
+        Participant participant = participantRepository.findByMemberIdAndStudyGroupId(member.getId(), groupId)
+                .orElseThrow(()->new BaseException(ErrorCode.UNAUTHORIZED));
+
+        // 권한 확인
+        if(participant.getRole()== Role.MEMBER)
+            throw new BaseException(ErrorCode.PERMISSION_DENIED);
+
+        StudyGroup studyGroup = studyGroupRepository.findById(groupId)
+                .orElseThrow(()->new BaseException(ErrorCode.STUDYGROUP_NOT_FOUND));
+
+        studyGroup.updateStudyGroupDetail(groupName, description);
+
+        // S3에 이미지 업로드 기능 추가
+        String backgroundImageUrl = null;
+        if (backgroundImg != null && !backgroundImg.isEmpty()) {
+            try {
+                backgroundImageUrl = s3Service.upload(backgroundImg, "study-group/");
+            } catch (FileUploadException e) {
+                throw new BaseException(ErrorCode.FILE_UPLOAD_ERROR);
+            } catch (S3UploadException e) {
+                throw new BaseException(ErrorCode.S3_UPLOAD_ERROR);
+            }
+        }
+
+        // 새 관심 분야 Area 조회 ( 없으면 404 리턴 )
+        List<Area> newAreas = areaIds.stream()
+                .map(areaId -> areaRepository.findById(areaId)
+                        .orElseThrow(() -> new BaseException(ErrorCode.INTEREST_NOT_FOUND)))
+                .toList();
+
+        // 기존 StudyGroupArea 삭제
+        studyGroupAreaRepository.deleteByStudyGroup_Id(groupId);
+
+        // 새로운 StudyGroupArea 추가
+        List<StudyGroupArea> studyGroupAreas = newAreas.stream()
+                .map(area -> StudyGroupArea.createStudyGroupArea(studyGroup, area))
+                .toList();
+        studyGroupAreaRepository.saveAll(studyGroupAreas);
     }
 }

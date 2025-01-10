@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Entity
@@ -41,8 +43,11 @@ public class DailyLog {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt; // 삭제일
 
+    @OneToMany(mappedBy = "dailyLog", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DailyLogFile> fileUrls = new ArrayList<>();
+
     // 데일리 로그 생성 메서드
-    public static DailyLog createDailyLog(StudyGroup group, Participant author, String title, String content) {
+    public static DailyLog createDailyLog(StudyGroup group, Participant author, String title, String content, List<String> fileUrls) {
         DailyLog log = new DailyLog();
         log.studyGroup = group;
         log.author = author;
@@ -50,12 +55,30 @@ public class DailyLog {
         log.content = content;
         log.createdAt = LocalDateTime.now();
         log.updatedAt = null;
+
+        if(fileUrls != null){
+            for(String urls : fileUrls){
+                DailyLogFile dailyLogFile = DailyLogFile.createDailyLogFile(log, urls);
+                log.fileUrls.add(dailyLogFile);
+            }
+        }
+
         return log;
     }
 
-    public void updateLog(String title, String content) {
+    // 수정 메소드
+    public void updateLog(String title, String content, List<String> fileUrls) {
         this.title = title;
         this.content = content;
         this.updatedAt = LocalDateTime.now();
+
+        if(fileUrls != null && !fileUrls.isEmpty()){
+            this.fileUrls.clear();
+
+            for(String urls : fileUrls){
+                DailyLogFile dailyLogFile = DailyLogFile.createDailyLogFile(this,urls);
+                this.fileUrls.add(dailyLogFile);
+            }
+        }
     }
 }
