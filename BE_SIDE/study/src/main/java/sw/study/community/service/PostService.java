@@ -27,6 +27,7 @@ import sw.study.user.domain.Member;
 import sw.study.user.repository.AreaRepository;
 import sw.study.user.repository.MemberRepository;
 import sw.study.user.service.MemberService;
+import sw.study.user.service.NotificationService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,7 @@ public class PostService {
     private final PostLikeRepository postLikeRepository;
     private final ReportService reportService;
     private final MemberService memberService;
+    private final NotificationService notificationService;
 
     /**
      * 게시글 생성
@@ -101,6 +103,7 @@ public class PostService {
 
         Member author = post.getMember();
         PostAuthorResponse postAuthorResponse = new PostAuthorResponse();
+        postAuthorResponse.setEmail(author.getEmail());
         postAuthorResponse.setNickname(author.getNickname());
         postAuthorResponse.setDeleted(author.isDeleted());
         postDetailResponse.setPostAuthorResponse(postAuthorResponse);
@@ -128,6 +131,7 @@ public class PostService {
 
             CommentAuthorResponse commentAuthorResponse = new CommentAuthorResponse(); // 댓글 작성자
             Member commentAuthor = comment.getMember();
+            commentAuthorResponse.setEmail(commentAuthor.getEmail());
             commentAuthorResponse.setNickname(commentAuthor.getNickname());
             commentAuthorResponse.setProfile(commentAuthor.getProfile());
             commentAuthorResponse.setDeleted(commentAuthor.isDeleted());
@@ -151,6 +155,7 @@ public class PostService {
 
                     CommentAuthorResponse replyAuthorResponse = new CommentAuthorResponse(); // 대댓글 작성자
                     Member replyAuthor = reply.getMember();
+                    replyAuthorResponse.setEmail(replyAuthor.getEmail());
                     replyAuthorResponse.setNickname(replyAuthor.getNickname());
                     replyAuthorResponse.setProfile(replyAuthor.getProfile());
                     replyAuthorResponse.setDeleted(replyAuthor.isDeleted());
@@ -165,6 +170,24 @@ public class PostService {
 
         log.info("게시글 DTO 전송 완료: postId = {}", post.getId());
         return postDetailResponse;
+    }
+
+    /**
+     * 게시글 수정
+     */
+    @Transactional
+    public void update(Long postId, Long memberId, PostUpdateRequest postUpdateRequest) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException("해당하는 게시글을 찾을 수 없습니다."));
+
+        // 작성자가 아닐 경우
+        if(!post.getMember().getId().equals(memberId)) {
+            throw new UnauthorizedException("작성자만 수정할 수 있습니다");
+        }
+
+        post.updateTitle(postUpdateRequest.getTitle());
+        post.updateContent(postUpdateRequest.getContent());
+        log.info("게시글 수정 완료: postId = {}", postId);
     }
 
     /**
@@ -202,6 +225,10 @@ public class PostService {
 
         PostLike postLike = PostLike.createPostLike(post, liker);
         postLikeRepository.save(postLike);
+
+        // 알림 생성
+        notificationService.sendNotification(post.getMember(), "게시글에 좋아요가 달렸습니다.", "POST", postId);
+
         log.info("게시글 좋아요 요청 완료: postId = {}, memberId = {}", postId, likerId);
     }
 

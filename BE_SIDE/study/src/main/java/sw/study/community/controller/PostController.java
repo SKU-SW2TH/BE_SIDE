@@ -10,13 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sw.study.admin.dto.ReportRequest;
 import sw.study.community.apiDoc.PostApiDocumentation;
-import sw.study.community.dto.CommentRequest;
-import sw.study.community.dto.PostDetailResponse;
-import sw.study.community.dto.PostRequest;
-import sw.study.community.dto.PostResponse;
-import sw.study.community.repository.CommentRepository;
+import sw.study.community.dto.*;
 import sw.study.community.service.CommentService;
 import sw.study.community.service.PostService;
+import sw.study.config.jwt.JWTService;
 import sw.study.exception.InvalidTokenException;
 import sw.study.exception.UserNotFoundException;
 import sw.study.exception.community.*;
@@ -33,6 +30,7 @@ public class PostController implements PostApiDocumentation {
     private final PostService postService;
     private final CommentService commentService;
     private final MemberService memberService;
+    private final JWTService jwtService;
 
     @Override
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -87,6 +85,25 @@ public class PostController implements PostApiDocumentation {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
+    @PatchMapping("/{postId}/edit")
+    public ResponseEntity<?> updatePost(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId, @RequestBody PostUpdateRequest updateRequest) {
+        log.info("게시글 수정 요청: postId = {}", postId);
+        try {
+            Long memberId = memberService.getMemberIdByToken(accessToken);
+            postService.update(postId, memberId, updateRequest);
+
+            return ResponseEntity.ok("게시글이 정상적으로 수정되었습니다");
+        } catch (PostNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()); // 500
+        }
+    }
+
 
     @Override
     @DeleteMapping("/{postId}")
@@ -183,6 +200,29 @@ public class PostController implements PostApiDocumentation {
         } catch (PostNotFoundException | UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
         }  catch (InvalidTokenException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않는 토큰입니다."); // 잘못된 토큰이면 401 Unauthorized 응답
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{postId}/comment/{commentId}/edit")
+    public ResponseEntity<?> editComment(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId, @PathVariable Long commentId, String content) {
+        log.info("댓글 수정 요청: postId = {}, commentId = {}", postId, commentId);
+        try {
+            Long memberId = memberService.getMemberIdByToken(accessToken);
+            commentService.updateComment(postId, commentId, memberId, content);
+            return ResponseEntity.ok("정상적으로 댓글이 수정되었습니다.");
+
+
+        } catch (PostNotFoundException | CommentNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
+        } catch (CommentNotBelongToPostException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 본인이 작성한 댓글이 아닐 경우 401
+        } catch (InvalidTokenException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않는 토큰입니다."); // 잘못된 토큰이면 401 Unauthorized 응답
         } catch (Exception e) {
             // 기타 예외 발생
@@ -335,6 +375,30 @@ public class PostController implements PostApiDocumentation {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
+    @PatchMapping("/{postId}/comment/{commentId}/reply/{replyId}/edit")
+    public ResponseEntity<?> editReply(@RequestHeader("Authorization") String accessToken, @PathVariable Long postId, @PathVariable Long commentId, @PathVariable Long replyId, String content) {
+        log.info("대댓글 수정 요청: postId = {}, commentId = {}", postId, commentId);
+        try {
+            Long memberId = memberService.getMemberIdByToken(accessToken);
+            commentService.updateReply(postId, commentId, replyId, memberId, content);
+            return ResponseEntity.ok("정상적으로 대댓글이 수정되었습니다.");
+
+
+        } catch (PostNotFoundException | CommentNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // 404
+        } catch (CommentNotBelongToPostException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage()); // 400
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 본인이 작성한 댓글이 아닐 경우 401
+        } catch (InvalidTokenException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않는 토큰입니다."); // 잘못된 토큰이면 401 Unauthorized 응답
+        } catch (Exception e) {
+            // 기타 예외 발생
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
 
     // 대댓글 삭제
     @DeleteMapping("/{postId}/comment/{commentId}/reply/{replyId}")

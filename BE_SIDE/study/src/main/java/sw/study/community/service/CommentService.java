@@ -23,6 +23,7 @@ import sw.study.exception.community.PostNotFoundException;
 import sw.study.exception.studyGroup.UnauthorizedException;
 import sw.study.user.domain.Member;
 import sw.study.user.repository.MemberRepository;
+import sw.study.user.service.NotificationService;
 
 @Slf4j
 @Service
@@ -34,6 +35,7 @@ public class CommentService {
     private final MemberRepository memberRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final ReportService reportService;
+    private final NotificationService notificationService;
 
     /**
      * 댓글 생성
@@ -49,6 +51,10 @@ public class CommentService {
                 commentRequest.getContent(), commentRequest.getLevel());
         commentRepository.save(comment);
         log.info("댓글이 성공적으로 반영: commentId={}, postId={}", comment.getId(), postId);
+
+        // 알림 생성
+        notificationService.sendNotification(findPost.getMember(), "게시글에 댓글이 달렸습니다.", "POST", postId);
+
         return comment.getId();
     }
 
@@ -72,8 +78,66 @@ public class CommentService {
         Comment reply = Comment.createReply(comment, member, replyRequest.getContent(), replyRequest.getLevel());
         commentRepository.save(reply);
         log.info("대댓글이 성공적으로 반영: postId={}, commentId={}, replyId={}", postId, comment.getId(), reply.getId());
+
+        // 알림 생성
+        notificationService.sendNotification(comment.getMember(), "댓글에 대댓글이 달렸습니다.", "POST", postId);
+
+
         return reply.getId();
     }
+
+    /**
+     * 댓글 수정
+     */
+    @Transactional
+    public void updateComment(Long postId, Long commentId, Long memberId, String content) {
+        // 게시글과 댓글 조회
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException("해당 게시글을 찾을 수 없습니다."));
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("해당 댓글을 찾을 수 없습니다."));
+
+        // 댓글이 해당 게시글에 속하는지 검증
+        if (!post.getComments().contains(comment)) {
+            throw new CommentNotBelongToPostException("댓글이 해당 게시글에 속하지 않습니다.");
+        }
+
+        // 본인이 작성한 댓글인지 확인
+        if (!comment.getMember().getId().equals(memberId)) {
+            throw new UnauthorizedException("작성자만 수정할 수 있습니다");
+        }
+
+        comment.updateContent(content);
+        log.info("댓글이 성공적으로 수정됨: commentId={}, postId={}", comment.getId(), postId);
+    }
+
+    /**
+     * 대댓글 수정
+     */
+    @Transactional
+    public void updateReply(Long postId, Long commentId, Long replyId, Long memberId, String content) {
+        // 게시글, 댓글, 대댓글 조회
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException("해당 게시글을 찾을 수 없습니다."));
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommentNotFoundException("해당 댓글을 찾을 수 없습니다."));
+        Comment reply = commentRepository.findById(replyId)
+                .orElseThrow(() -> new CommentNotFoundException("해당 대댓글을 찾을 수 없습니다."));
+
+        // 댓글이 해당 게시글에 속하는지 검증
+        if (!post.getComments().contains(comment) || !comment.getChild().contains(reply)) {
+            throw new CommentNotBelongToPostException("대댓글이 해당 게시글에 속하지 않거나, 댓글에 속하지 않습니다.");
+        }
+
+        // 본인이 작성한 대댓글인지 확인
+        if (!reply.getMember().getId().equals(memberId)) {
+            throw new UnauthorizedException("작성자만 수정할 수 있습니다");
+        }
+
+        reply.updateContent(content);
+        log.info("대댓글이 성공적으로 수정: replyId={}, commentId={}, postId={}", replyId, commentId, postId);
+    }
+
 
     /**
      * 댓글 삭제
@@ -122,6 +186,10 @@ public class CommentService {
         // 댓글 좋아요
         CommentLike commentLike = CommentLike.createCommentLike(comment, member);
         commentLikeRepository.save(commentLike);
+
+        // 알림 생성
+        notificationService.sendNotification(comment.getMember(), "댓글에 좋아요가 달렸습니다.", "POST", postId);
+
         log.info("댓글에 성공적으로 좋아요: commentId={}, postId={}, memberId={}", commentId, postId, memberId);
     }
 
@@ -264,6 +332,10 @@ public class CommentService {
         // 대댓글 좋아요
         CommentLike commentLike = CommentLike.createCommentLike(reply, member);
         commentLikeRepository.save(commentLike);
+
+        // 알림 생성
+        notificationService.sendNotification(reply.getMember(), "대댓글에 좋아요가 달렸습니다.", "POST", postId);
+
         log.info("대댓글에 성공적으로 좋아요: replyId={}, commentId={}, postId={}, memberId={}", replyId, commentId, postId, likerId);
     }
 
